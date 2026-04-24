@@ -17,7 +17,7 @@
     "dev:stdio": "tsx src/stdio.ts",
     "build": "npm run build:widgets && npm run build:server",
     "build:widgets": "for w in bar-chart line-chart pie-chart table; do WIDGET=$w vite build || exit 1; done",
-    "build:server": "tsc -p tsconfig.server.json",
+    "build:server": "tsc -p tsconfig.server.json && chmod +x dist/server/stdio.js",
     "start": "node dist/server/server.js",
     "start:stdio": "node dist/server/stdio.js",
     "typecheck": "tsc --noEmit"

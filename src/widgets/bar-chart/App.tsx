@@ -4,7 +4,7 @@ import { useApp } from "@modelcontextprotocol/ext-apps/react";
 import { BarChartView } from "./BarChartView.js";
 import type { BarChartPayload, BarDatum } from "../../shared/payloads.js";
 import { installThemeStyles } from "../shared/theme.js";
-import "./styles.css";
+import "../shared/styles.css";
 
 installThemeStyles();
 

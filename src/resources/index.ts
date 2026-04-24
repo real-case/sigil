@@ -7,6 +7,9 @@ import {
   RESOURCE_MIME_TYPE,
 } from "@modelcontextprotocol/ext-apps/server";
 import { BAR_CHART_UI_URI } from "../tools/bar-chart.js";
+import { LINE_CHART_UI_URI } from "../tools/line-chart.js";
+import { PIE_CHART_UI_URI } from "../tools/pie-chart.js";
+import { TABLE_UI_URI } from "../tools/table.js";
 
 type WidgetEntry = {
   name: string;
@@ -16,6 +19,9 @@ type WidgetEntry = {
 
 const WIDGETS: WidgetEntry[] = [
   { name: "bar-chart", uri: BAR_CHART_UI_URI, distSubpath: "bar-chart" },
+  { name: "line-chart", uri: LINE_CHART_UI_URI, distSubpath: "line-chart" },
+  { name: "pie-chart", uri: PIE_CHART_UI_URI, distSubpath: "pie-chart" },
+  { name: "table", uri: TABLE_UI_URI, distSubpath: "table" },
 ];
 
 function findPackageRoot(start: string): string {

@@ -1,5 +1,16 @@
 #!/usr/bin/env node
-// Stdio entry point — used by `npx mcpcharts` from Claude Desktop / VS Code configs.
-// Implemented in Phase 3, Day 6.
-// See SPEC.md §3.3 and §7.
-export {};
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { createServer } from "./mcp-server.js";
+
+async function main() {
+  const server = createServer();
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  // Keep the process alive until the host closes stdin.
+}
+
+main().catch((err) => {
+  // stderr is the only safe channel — stdout is the MCP transport.
+  console.error("mcpcharts stdio fatal:", err);
+  process.exit(1);
+});

@@ -1,0 +1,93 @@
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--mcp-bg);
+  color: var(--mcp-text);
+  font-family: var(--mcp-font-family);
+}
+
+.mcpcharts-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.mcpcharts-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.mcpcharts-title {
+  margin: 0 0 12px 0;
+  font-size: var(--mcp-font-title);
+  font-weight: 600;
+  color: var(--mcp-text);
+}
+
+.mcpcharts-header .mcpcharts-title {
+  margin-bottom: 0;
+}
+
+.mcpcharts-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.mcpcharts-toolbar-btn {
+  background: transparent;
+  color: var(--mcp-text-secondary);
+  border: 1px solid var(--mcp-axis);
+  border-radius: var(--mcp-radius);
+  padding: 4px 10px;
+  font-size: var(--mcp-font-label);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.mcpcharts-toolbar-btn:hover:not(:disabled) {
+  background: var(--mcp-surface);
+  color: var(--mcp-text);
+  border-color: var(--mcp-text-secondary);
+}
+
+.mcpcharts-toolbar-btn:disabled {
+  cursor: default;
+  color: var(--mcp-series-0);
+}
+
+.mcpcharts-toolbar-btn.is-error {
+  color: #EF4444;
+  border-color: #EF4444;
+}
+
+.mcpcharts-canvas {
+  flex: 1 1 auto;
+  min-height: 220px;
+}
+
+.mcpcharts-empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--mcp-text-muted);
+}
+
+.mcpcharts-empty p {
+  margin: 0;
+  font-size: var(--mcp-font-label);
+}

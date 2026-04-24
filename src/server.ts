@@ -1,25 +1,11 @@
 import { randomUUID } from "node:crypto";
 import cors from "cors";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { registerAllTools } from "./tools/index.js";
-import { registerAllResources } from "./resources/index.js";
+import { createServer } from "./mcp-server.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const HOST = process.env.HOST ?? "127.0.0.1";
-
-function createServer(): McpServer {
-  const server = new McpServer({
-    name: "mcpcharts",
-    version: "0.1.0",
-  });
-
-  registerAllTools(server);
-  registerAllResources(server);
-
-  return server;
-}
 
 async function main() {
   const app = createMcpExpressApp({ host: HOST });

@@ -13,3 +13,53 @@ export interface BarChartPayload {
   xlabel?: string;
   ylabel?: string;
 }
+
+export interface LineDatum {
+  x: string | number;
+  y: number;
+}
+
+export interface LineSeries {
+  name: string;
+  data: LineDatum[];
+}
+
+export interface LineChartPayload {
+  title: string;
+  series: LineSeries[];
+  xlabel?: string;
+  ylabel?: string;
+}
+
+export type PieVariant = "pie" | "donut";
+
+export interface PieDatum {
+  label: string;
+  value: number;
+  color?: string;
+}
+
+export interface PieChartPayload {
+  title: string;
+  data: PieDatum[];
+  variant: PieVariant;
+}
+
+export type ColumnAlign = "left" | "right" | "center";
+
+export interface TableColumn {
+  key: string;
+  label: string;
+  align?: ColumnAlign;
+}
+
+export type TableCell = string | number;
+export type TableRow = Record<string, TableCell>;
+
+export interface TablePayload {
+  title: string;
+  columns: TableColumn[];
+  rows: TableRow[];
+  sortable: boolean;
+  filterable: boolean;
+}

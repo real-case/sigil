@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -12,6 +12,8 @@ import {
 } from "recharts";
 import type { BarChartPayload } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 
 const DIMMED_OPACITY = 0.28;
 const CELL_TRANSITION = "fill-opacity 150ms ease";
@@ -35,12 +37,27 @@ function colorFor(
 export function BarChartView({ payload }: { payload: BarChartPayload }) {
   const tokens = useTheme();
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const { title, data, orientation, xlabel, ylabel } = payload;
   const isHorizontal = orientation === "horizontal";
 
   if (data.length === 0) {
     return <EmptyState title={title} />;
   }
+
+  const copyCsv = () =>
+    copyText(
+      toCsv(
+        [xlabel ?? "label", ylabel ?? "value"],
+        data.map((d) => [d.label, d.value]),
+      ),
+    );
+
+  const copyPng = async () => {
+    const svg = canvasRef.current?.querySelector("svg");
+    if (!svg) throw new Error("Chart SVG not found");
+    await copySvgAsPng(svg as SVGSVGElement, "bar-chart", tokens.background);
+  };
 
   const toggleSelection = (label: string) =>
     setSelectedLabel((prev) => (prev === label ? null : label));
@@ -80,8 +97,14 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
 
   return (
     <div className="mcpcharts-root">
-      <h2 className="mcpcharts-title">{title}</h2>
-      <div className="mcpcharts-canvas">
+      <div className="mcpcharts-header">
+        <h2 className="mcpcharts-title">{title}</h2>
+        <Toolbar>
+          <ToolbarButton label="Copy CSV" onAction={copyCsv} />
+          <ToolbarButton label="Copy PNG" onAction={copyPng} />
+        </Toolbar>
+      </div>
+      <div className="mcpcharts-canvas" ref={canvasRef}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
