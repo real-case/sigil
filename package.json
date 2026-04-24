@@ -1,0 +1,65 @@
+{
+  "name": "mcpcharts",
+  "version": "0.1.0",
+  "description": "Interactive chart widgets for Claude and other MCP Apps hosts — live, sandboxed iframes instead of static PNGs.",
+  "type": "module",
+  "bin": {
+    "mcpcharts": "./dist/server/stdio.js"
+  },
+  "main": "./dist/server/server.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "dev:stdio": "tsx src/stdio.ts",
+    "build": "npm run build:widgets && npm run build:server",
+    "build:widgets": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "start": "node dist/server/server.js",
+    "start:stdio": "node dist/server/stdio.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-apps",
+    "claude",
+    "charts",
+    "visualization",
+    "recharts",
+    "interactive"
+  ],
+  "license": "MIT",
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "latest",
+    "@modelcontextprotocol/sdk": "latest",
+    "cors": "^2.8.6",
+    "express": "^4.21.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.15.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vite-plugin-singlefile": "^2.0.3"
+  }
+}
