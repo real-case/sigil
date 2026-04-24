@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
+import type { BarChartPayload } from "../shared/payloads.js";
 
 export const BAR_CHART_UI_URI = "ui://mcpcharts/bar-chart";
 
@@ -51,7 +52,7 @@ export function registerBarChartTool(server: McpServer) {
       _meta: { ui: { resourceUri: BAR_CHART_UI_URI } },
     },
     async (args) => {
-      const payload = {
+      const payload: BarChartPayload = {
         title: args.title,
         data: args.data,
         orientation: args.orientation ?? "vertical",
@@ -60,7 +61,7 @@ export function registerBarChartTool(server: McpServer) {
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],
-        structuredContent: payload,
+        structuredContent: payload as unknown as Record<string, unknown>,
       };
     },
   );

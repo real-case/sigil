@@ -3,18 +3,22 @@ import react from "@vitejs/plugin-react";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { resolve } from "node:path";
 
-const widgets = ["bar-chart", "line-chart", "pie-chart", "table"] as const;
+export const WIDGETS = ["bar-chart", "line-chart", "pie-chart", "table"] as const;
+export type Widget = (typeof WIDGETS)[number];
+
+const widget = (process.env.WIDGET ?? "bar-chart") as Widget;
+if (!WIDGETS.includes(widget)) {
+  throw new Error(
+    `Unknown WIDGET="${widget}". Expected one of: ${WIDGETS.join(", ")}`,
+  );
+}
 
 export default defineConfig({
+  root: resolve(__dirname, `src/widgets/${widget}`),
   plugins: [react(), viteSingleFile()],
   build: {
-    outDir: "dist/widgets",
+    outDir: resolve(__dirname, `dist/widgets/${widget}`),
     emptyOutDir: true,
-    rollupOptions: {
-      input: Object.fromEntries(
-        widgets.map((w) => [w, resolve(__dirname, `src/widgets/${w}/index.html`)]),
-      ),
-    },
     cssCodeSplit: false,
     assetsInlineLimit: 100_000_000,
     chunkSizeWarningLimit: 2_000,

@@ -4,6 +4,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { registerAllTools } from "./tools/index.js";
+import { registerAllResources } from "./resources/index.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const HOST = process.env.HOST ?? "127.0.0.1";
@@ -15,7 +16,7 @@ function createServer(): McpServer {
   });
 
   registerAllTools(server);
-  // TODO(#5): registerAllResources(server) — ui://bar-chart, ui://line-chart, ...
+  registerAllResources(server);
 
   return server;
 }

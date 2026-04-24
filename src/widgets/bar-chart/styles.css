@@ -1,0 +1,46 @@
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--mcp-bg);
+  color: var(--mcp-text);
+  font-family: var(--mcp-font-family);
+}
+
+.mcpcharts-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.mcpcharts-title {
+  margin: 0 0 12px 0;
+  font-size: var(--mcp-font-title);
+  font-weight: 600;
+  color: var(--mcp-text);
+}
+
+.mcpcharts-canvas {
+  flex: 1 1 auto;
+  min-height: 220px;
+}
+
+.mcpcharts-empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--mcp-text-muted);
+}
+
+.mcpcharts-empty p {
+  margin: 0;
+  font-size: var(--mcp-font-label);
+}
