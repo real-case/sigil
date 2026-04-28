@@ -6,7 +6,7 @@
 
 Unlike existing MCP chart servers that return static images, Sigil renders **live widgets** — hover tooltips, click-to-highlight, Copy-as-CSV / PNG — inside the host's sandboxed iframe via the [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) extension.
 
-🌐 [sigil.live](https://sigil.live) · [TESTING.md](./TESTING.md) · [SPEC.md](./SPEC.md)
+🌐 [sigil.live](https://sigil.live) · [TESTING.md](./TESTING.md) · [INCANTATIONS.md](./INCANTATIONS.md) · [SPEC.md](./SPEC.md)
 
 > **Status:** v0.1.0 — MVP complete.
 
@@ -24,6 +24,18 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 | [`render_table`](#render_table) | structured data exploration | sortable + filterable data table |
 
 All chart widgets expose **Copy CSV** and **Copy PNG** buttons; the table exposes **Copy CSV**.
+
+### Optional: Ritual Mode
+
+Sigil ships with an optional [`INCANTATIONS.md`](./INCANTATIONS.md) preset — copy it into Claude's Project Instructions and you can summon charts in ritual register:
+
+```
+Astrologers proclaim a week of Q1 sales: US 1200, EU 950, APAC 670.
+View Air on monthly temperatures for Berlin and Madrid.
+Animate Dead из revenue по регионам.
+```
+
+Includes Might & Magic homages (Town Portal, View Earth/Air, Resurrection, Scry, Animate Dead) for genre fans.
 
 ---
 
