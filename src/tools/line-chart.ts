@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
 import type { LineChartPayload } from "../shared/payloads.js";
 
-export const LINE_CHART_UI_URI = "ui://mcpcharts/line-chart";
+export const LINE_CHART_UI_URI = "ui://sigil/line-chart";
 
 const description = [
   "Render an interactive line chart with one or more series.",

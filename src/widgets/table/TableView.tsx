@@ -95,14 +95,14 @@ export function TableView({ payload }: { payload: TablePayload }) {
   };
 
   return (
-    <div className="mcpcharts-root mcpcharts-table-root">
-      <div className="mcpcharts-header">
-        <h2 className="mcpcharts-title">{title}</h2>
-        <div className="mcpcharts-table-controls">
+    <div className="sigil-root sigil-table-root">
+      <div className="sigil-header">
+        <h2 className="sigil-title">{title}</h2>
+        <div className="sigil-table-controls">
           {filterable && (
             <input
               type="search"
-              className="mcpcharts-table-filter"
+              className="sigil-table-filter"
               placeholder="Filter…"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
@@ -114,13 +114,13 @@ export function TableView({ payload }: { payload: TablePayload }) {
           </Toolbar>
         </div>
       </div>
-      <div className="mcpcharts-table-scroll">
+      <div className="sigil-table-scroll">
         {sorted.length === 0 ? (
-          <p className="mcpcharts-table-empty">
+          <p className="sigil-table-empty">
             {rows.length === 0 ? "No data to display." : "No rows match the filter."}
           </p>
         ) : (
-          <table className="mcpcharts-table">
+          <table className="sigil-table">
             <thead>
               <tr>
                 {columns.map((col) => {
@@ -178,9 +178,9 @@ export function TableView({ payload }: { payload: TablePayload }) {
 
 function TableStyles({ tokens }: { tokens: ChartDesignTokens }) {
   const css = `
-.mcpcharts-table-root { padding: 16px; }
-.mcpcharts-table-controls { display: flex; gap: 8px; align-items: center; }
-.mcpcharts-table-filter {
+.sigil-table-root { padding: 16px; }
+.sigil-table-controls { display: flex; gap: 8px; align-items: center; }
+.sigil-table-filter {
   background: ${tokens.surfaceBackground};
   color: ${tokens.textPrimary};
   border: 1px solid ${tokens.axisLine};
@@ -191,10 +191,10 @@ function TableStyles({ tokens }: { tokens: ChartDesignTokens }) {
   outline: none;
   min-width: 160px;
 }
-.mcpcharts-table-filter:focus { border-color: ${tokens.seriesColors[0]}; }
-.mcpcharts-table-scroll { flex: 1 1 auto; overflow: auto; border: 1px solid ${tokens.axisLine}; border-radius: ${tokens.borderRadius}px; background: ${tokens.surfaceBackground}; }
-.mcpcharts-table { width: 100%; border-collapse: collapse; font-size: ${tokens.fontSize.label}px; color: ${tokens.textPrimary}; }
-.mcpcharts-table thead th {
+.sigil-table-filter:focus { border-color: ${tokens.seriesColors[0]}; }
+.sigil-table-scroll { flex: 1 1 auto; overflow: auto; border: 1px solid ${tokens.axisLine}; border-radius: ${tokens.borderRadius}px; background: ${tokens.surfaceBackground}; }
+.sigil-table { width: 100%; border-collapse: collapse; font-size: ${tokens.fontSize.label}px; color: ${tokens.textPrimary}; }
+.sigil-table thead th {
   position: sticky; top: 0;
   background: ${tokens.surfaceBackground};
   border-bottom: 1px solid ${tokens.axisLine};
@@ -203,10 +203,10 @@ function TableStyles({ tokens }: { tokens: ChartDesignTokens }) {
   padding: 8px 12px;
   user-select: none;
 }
-.mcpcharts-table tbody td { padding: 8px 12px; border-bottom: 1px solid ${tokens.gridLine}; }
-.mcpcharts-table tbody tr:last-child td { border-bottom: none; }
-.mcpcharts-table tbody tr:hover td { background: ${tokens.gridLine}; }
-.mcpcharts-table-empty { color: ${tokens.textMuted}; padding: 24px; text-align: center; }
+.sigil-table tbody td { padding: 8px 12px; border-bottom: 1px solid ${tokens.gridLine}; }
+.sigil-table tbody tr:last-child td { border-bottom: none; }
+.sigil-table tbody tr:hover td { background: ${tokens.gridLine}; }
+.sigil-table-empty { color: ${tokens.textMuted}; padding: 24px; text-align: center; }
 `;
   return <style>{css}</style>;
 }

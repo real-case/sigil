@@ -1,10 +1,14 @@
-# mcpcharts
+# Sigil
 
-**Interactive chart widgets for Claude and other MCP Apps hosts.**
+**Live, interactive data widgets for Claude and other MCP Apps hosts.**
 
-Unlike existing MCP chart servers that return static PNGs, `mcpcharts` renders **live, interactive widgets** — hover tooltips, click-to-highlight, Copy-as-CSV / PNG — inside the host's sandboxed iframe via the [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) extension.
+> A *sigil* is a symbol that carries compressed meaning. Same idea, applied to data: a chart you can hover, click, and copy — embedded directly in your conversation, instead of a flat PNG.
 
-> **Status:** v0.1.0 — MVP complete. See [SPEC.md](./SPEC.md) for the full technical specification.
+Unlike existing MCP chart servers that return static images, Sigil renders **live widgets** — hover tooltips, click-to-highlight, Copy-as-CSV / PNG — inside the host's sandboxed iframe via the [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) extension.
+
+🌐 [sigil.live](https://sigil.live) · [TESTING.md](./TESTING.md) · [SPEC.md](./SPEC.md)
+
+> **Status:** v0.1.0 — MVP complete.
 
 ## Demo
 
@@ -32,15 +36,15 @@ Add to your Claude Desktop config (macOS: `~/Library/Application Support/Claude/
 ```json
 {
   "mcpServers": {
-    "mcpcharts": {
+    "sigil": {
       "command": "npx",
-      "args": ["-y", "mcpcharts"]
+      "args": ["-y", "sigil"]
     }
   }
 }
 ```
 
-Restart Claude Desktop. You should now see `mcpcharts` in the tools list.
+Restart Claude Desktop. You should now see `sigil` in the tools list.
 
 ### VS Code (GitHub Copilot Chat)
 
@@ -49,9 +53,9 @@ Add to `.vscode/mcp.json`:
 ```json
 {
   "servers": {
-    "mcpcharts": {
+    "sigil": {
       "command": "npx",
-      "args": ["-y", "mcpcharts"]
+      "args": ["-y", "sigil"]
     }
   }
 }
@@ -61,10 +65,7 @@ Add to `.vscode/mcp.json`:
 
 Requires a Claude.ai paid plan.
 
-1. Run `mcpcharts` in HTTP mode somewhere publicly reachable:
-   ```bash
-   npx mcpcharts-http   # not yet published; use `npm run dev` + cloudflared during development
-   ```
+1. Run Sigil in HTTP mode somewhere publicly reachable (Railway, Cloudflare Workers, or a tunnel during development).
 2. In Claude → Settings → Connectors → Add custom connector → paste the HTTPS URL ending in `/mcp`.
 
 For local development with Claude Web, use `cloudflared`:
@@ -154,7 +155,7 @@ npm run start:stdio         # run compiled stdio server
 ```
 src/
 ├── server.ts             # HTTP entry (Express + StreamableHTTPServerTransport)
-├── stdio.ts              # stdio entry — npx mcpcharts
+├── stdio.ts              # stdio entry — npx sigil
 ├── mcp-server.ts         # shared factory — registers tools + resources
 ├── tools/                # tool definitions + input schemas
 │   ├── bar-chart.ts
@@ -171,7 +172,7 @@ src/
     └── table/
 ```
 
-Each widget bundles to a standalone single-file HTML via Vite + `vite-plugin-singlefile`, then gets served as a `ui://` resource by the MCP server. The host renders it in a sandboxed iframe and communicates with it via `postMessage` per the MCP Apps spec.
+Each widget bundles to a standalone single-file HTML via Vite + `vite-plugin-singlefile`, then gets served as a `ui://sigil/<widget>` resource by the MCP server. The host renders it in a sandboxed iframe and communicates with it via `postMessage` per the MCP Apps spec.
 
 ---
 

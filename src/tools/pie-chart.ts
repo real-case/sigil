@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
 import type { PieChartPayload } from "../shared/payloads.js";
 
-export const PIE_CHART_UI_URI = "ui://mcpcharts/pie-chart";
+export const PIE_CHART_UI_URI = "ui://sigil/pie-chart";
 
 const description = [
   "Render an interactive pie or donut chart.",

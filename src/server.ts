@@ -35,11 +35,11 @@ async function main() {
   });
 
   app.get("/health", (_req, res) => {
-    res.json({ ok: true, name: "mcpcharts", version: "0.1.0" });
+    res.json({ ok: true, name: "sigil", version: "0.1.0" });
   });
 
   app.listen(PORT, HOST, () => {
-    console.log(`mcpcharts listening on http://${HOST}:${PORT}/mcp`);
+    console.log(`sigil listening on http://${HOST}:${PORT}/mcp`);
   });
 }
 

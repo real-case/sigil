@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
 import type { BarChartPayload } from "../shared/payloads.js";
 
-export const BAR_CHART_UI_URI = "ui://mcpcharts/bar-chart";
+export const BAR_CHART_UI_URI = "ui://sigil/bar-chart";
 
 const description = [
   "Render an interactive bar chart for comparing discrete categories or showing rankings.",

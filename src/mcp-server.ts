@@ -4,7 +4,7 @@ import { registerAllResources } from "./resources/index.js";
 
 export function createServer(): McpServer {
   const server = new McpServer({
-    name: "mcpcharts",
+    name: "sigil",
     version: "0.1.0",
   });
   registerAllTools(server);

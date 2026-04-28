@@ -114,26 +114,26 @@ export function useTheme(): ChartDesignTokens {
 
 /**
  * Produces CSS declarations for all non-palette token fields of `tokens`.
- * Emits `--mcp-<field-kebab>` variables plus one var per series color.
+ * Emits `--sigil-<field-kebab>` variables plus one var per series color.
  */
 function tokensToDeclarations(tokens: ChartDesignTokens): string {
   const decls: string[] = [];
-  tokens.seriesColors.forEach((c, i) => decls.push(`--mcp-series-${i}: ${c};`));
-  decls.push(`--mcp-bg: ${tokens.background};`);
-  decls.push(`--mcp-surface: ${tokens.surfaceBackground};`);
-  decls.push(`--mcp-text: ${tokens.textPrimary};`);
-  decls.push(`--mcp-text-secondary: ${tokens.textSecondary};`);
-  decls.push(`--mcp-text-muted: ${tokens.textMuted};`);
-  decls.push(`--mcp-grid: ${tokens.gridLine};`);
-  decls.push(`--mcp-axis: ${tokens.axisLine};`);
-  decls.push(`--mcp-tooltip-bg: ${tokens.tooltipBackground};`);
-  decls.push(`--mcp-tooltip-border: ${tokens.tooltipBorder};`);
-  decls.push(`--mcp-tooltip-text: ${tokens.tooltipText};`);
-  decls.push(`--mcp-radius: ${tokens.borderRadius}px;`);
-  decls.push(`--mcp-font-family: ${tokens.fontFamily};`);
-  decls.push(`--mcp-font-label: ${tokens.fontSize.label}px;`);
-  decls.push(`--mcp-font-title: ${tokens.fontSize.title}px;`);
-  decls.push(`--mcp-font-tooltip: ${tokens.fontSize.tooltip}px;`);
+  tokens.seriesColors.forEach((c, i) => decls.push(`--sigil-series-${i}: ${c};`));
+  decls.push(`--sigil-bg: ${tokens.background};`);
+  decls.push(`--sigil-surface: ${tokens.surfaceBackground};`);
+  decls.push(`--sigil-text: ${tokens.textPrimary};`);
+  decls.push(`--sigil-text-secondary: ${tokens.textSecondary};`);
+  decls.push(`--sigil-text-muted: ${tokens.textMuted};`);
+  decls.push(`--sigil-grid: ${tokens.gridLine};`);
+  decls.push(`--sigil-axis: ${tokens.axisLine};`);
+  decls.push(`--sigil-tooltip-bg: ${tokens.tooltipBackground};`);
+  decls.push(`--sigil-tooltip-border: ${tokens.tooltipBorder};`);
+  decls.push(`--sigil-tooltip-text: ${tokens.tooltipText};`);
+  decls.push(`--sigil-radius: ${tokens.borderRadius}px;`);
+  decls.push(`--sigil-font-family: ${tokens.fontFamily};`);
+  decls.push(`--sigil-font-label: ${tokens.fontSize.label}px;`);
+  decls.push(`--sigil-font-title: ${tokens.fontSize.title}px;`);
+  decls.push(`--sigil-font-tooltip: ${tokens.fontSize.tooltip}px;`);
   return decls.join("\n  ");
 }
 
@@ -154,7 +154,7 @@ export function renderThemeCss(): string {
  */
 export function installThemeStyles(): void {
   if (typeof document === "undefined") return;
-  const id = "mcpcharts-theme-tokens";
+  const id = "sigil-theme-tokens";
   if (document.getElementById(id)) return;
   const el = document.createElement("style");
   el.id = id;

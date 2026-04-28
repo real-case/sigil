@@ -1,4 +1,4 @@
-# mcpcharts — Техническое Требование
+# Sigil — Техническое Требование
 
 ## 1. Обзор проекта
 
@@ -6,13 +6,13 @@
 MCP Apps сервер с интерактивными chart-виджетами, которые рендерятся inline в AI-хостах (Claude, ChatGPT, VS Code Copilot, Microsoft Copilot, Goose). Пользователь подключает сервер один раз — AI-ассистент начинает визуализировать данные интерактивными графиками вместо текстовых таблиц.
 
 ### 1.2 Ключевой дифференциатор
-Все существующие MCP chart серверы (`@antv/mcp-server-chart`, `@ax-crew/chartjs-mcp-server`, `mcp-echarts`) генерируют **статичные PNG-картинки или HTML-сниппеты**. mcpcharts — первый сервер на **MCP Apps** расширении, который рендерит **живые интерактивные виджеты** в sandboxed iframe с hover, zoom, click и экспортом.
+Все существующие MCP chart серверы (`@antv/mcp-server-chart`, `@ax-crew/chartjs-mcp-server`, `mcp-echarts`) генерируют **статичные PNG-картинки или HTML-сниппеты**. Sigil — первый сервер на **MCP Apps** расширении, который рендерит **живые интерактивные виджеты** в sandboxed iframe с hover, zoom, click и экспортом.
 
 ### 1.3 Целевая аудитория
 Пользователи Claude, ChatGPT, VS Code Copilot, которые работают с числовыми данными: аналитики, менеджеры, разработчики, исследователи.
 
 ### 1.4 Цели проекта
-- Занять имя `mcpcharts` на npm рабочим пакетом (v0.1.0)
+- Занять имя `sigil` на npm рабочим пакетом (v0.1.0)
 - Валидировать MCP Apps pipeline от сервера до рендера в Claude
 - Создать контент для персонального бренда (статья, демо-видео)
 - Получить 100+ GitHub stars за первый месяц
@@ -83,9 +83,9 @@ MCP Apps сервер с интерактивными chart-виджетами, 
 ```json
 {
   "mcpServers": {
-    "mcpcharts": {
+    "sigil": {
       "command": "npx",
-      "args": ["-y", "mcpcharts"]
+      "args": ["-y", "sigil"]
     }
   }
 }
@@ -97,7 +97,7 @@ MCP Apps сервер с интерактивными chart-виджетами, 
 ### 3.4 Структура проекта
 
 ```
-mcpcharts/
+Sigil/
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
@@ -311,7 +311,7 @@ interface ChartDesignTokens {
 ### Phase 3 — Публикация (День 6)
 
 - [ ] Stdio entry point (`src/stdio.ts`)
-- [ ] `npm publish` как `mcpcharts@0.1.0`
+- [ ] `npm publish` как `sigil@0.1.0`
 - [ ] README с:
   - GIF-демо каждого виджета
   - Инструкция подключения к Claude Desktop / VS Code / Claude web
@@ -398,8 +398,8 @@ interface ChartDesignTokens {
 1. **Bundle size budget** — какой максимальный размер single-file HTML допустим? Нужен бенчмарк Recharts bundle.
 2. **Iframe dimensions** — какой размер iframe выделяют разные хосты (Claude web, Desktop, VS Code)? Нужно тестировать.
 3. **Remote hosting** — Railway vs Cloudflare Workers vs Render для demo-инстанса?
-4. **Monorepo** — один пакет `mcpcharts` со всеми виджетами (рекомендуется для простоты).
-5. **GitHub org** — публиковать под личным аккаунтом или создать org `mcpcharts`?
+4. **Monorepo** — один пакет `sigil` со всеми виджетами (рекомендуется для простоты).
+5. **GitHub org** — публиковать под личным аккаунтом или создать org `sigil`?
 
 ---
 

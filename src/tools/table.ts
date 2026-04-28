@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
 import type { TablePayload } from "../shared/payloads.js";
 
-export const TABLE_UI_URI = "ui://mcpcharts/table";
+export const TABLE_UI_URI = "ui://sigil/table";
 
 const description = [
   "Render an interactive data table with sortable columns and text-search filtering.",

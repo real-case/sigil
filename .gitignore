@@ -9,3 +9,6 @@ dist/
 coverage/
 .cache/
 .playwright-mcp/
+
+# Stray macOS path created by accidental tilde-expansion mishaps
+/Support/

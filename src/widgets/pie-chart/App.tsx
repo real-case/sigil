@@ -52,7 +52,7 @@ function extractPayload(result: {
 
 function Status({ message }: { message: string }) {
   return (
-    <div className="mcpcharts-root mcpcharts-empty">
+    <div className="sigil-root sigil-empty">
       <p>{message}</p>
     </div>
   );
@@ -63,7 +63,7 @@ function App() {
   const [parseError, setParseError] = useState<string | null>(null);
 
   const { isConnected, error } = useApp({
-    appInfo: { name: "mcpcharts-pie-chart", version: "0.1.0" },
+    appInfo: { name: "sigil-pie-chart", version: "0.1.0" },
     capabilities: {},
     onAppCreated: (app) => {
       app.ontoolresult = (params) => {

@@ -1,10 +1,11 @@
 {
-  "name": "mcpcharts",
+  "name": "sigil",
   "version": "0.1.0",
-  "description": "Interactive chart widgets for Claude and other MCP Apps hosts — live, sandboxed iframes instead of static PNGs.",
+  "description": "Live, interactive chart widgets for Claude and other MCP Apps hosts. Sigils carry meaning compressed into a glyph — same idea, applied to data.",
+  "homepage": "https://sigil.live",
   "type": "module",
   "bin": {
-    "mcpcharts": "./dist/server/stdio.js"
+    "sigil": "./dist/server/stdio.js"
   },
   "main": "./dist/server/server.js",
   "files": [
@@ -23,14 +24,15 @@
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
+    "sigil",
     "mcp",
     "model-context-protocol",
     "mcp-apps",
     "claude",
     "charts",
     "visualization",
-    "recharts",
-    "interactive"
+    "interactive",
+    "dashboard"
   ],
   "license": "MIT",
   "author": "",

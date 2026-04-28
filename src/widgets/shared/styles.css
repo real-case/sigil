@@ -2,27 +2,29 @@
   color-scheme: light dark;
 }
 
+/* Do NOT add `height: 100%` here. MCP Apps hosts size the iframe from the
+   guest's ResizeObserver on body; pinning body to 100% of the iframe makes
+   the observer report the host-allocated height (not content), so growth
+   from "Connecting…" to a rendered chart never propagates. */
 html,
 body,
 #root {
   margin: 0;
   padding: 0;
-  height: 100%;
-  background: var(--mcp-bg);
-  color: var(--mcp-text);
-  font-family: var(--mcp-font-family);
+  background: var(--sigil-bg);
+  color: var(--sigil-text);
+  font-family: var(--sigil-font-family);
 }
 
-.mcpcharts-root {
+.sigil-root {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
   padding: 16px;
   box-sizing: border-box;
 }
 
-.mcpcharts-header {
+.sigil-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -31,63 +33,69 @@ body,
   flex-wrap: wrap;
 }
 
-.mcpcharts-title {
+.sigil-title {
   margin: 0 0 12px 0;
-  font-size: var(--mcp-font-title);
+  font-size: var(--sigil-font-title);
   font-weight: 600;
-  color: var(--mcp-text);
+  color: var(--sigil-text);
 }
 
-.mcpcharts-header .mcpcharts-title {
+.sigil-header .sigil-title {
   margin-bottom: 0;
 }
 
-.mcpcharts-toolbar {
+.sigil-toolbar {
   display: flex;
   gap: 6px;
   align-items: center;
 }
 
-.mcpcharts-toolbar-btn {
+.sigil-toolbar-btn {
   background: transparent;
-  color: var(--mcp-text-secondary);
-  border: 1px solid var(--mcp-axis);
-  border-radius: var(--mcp-radius);
+  color: var(--sigil-text-secondary);
+  border: 1px solid var(--sigil-axis);
+  border-radius: var(--sigil-radius);
   padding: 4px 10px;
-  font-size: var(--mcp-font-label);
+  font-size: var(--sigil-font-label);
   font-family: inherit;
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 
-.mcpcharts-toolbar-btn:hover:not(:disabled) {
-  background: var(--mcp-surface);
-  color: var(--mcp-text);
-  border-color: var(--mcp-text-secondary);
+.sigil-toolbar-btn:hover:not(:disabled) {
+  background: var(--sigil-surface);
+  color: var(--sigil-text);
+  border-color: var(--sigil-text-secondary);
 }
 
-.mcpcharts-toolbar-btn:disabled {
+.sigil-toolbar-btn:disabled {
   cursor: default;
-  color: var(--mcp-series-0);
+  color: var(--sigil-series-0);
 }
 
-.mcpcharts-toolbar-btn.is-error {
+.sigil-toolbar-btn.is-error {
   color: #EF4444;
   border-color: #EF4444;
 }
 
-.mcpcharts-canvas {
+.sigil-canvas {
   flex: 1 1 auto;
   min-height: 220px;
 }
 
-.mcpcharts-empty {
+.sigil-empty {
   align-items: center;
   justify-content: center;
-  color: var(--mcp-text-muted);
+  color: var(--sigil-text-muted);
 }
 
-.mcpcharts-empty p {
+/* Suppress browser focus outline on chart segments clicked with mouse,
+   while preserving keyboard focus indicators for accessibility. */
+.recharts-wrapper :focus:not(:focus-visible) {
+  outline: none;
+}
+
+.sigil-empty p {
   margin: 0;
-  font-size: var(--mcp-font-label);
+  font-size: var(--sigil-font-label);
 }

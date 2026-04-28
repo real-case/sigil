@@ -34,7 +34,7 @@ export function ToolbarButton({
   return (
     <button
       type="button"
-      className={`mcpcharts-toolbar-btn${status === "err" ? " is-error" : ""}`}
+      className={`sigil-toolbar-btn${status === "err" ? " is-error" : ""}`}
       onClick={run}
       disabled={status !== "idle"}
     >
@@ -44,5 +44,5 @@ export function ToolbarButton({
 }
 
 export function Toolbar({ children }: { children: React.ReactNode }) {
-  return <div className="mcpcharts-toolbar">{children}</div>;
+  return <div className="sigil-toolbar">{children}</div>;
 }

@@ -96,16 +96,16 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
   const cursorFill = hexWithAlpha(tokens.seriesColors[0]!, 0.08);
 
   return (
-    <div className="mcpcharts-root">
-      <div className="mcpcharts-header">
-        <h2 className="mcpcharts-title">{title}</h2>
+    <div className="sigil-root">
+      <div className="sigil-header">
+        <h2 className="sigil-title">{title}</h2>
         <Toolbar>
           <ToolbarButton label="Copy CSV" onAction={copyCsv} />
           <ToolbarButton label="Copy PNG" onAction={copyPng} />
         </Toolbar>
       </div>
-      <div className="mcpcharts-canvas" ref={canvasRef}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="sigil-canvas" ref={canvasRef}>
+        <ResponsiveContainer width="100%" height={360}>
           <BarChart
             data={data}
             layout={isHorizontal ? "vertical" : "horizontal"}
@@ -201,8 +201,8 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
 
 function EmptyState({ title }: { title: string }) {
   return (
-    <div className="mcpcharts-root mcpcharts-empty">
-      <h2 className="mcpcharts-title">{title}</h2>
+    <div className="sigil-root sigil-empty">
+      <h2 className="sigil-title">{title}</h2>
       <p>No data to display.</p>
     </div>
   );

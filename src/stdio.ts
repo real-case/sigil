@@ -11,6 +11,6 @@ async function main() {
 
 main().catch((err) => {
   // stderr is the only safe channel — stdout is the MCP transport.
-  console.error("mcpcharts stdio fatal:", err);
+  console.error("sigil stdio fatal:", err);
   process.exit(1);
 });

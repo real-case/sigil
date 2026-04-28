@@ -1,4 +1,4 @@
-# Testing mcpcharts in Claude
+# Testing Sigil in Claude
 
 End-to-end test plan covering tasks #6, #18, #20 from [SPEC.md](./SPEC.md).
 Run **Path A** first (stdio, free, fast). Once green, run **Path B** (HTTP) to validate the Custom Connector flow.
@@ -37,15 +37,15 @@ Edit (macOS) `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "mcpcharts": {
+    "sigil": {
       "command": "node",
-      "args": ["/ABSOLUTE/PATH/TO/mcpcharts/dist/server/stdio.js"]
+      "args": ["/ABSOLUTE/PATH/TO/sigil/dist/server/stdio.js"]
     }
   }
 }
 ```
 
-> Use the absolute path while you're iterating locally. Once published to npm, switch to `"command": "npx", "args": ["-y", "mcpcharts"]`.
+> Use the absolute path while you're iterating locally. Once published to npm, switch to `"command": "npx", "args": ["-y", "sigil"]`.
 
 Quit Claude Desktop completely (Cmd+Q) and reopen it.
 
@@ -125,11 +125,11 @@ Cloudflared prints an HTTPS URL like `https://crisp-falcon-7821.trycloudflare.co
 
 1. Open Claude.ai → click your avatar → **Settings** → **Connectors**
 2. **Add custom connector**
-3. Name: `mcpcharts (dev)`
+3. Name: `sigil (dev)`
 4. URL: `<the-cloudflared-url>/mcp` (note the `/mcp` suffix)
 5. Save
 
-You should see `mcpcharts` listed and Claude should detect 4 tools.
+You should see `sigil` listed and Claude should detect 4 tools.
 
 ### B3. Repeat A3 + A4 in a Web chat
 
@@ -150,7 +150,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
   | node dist/server/stdio.js
 ```
 
-You should see a JSON response with `serverInfo: { name: "mcpcharts", version: "0.1.0" }`. If not, the issue is in the build output. Re-run `npm run build` and check the shebang on `dist/server/stdio.js`.
+You should see a JSON response with `serverInfo: { name: "sigil", version: "0.1.0" }`. If not, the issue is in the build output. Re-run `npm run build` and check the shebang on `dist/server/stdio.js`.
 
 Claude Desktop logs:
 - macOS: `~/Library/Logs/Claude/mcp*.log`
@@ -167,7 +167,7 @@ The host loaded the iframe but never sent `tool-result`. Check:
 
 ### Bar chart looks unthemed (default Recharts blue)
 
-The `installThemeStyles()` call didn't fire, or React mounted before document was ready. Open DevTools → Elements → `<head>` → check for `<style id="mcpcharts-theme-tokens">`. If missing, that's a load-order bug.
+The `installThemeStyles()` call didn't fire, or React mounted before document was ready. Open DevTools → Elements → `<head>` → check for `<style id="sigil-theme-tokens">`. If missing, that's a load-order bug.
 
 ### Wrong tool gets selected
 

@@ -99,16 +99,16 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
   const tooltipItemStyle = { color: tokens.tooltipText };
 
   return (
-    <div className="mcpcharts-root">
-      <div className="mcpcharts-header">
-        <h2 className="mcpcharts-title">{title}</h2>
+    <div className="sigil-root">
+      <div className="sigil-header">
+        <h2 className="sigil-title">{title}</h2>
         <Toolbar>
           <ToolbarButton label="Copy CSV" onAction={copyCsv} />
           <ToolbarButton label="Copy PNG" onAction={copyPng} />
         </Toolbar>
       </div>
-      <div className="mcpcharts-canvas" ref={canvasRef}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="sigil-canvas" ref={canvasRef}>
+        <ResponsiveContainer width="100%" height={360}>
           <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 24, left: 16 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={tokens.gridLine} />
             <XAxis
@@ -168,8 +168,8 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
 
 function EmptyState({ title }: { title: string }) {
   return (
-    <div className="mcpcharts-root mcpcharts-empty">
-      <h2 className="mcpcharts-title">{title}</h2>
+    <div className="sigil-root sigil-empty">
+      <h2 className="sigil-title">{title}</h2>
       <p>No data to display.</p>
     </div>
   );

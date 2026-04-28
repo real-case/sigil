@@ -49,7 +49,7 @@ function extractPayload(result: { structuredContent?: unknown; content?: unknown
 
 function Status({ message }: { message: string }) {
   return (
-    <div className="mcpcharts-root mcpcharts-empty">
+    <div className="sigil-root sigil-empty">
       <p>{message}</p>
     </div>
   );
@@ -60,7 +60,7 @@ function App() {
   const [parseError, setParseError] = useState<string | null>(null);
 
   const { isConnected, error } = useApp({
-    appInfo: { name: "mcpcharts-bar-chart", version: "0.1.0" },
+    appInfo: { name: "sigil-bar-chart", version: "0.1.0" },
     capabilities: {},
     onAppCreated: (app) => {
       app.ontoolresult = (params) => {
