@@ -3,6 +3,7 @@ import { registerBarChartTool, BAR_CHART_UI_URI } from "./tools/bar-chart.js";
 import { registerLineChartTool, LINE_CHART_UI_URI } from "./tools/line-chart.js";
 import { registerPieChartTool, PIE_CHART_UI_URI } from "./tools/pie-chart.js";
 import { registerTableTool, TABLE_UI_URI } from "./tools/table.js";
+import { registerEmptyStateTool, EMPTY_STATE_UI_URI } from "./tools/empty-state.js";
 
 export interface WidgetEntry {
   name: string;
@@ -15,4 +16,5 @@ export const WIDGETS: readonly WidgetEntry[] = [
   { name: "line-chart", uri: LINE_CHART_UI_URI, register: registerLineChartTool },
   { name: "pie-chart", uri: PIE_CHART_UI_URI, register: registerPieChartTool },
   { name: "table", uri: TABLE_UI_URI, register: registerTableTool },
+  { name: "empty-state", uri: EMPTY_STATE_UI_URI, register: registerEmptyStateTool },
 ] as const;

@@ -63,3 +63,8 @@ export interface TablePayload {
   sortable: boolean;
   filterable: boolean;
 }
+
+export interface EmptyStatePayload {
+  title: string;
+  message: string;
+}
