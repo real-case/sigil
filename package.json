@@ -1,6 +1,9 @@
 {
-  "name": "sigil",
+  "name": "@real-case/sigil",
   "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Live, interactive chart widgets for Claude and other MCP Apps hosts. Sigils carry meaning compressed into a glyph — same idea, applied to data.",
   "homepage": "https://sigil.live",
   "type": "module",
