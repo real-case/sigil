@@ -21,7 +21,7 @@
     "dev:stdio": "tsx src/stdio.ts",
     "dev:preview": "WIDGET=palette-preview vite",
     "build": "npm run build:widgets && npm run build:server",
-    "build:widgets": "for w in bar-chart line-chart pie-chart table; do WIDGET=$w vite build || exit 1; done",
+    "build:widgets": "tsx scripts/build-widgets.ts",
     "build:server": "tsc -p tsconfig.server.json && chmod +x dist/server/stdio.js",
     "start": "node dist/server/server.js",
     "start:stdio": "node dist/server/stdio.js",
