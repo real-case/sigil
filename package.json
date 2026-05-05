@@ -22,7 +22,8 @@
     "build:server": "tsc -p tsconfig.server.json && chmod +x dist/server/stdio.js",
     "start": "node dist/server/server.js",
     "start:stdio": "node dist/server/stdio.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "rm -rf dist && npm run build"
   },
   "keywords": [
     "sigil",
@@ -36,17 +37,20 @@
     "dashboard"
   ],
   "license": "MIT",
-  "author": "",
+  "author": "Yurii Anichkin",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/real-case/sigil.git"
+  },
+  "bugs": {
+    "url": "https://github.com/real-case/sigil/issues"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "@modelcontextprotocol/ext-apps": "latest",
-    "@modelcontextprotocol/sdk": "latest",
+    "@modelcontextprotocol/ext-apps": "^1.7.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "cors": "^2.8.6",
     "express": "^4.21.1",
     "react": "^18.3.1",
