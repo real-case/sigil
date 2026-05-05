@@ -3,7 +3,13 @@ import react from "@vitejs/plugin-react";
 import { viteSingleFile } from "vite-plugin-singlefile";
 import { resolve } from "node:path";
 
-export const WIDGETS = ["bar-chart", "line-chart", "pie-chart", "table"] as const;
+export const WIDGETS = [
+  "bar-chart",
+  "line-chart",
+  "pie-chart",
+  "table",
+  "palette-preview", // dev-only — not built into production via build:widgets script
+] as const;
 export type Widget = (typeof WIDGETS)[number];
 
 const widget = (process.env.WIDGET ?? "bar-chart") as Widget;
