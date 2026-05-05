@@ -240,7 +240,7 @@ structured data. Supports column sorting and text search.
 
 ```typescript
 interface ChartDesignTokens {
-  // Палитра для серий данных (6+ цветов)
+  // Палитра для серий данных (10 цветов; графики wrap-around'ят по `i % length`)
   seriesColors: string[];
 
   // Фоны

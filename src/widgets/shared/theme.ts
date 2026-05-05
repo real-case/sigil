@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 
 export interface ChartDesignTokens {
-  seriesColors: string[]; // palette for data series (6+ colors)
+  seriesColors: string[]; // palette for data series (10 colors)
 
   background: string;
   surfaceBackground: string; // tooltip, legend surfaces
@@ -36,6 +36,10 @@ const seriesPalette = [
   "#EC4899", // pink — 4th series, distinct hue
   "#8B5CF6", // violet — close-to-indigo but distinguishable
   "#10B981", // emerald — nature-coded (positive/growth)
+  "#EF4444", // red — fills the hot gap between amber and pink
+  "#0EA5E9", // sky — bright blue, distinct from indigo
+  "#84CC16", // lime — chartreuse, only way to fill amber↔emerald gap
+  "#D946EF", // fuchsia — magenta between violet and pink, brighter than both
 ];
 
 const systemFontStack =
