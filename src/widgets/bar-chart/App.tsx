@@ -12,7 +12,7 @@ function isBarDatum(value: unknown): value is BarDatum {
   );
 }
 
-function isBarChartPayload(value: unknown): value is BarChartPayload {
+export function isBarChartPayload(value: unknown): value is BarChartPayload {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (

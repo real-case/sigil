@@ -8,7 +8,7 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 
 🌐 [sigil.live](https://sigil.live) · [TESTING.md](./TESTING.md) · [INCANTATIONS.md](./INCANTATIONS.md) · [SPEC.md](./SPEC.md)
 
-> **Status:** v0.1.0 — MVP complete.
+> **Status:** v0.2.0 — 7 widgets + payload-guard / registry / registration test harness.
 
 ## Demo
 
@@ -22,6 +22,9 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 | [`render_line_chart`](#render_line_chart) | time-series, trends, continuous data | multi-series lines with shared crosshair tooltip |
 | [`render_pie_chart`](#render_pie_chart) | part-of-whole proportions, composition | pie or donut with percentage labels |
 | [`render_table`](#render_table) | structured data exploration | sortable + filterable data table |
+| [`render_scatter_chart`](#render_scatter_chart) | (x, y) relationships, correlation, clusters | multi-series scatter with optional point-size encoding |
+| [`render_treemap`](#render_treemap) | hierarchical part-of-whole, many leaves | nested rectangles sized by value, palette-tinted by branch |
+| [`render_heatmap`](#render_heatmap) | 2D categorical × numeric intensity | matrix with palette gradient, hover tooltip per cell |
 
 All chart widgets expose **Copy CSV** and **Copy PNG** buttons; the table exposes **Copy CSV**.
 
@@ -50,7 +53,7 @@ Add to your Claude Desktop config (macOS: `~/Library/Application Support/Claude/
   "mcpServers": {
     "sigil": {
       "command": "npx",
-      "args": ["-y", "sigil"]
+      "args": ["-y", "@real-case/sigil"]
     }
   }
 }
@@ -67,7 +70,7 @@ Add to `.vscode/mcp.json`:
   "servers": {
     "sigil": {
       "command": "npx",
-      "args": ["-y", "sigil"]
+      "args": ["-y", "@real-case/sigil"]
     }
   }
 }
@@ -148,6 +151,45 @@ Render an interactive data table with sortable columns and text-search filtering
 | `sortable` | `boolean` | no | Default `true` |
 | `filterable` | `boolean` | no | Default `true` |
 
+### `render_scatter_chart`
+
+Render an interactive scatter plot for showing the relationship between two numeric variables. Optional point size encodes a third metric.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Chart title |
+| `series` | `Array<{ name, data }>` | yes | One or more series; rendered in distinct palette colors |
+| `series[].name` | `string` | yes | Series name (legend + tooltip) |
+| `series[].data` | `Array<{ x, y, size? }>` | yes | Points; `x` and `y` are numeric; optional positive `size` |
+| `xlabel` | `string` | no | X-axis label |
+| `ylabel` | `string` | no | Y-axis label |
+
+### `render_treemap`
+
+Render an interactive treemap for hierarchical part-of-whole data with many leaves where a pie chart would be unreadable.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Chart title |
+| `data` | `Array<{ label, value, color?, children? }>` | yes | Top-level nodes; nested `children` are recursively the same shape |
+| `data[].label` | `string` | yes | Node label shown in the rectangle and tooltip |
+| `data[].value` | `number` | yes | Non-negative; for parents may be `0` since children sum is used |
+| `data[].color` | `string` | no | Per-node color override |
+| `data[].children` | same shape | no | Nested groupings |
+
+### `render_heatmap`
+
+Render an interactive heatmap matrix: a 2D grid where each cell's color encodes a numeric intensity. The cell color scales linearly from the surface background (low) to the primary palette accent (high), so the same gradient adapts cleanly to dark and light themes.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Chart title |
+| `xLabels` | `string[]` | yes | Column labels along the x-axis |
+| `yLabels` | `string[]` | yes | Row labels along the y-axis |
+| `cells` | `Array<{ x, y, value }>` | yes | `x` indexes `xLabels`, `y` indexes `yLabels`, `value` is the cell intensity. Missing combinations render as empty cells. |
+| `xlabel` | `string` | no | X-axis title |
+| `ylabel` | `string` | no | Y-axis title |
+
 ---
 
 ## Development
@@ -157,7 +199,8 @@ npm install
 npm run dev                 # HTTP server on :3001 (for Claude Web via cloudflared)
 npm run dev:stdio           # stdio server (for Claude Desktop / VS Code)
 npm run typecheck           # tsc --noEmit
-npm run build               # bundle 4 widgets + compile server
+npm test                    # vitest: payload guards, registry, tool registration
+npm run build               # bundle 7 widgets + compile server
 npm start                   # run compiled HTTP server
 npm run start:stdio         # run compiled stdio server
 ```
@@ -173,15 +216,23 @@ src/
 │   ├── bar-chart.ts
 │   ├── line-chart.ts
 │   ├── pie-chart.ts
-│   └── table.ts
+│   ├── table.ts
+│   ├── scatter-chart.ts
+│   ├── treemap.ts
+│   └── heatmap.ts
 ├── resources/            # ui:// resource serving for bundled widget HTMLs
+├── registry.ts           # single source of truth — server tools, resources, build
 ├── shared/payloads.ts    # contract types between server and widgets
+├── __tests__/            # vitest suites: registry, payload guards, registration
 └── widgets/              # React + Recharts widget entries
-    ├── shared/           # theme tokens, export utils, Toolbar, styles
+    ├── shared/           # theme tokens, export utils, Toolbar, mountWidget shell
     ├── bar-chart/
     ├── line-chart/
     ├── pie-chart/
-    └── table/
+    ├── table/
+    ├── scatter-chart/
+    ├── treemap/
+    └── heatmap/          # hand-rolled SVG (no Recharts)
 ```
 
 Each widget bundles to a standalone single-file HTML via Vite + `vite-plugin-singlefile`, then gets served as a `ui://sigil/<widget>` resource by the MCP server. The host renders it in a sandboxed iframe and communicates with it via `postMessage` per the MCP Apps spec.

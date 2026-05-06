@@ -27,7 +27,7 @@ function isTableRow(value: unknown): value is TableRow {
   );
 }
 
-function isTablePayload(value: unknown): value is TablePayload {
+export function isTablePayload(value: unknown): value is TablePayload {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (

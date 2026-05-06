@@ -25,7 +25,7 @@ function isLineSeries(value: unknown): value is LineSeries {
   );
 }
 
-function isLineChartPayload(value: unknown): value is LineChartPayload {
+export function isLineChartPayload(value: unknown): value is LineChartPayload {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (

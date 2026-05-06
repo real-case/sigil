@@ -12,7 +12,7 @@ function isPieDatum(value: unknown): value is PieDatum {
   );
 }
 
-function isPieChartPayload(value: unknown): value is PieChartPayload {
+export function isPieChartPayload(value: unknown): value is PieChartPayload {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (

@@ -45,6 +45,51 @@ export interface PieChartPayload {
   variant: PieVariant;
 }
 
+export interface ScatterDatum {
+  x: number;
+  y: number;
+  size?: number;
+}
+
+export interface ScatterSeries {
+  name: string;
+  data: ScatterDatum[];
+}
+
+export interface ScatterChartPayload {
+  title: string;
+  series: ScatterSeries[];
+  xlabel?: string;
+  ylabel?: string;
+}
+
+export interface TreemapNode {
+  label: string;
+  value: number;
+  color?: string;
+  children?: TreemapNode[];
+}
+
+export interface TreemapPayload {
+  title: string;
+  data: TreemapNode[];
+}
+
+export interface HeatmapCell {
+  x: number;
+  y: number;
+  value: number;
+}
+
+export interface HeatmapPayload {
+  title: string;
+  xLabels: string[];
+  yLabels: string[];
+  cells: HeatmapCell[];
+  xlabel?: string;
+  ylabel?: string;
+}
+
 export type ColumnAlign = "left" | "right" | "center";
 
 export interface TableColumn {
