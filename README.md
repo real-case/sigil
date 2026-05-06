@@ -32,7 +32,7 @@ Sigil ships with an optional [`INCANTATIONS.md`](./INCANTATIONS.md) preset — c
 ```
 Astrologers proclaim a week of Q1 sales: US 1200, EU 950, APAC 670.
 View Air on monthly temperatures for Berlin and Madrid.
-Animate Dead из revenue по регионам.
+Animate Dead from revenue by region.
 ```
 
 Includes Might & Magic homages (Town Portal, View Earth/Air, Resurrection, Scry, Animate Dead) for genre fans.

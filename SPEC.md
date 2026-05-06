@@ -1,38 +1,38 @@
-# Sigil — Техническое Требование
+# Sigil — Technical Specification
 
-## 1. Обзор проекта
+## 1. Project Overview
 
-### 1.1 Что это
-MCP Apps сервер с интерактивными chart-виджетами, которые рендерятся inline в AI-хостах (Claude, ChatGPT, VS Code Copilot, Microsoft Copilot, Goose). Пользователь подключает сервер один раз — AI-ассистент начинает визуализировать данные интерактивными графиками вместо текстовых таблиц.
+### 1.1 What it is
+An MCP Apps server with interactive chart widgets that render inline inside AI hosts (Claude, ChatGPT, VS Code Copilot, Microsoft Copilot, Goose). The user wires the server up once — and from then on the AI assistant visualises data with interactive charts instead of text tables.
 
-### 1.2 Ключевой дифференциатор
-Все существующие MCP chart серверы (`@antv/mcp-server-chart`, `@ax-crew/chartjs-mcp-server`, `mcp-echarts`) генерируют **статичные PNG-картинки или HTML-сниппеты**. Sigil — первый сервер на **MCP Apps** расширении, который рендерит **живые интерактивные виджеты** в sandboxed iframe с hover, zoom, click и экспортом.
+### 1.2 Key differentiator
+All existing MCP chart servers (`@antv/mcp-server-chart`, `@ax-crew/chartjs-mcp-server`, `mcp-echarts`) emit **static PNG images or HTML snippets**. Sigil is the first server built on the **MCP Apps** extension that renders **live, interactive widgets** inside a sandboxed iframe with hover, zoom, click, and export.
 
-### 1.3 Целевая аудитория
-Пользователи Claude, ChatGPT, VS Code Copilot, которые работают с числовыми данными: аналитики, менеджеры, разработчики, исследователи.
+### 1.3 Target audience
+Users of Claude, ChatGPT, and VS Code Copilot who work with numeric data: analysts, managers, developers, researchers.
 
-### 1.4 Цели проекта
-- Занять имя `sigil` на npm рабочим пакетом (v0.1.0)
-- Валидировать MCP Apps pipeline от сервера до рендера в Claude
-- Создать контент для персонального бренда (статья, демо-видео)
-- Получить 100+ GitHub stars за первый месяц
+### 1.4 Project goals
+- Claim the `sigil` name on npm with a working package (v0.1.0)
+- Validate the MCP Apps pipeline end-to-end, from server to render in Claude
+- Produce content for the personal brand (article, demo video)
+- Reach 100+ GitHub stars in the first month
 
 ---
 
-## 2. Технологический стек
+## 2. Tech stack
 
-| Слой | Технология | Обоснование |
-|------|------------|-------------|
-| **MCP Server** | `@modelcontextprotocol/sdk` + `@modelcontextprotocol/ext-apps` | Официальный SDK для MCP Apps |
-| **Server Transport** | Express + `StreamableHTTPServerTransport` | HTTP для remote-режима |
-| **Stdio Transport** | `StdioServerTransport` | Для локального запуска через `npx` |
-| **Chart Library** | Recharts | Декларативный React API, tooltips/responsive/animations из коробки, хорошо бандлится в single-file. Если bundle size станет проблемой — миграция на Chart.js или uPlot (каждый виджет изолирован) |
-| **UI Framework** | React 18+ | Требуется для Recharts |
-| **Bundler** | Vite + `vite-plugin-singlefile` | Бандлинг каждого виджета в один HTML-файл |
-| **Language** | TypeScript | Строгая типизация для tool schemas и данных |
-| **Dev Tunneling** | cloudflared | Проброс localhost для тестирования с Claude web |
+| Layer | Technology | Rationale |
+|------|------------|-----------|
+| **MCP Server** | `@modelcontextprotocol/sdk` + `@modelcontextprotocol/ext-apps` | Official SDK for MCP Apps |
+| **Server Transport** | Express + `StreamableHTTPServerTransport` | HTTP for remote mode |
+| **Stdio Transport** | `StdioServerTransport` | For local launch via `npx` |
+| **Chart Library** | Recharts | Declarative React API, tooltips/responsive/animations out of the box, bundles well into a single file. If bundle size becomes an issue, migration to Chart.js or uPlot is straightforward (each widget is isolated). |
+| **UI Framework** | React 18+ | Required by Recharts |
+| **Bundler** | Vite + `vite-plugin-singlefile` | Bundles each widget into a single HTML file |
+| **Language** | TypeScript | Strict typing for tool schemas and data |
+| **Dev Tunneling** | cloudflared | Exposes localhost so Claude web can reach it |
 
-### 2.1 Ключевые npm-зависимости
+### 2.1 Key npm dependencies
 
 ```json
 {
@@ -55,31 +55,31 @@ MCP Apps сервер с интерактивными chart-виджетами, 
 
 ---
 
-## 3. Архитектура
+## 3. Architecture
 
-### 3.1 Как работает MCP Apps
+### 3.1 How MCP Apps works
 
 ```
-Пользователь → пишет промпт → AI-хост (Claude)
-  → видит доступные тулы с описаниями
-  → решает вызвать render_bar_chart
-  → отправляет tool call с параметрами на MCP-сервер
-  → сервер возвращает данные + хост рендерит связанный HTML-виджет
-  → пользователь видит интерактивный график в iframe внутри чата
+User → writes a prompt → AI host (Claude)
+  → sees the available tools with their descriptions
+  → decides to call render_bar_chart
+  → sends the tool call with parameters to the MCP server
+  → server returns data + the host renders the linked HTML widget
+  → user sees an interactive chart in an iframe inside the chat
 ```
 
-### 3.2 Механика MCP Apps
+### 3.2 MCP Apps mechanics
 
-1. Тул декларирует `_meta.ui.resourceUri` → указывает на `ui://` ресурс
-2. Хост может предзагрузить UI ещё до вызова тула
-3. HTML-ресурс рендерится в sandboxed iframe (нет доступа к parent DOM, cookies, localStorage)
-4. Двусторонняя коммуникация через JSON-RPC over postMessage
-5. Виджет получает данные через `app.ontoolresult`
-6. Виджет может вызывать другие тулы через `app.callServerTool()`
+1. The tool declares `_meta.ui.resourceUri` → points to a `ui://` resource
+2. The host can preload the UI before the tool is even called
+3. The HTML resource is rendered in a sandboxed iframe (no access to parent DOM, cookies, or localStorage)
+4. Two-way communication runs over JSON-RPC on top of postMessage
+5. The widget receives data through `app.ontoolresult`
+6. The widget can call other tools via `app.callServerTool()`
 
-### 3.3 Два режима дистрибуции
+### 3.3 Two distribution modes
 
-**Stdio (локальный)** — пользователь прописывает в конфиге Claude Desktop / VS Code:
+**Stdio (local)** — the user adds the server to their Claude Desktop / VS Code config:
 ```json
 {
   "mcpServers": {
@@ -90,11 +90,11 @@ MCP Apps сервер с интерактивными chart-виджетами, 
   }
 }
 ```
-Никакого хостинга не нужно — npm-пакет скачивается и запускается локально.
+No hosting required — the npm package is fetched and run locally.
 
-**HTTP (remote)** — для Claude web (Custom Connectors). Сервер доступен по HTTPS URL. Нужен хостинг (Railway, Cloudflare Workers, или cloudflared tunnel для разработки).
+**HTTP (remote)** — for Claude web (Custom Connectors). The server is reachable over an HTTPS URL. Hosting is needed (Railway, Cloudflare Workers, or a cloudflared tunnel during development).
 
-### 3.4 Структура проекта
+### 3.4 Project structure
 
 ```
 Sigil/
@@ -132,7 +132,7 @@ Sigil/
 
 ---
 
-## 4. MVP: 4 тула
+## 4. MVP: 4 tools
 
 ### 4.1 render_bar_chart
 
@@ -147,7 +147,7 @@ Sigil/
 }
 ```
 
-**Tool Description (критично для tool selection):**
+**Tool Description (critical for tool selection):**
 ```
 Render an interactive bar chart. Use when comparing discrete categories,
 showing rankings, or displaying distribution across groups. Supports
@@ -216,38 +216,38 @@ structured data. Supports column sorting and text search.
 
 ---
 
-## 5. Интерактивность (все виджеты)
+## 5. Interactivity (all widgets)
 
-### 5.1 Обязательно (MVP)
-- Hover tooltips с точными значениями
-- Click-to-highlight сегмент/серию
-- Responsive layout (адаптация под размер iframe)
-- Dark/light theme (определяется по `prefers-color-scheme`)
+### 5.1 Required (MVP)
+- Hover tooltips with exact values
+- Click-to-highlight a segment/series
+- Responsive layout (adapts to iframe size)
+- Dark/light theme (driven by `prefers-color-scheme`)
 
 ### 5.2 Phase 2
-- Кнопка "Copy as CSV"
-- Кнопка "Copy as PNG"
-- Анимация при загрузке данных
+- "Copy as CSV" button
+- "Copy as PNG" button
+- Animation on data load
 
 ---
 
-## 6. Дизайн
+## 6. Design
 
-### 6.1 Подход
-Собрать скриншоты chart-дизайнов из reference-продуктов (Vercel Analytics, Linear, PostHog, Stripe Dashboard), закинуть в Claude, сгенерировать design token set.
+### 6.1 Approach
+Collect chart-design screenshots from reference products (Vercel Analytics, Linear, PostHog, Stripe Dashboard), feed them to Claude, and generate a design token set.
 
-### 6.2 Design Token Set (структура)
+### 6.2 Design Token Set (structure)
 
 ```typescript
 interface ChartDesignTokens {
-  // Палитра для серий данных (10 цветов; графики wrap-around'ят по `i % length`)
+  // Series palette (10 colors; charts wrap around with `i % length`)
   seriesColors: string[];
 
-  // Фоны
+  // Backgrounds
   background: string;
   surfaceBackground: string; // tooltip, legend
 
-  // Текст
+  // Text
   textPrimary: string;
   textSecondary: string;  // axis labels, legend
   textMuted: string;      // grid labels
@@ -261,7 +261,7 @@ interface ChartDesignTokens {
   tooltipBorder: string;
   tooltipText: string;
 
-  // Общие
+  // Shared
   borderRadius: number;
   fontFamily: string;
   fontSize: { label: number; title: number; tooltip: number };
@@ -269,146 +269,146 @@ interface ChartDesignTokens {
 ```
 
 ### 6.3 Dark / Light Theme
-Определяется через `prefers-color-scheme` media query. Оба набора токенов определяются в `shared/theme.ts` и применяются через CSS-переменные.
+Driven by the `prefers-color-scheme` media query. Both token sets live in `shared/theme.ts` and are applied via CSS variables.
 
 ---
 
-## 7. План реализации
+## 7. Implementation plan
 
-### Phase 1 — MVP: Bar Chart E2E (Дни 1–3)
+### Phase 1 — MVP: Bar Chart E2E (Days 1–3)
 
-**День 1: Скелет проекта**
-- [ ] `npm init`, установка зависимостей
-- [ ] Настройка Vite + `vite-plugin-singlefile` для бандлинга виджетов
-- [ ] Express + MCP SDK + ext-apps: регистрация одного тула `render_bar_chart`
-- [ ] Простейший HTML-виджет (без React) — убедиться что iframe рендерится
+**Day 1: Project skeleton**
+- [ ] `npm init`, install dependencies
+- [ ] Set up Vite + `vite-plugin-singlefile` for widget bundling
+- [ ] Express + MCP SDK + ext-apps: register one tool, `render_bar_chart`
+- [ ] A minimal HTML widget (no React yet) — confirm the iframe renders
 
-**День 2: Первый виджет**
-- [ ] React + Recharts внутри виджета bar-chart
-- [ ] `app.ontoolresult` → парсинг данных → рендер BarChart
+**Day 2: First widget**
+- [ ] React + Recharts inside the bar-chart widget
+- [ ] `app.ontoolresult` → parse data → render BarChart
 - [ ] Hover tooltips, responsive container
-- [ ] Тестирование через `cloudflared tunnel` + Claude Custom Connector
+- [ ] Test via `cloudflared tunnel` + Claude Custom Connector
 
-**День 3: Полировка bar chart**
+**Day 3: Bar chart polish**
 - [ ] Design tokens (dark/light theme)
 - [ ] Click-to-highlight
 - [ ] Horizontal/vertical orientation
-- [ ] Edge cases: пустые данные, длинные лейблы, большие датасеты
+- [ ] Edge cases: empty data, long labels, large datasets
 
-### Phase 2 — Полный набор (Дни 4–5)
+### Phase 2 — Full set (Days 4–5)
 
-**День 4: Остальные виджеты**
+**Day 4: Remaining widgets**
 - [ ] `render_line_chart` — multiple series, crosshair tooltip
 - [ ] `render_pie_chart` — pie/donut variant, percentage labels
 - [ ] `render_table` — sortable columns, text search filter
 
-**День 5: Экспорт и полировка**
-- [ ] Copy as CSV для всех виджетов
-- [ ] Copy as PNG (html2canvas или recharts native)
-- [ ] Тестирование всех тулов с разными промптами в Claude
-- [ ] Итерация tool descriptions для лучшего tool selection
+**Day 5: Export and polish**
+- [ ] Copy as CSV for every widget
+- [ ] Copy as PNG (html2canvas or recharts native)
+- [ ] Test every tool with varied prompts in Claude
+- [ ] Iterate tool descriptions for better tool selection
 
-### Phase 3 — Публикация (День 6)
+### Phase 3 — Publish (Day 6)
 
 - [ ] Stdio entry point (`src/stdio.ts`)
-- [ ] `npm publish` как `sigil@0.1.0`
-- [ ] README с:
-  - GIF-демо каждого виджета
-  - Инструкция подключения к Claude Desktop / VS Code / Claude web
+- [ ] `npm publish` as `sigil@0.1.0`
+- [ ] README with:
+  - GIF demo of each widget
+  - Setup instructions for Claude Desktop / VS Code / Claude web
   - Input schema reference
-- [ ] Публикация на GitHub (MIT license)
+- [ ] Publish to GitHub (MIT license)
 
-### Phase 4 — Дистрибуция и бренд (День 7+)
+### Phase 4 — Distribution and brand (Day 7+)
 
-- [ ] Публикация на MCPHub / Glama.ai / MCP Marketplace
-- [ ] Twitter/LinkedIn пост с демо-видео
-- [ ] Dev.to / Medium статья: "I Built the First Interactive Charts for Claude — Here's How"
-- [ ] Сбор feedback, итерация
+- [ ] List on MCPHub / Glama.ai / MCP Marketplace
+- [ ] Twitter/LinkedIn post with demo video
+- [ ] Dev.to / Medium article: "I Built the First Interactive Charts for Claude — Here's How"
+- [ ] Collect feedback, iterate
 
-### Phase 5 — Расширение (по спросу)
+### Phase 5 — Expansion (demand-driven)
 
 - [ ] `render_heatmap`, `render_scatter`, `render_treemap`
 - [ ] Combo charts (bar + line)
-- [ ] Кастомизация через tool parameters (цвета, шрифты)
-- [ ] Drill-down: вызов тулов из виджета (`app.callServerTool`)
-- [ ] Интерактивные Mermaid-диаграммы (если есть спрос)
+- [ ] Customisation through tool parameters (colors, fonts)
+- [ ] Drill-down: tools called from inside the widget (`app.callServerTool`)
+- [ ] Interactive Mermaid diagrams (if there's demand)
 
 ---
 
-## 8. Тестирование
+## 8. Testing
 
 ### 8.1 Dev flow
-1. Запустить MCP-сервер локально: `npm run dev` → `http://localhost:3001`
-2. В соседнем терминале: `npx cloudflared tunnel --url http://localhost:3001`
-3. Скопировать HTTPS URL → Claude Settings → Connectors → Add custom connector
-4. В чате Claude: "Покажи bar chart с данными: React 45%, Vue 30%, Angular 25%"
-5. Убедиться что iframe рендерится, tooltips работают, theme корректная
+1. Run the MCP server locally: `npm run dev` → `http://localhost:3001`
+2. In a second terminal: `npx cloudflared tunnel --url http://localhost:3001`
+3. Copy the HTTPS URL → Claude Settings → Connectors → Add custom connector
+4. In a Claude chat: "Show a bar chart with this data: React 45%, Vue 30%, Angular 25%"
+5. Confirm the iframe renders, tooltips work, and the theme is correct
 
-### 8.2 Тестовые промпты для валидации tool selection
+### 8.2 Test prompts for tool-selection validation
 ```
-- "Покажи распределение расходов по категориям"     → pie_chart
-- "Сравни продажи за Q1-Q4"                         → bar_chart
-- "Покажи тренд температуры за последний год"        → line_chart
-- "Выведи таблицу с сортировкой по revenue"          → table
-- "Визуализируй эти данные: ..."                    → любой подходящий
+- "Show the breakdown of expenses by category"     → pie_chart
+- "Compare sales across Q1–Q4"                     → bar_chart
+- "Show the temperature trend over the last year"  → line_chart
+- "Render a table sorted by revenue"               → table
+- "Visualize this data: ..."                       → any suitable tool
 ```
 
 ### 8.3 Edge cases
-- Пустой массив данных → graceful empty state
-- 1 data point → корректный рендер
-- 100+ data points → перформанс, скролл
-- Очень длинные лейблы → truncation / rotation
-- Unicode в лейблах
-- Отрицательные значения
-- Смешанные типы в таблице
+- Empty data array → graceful empty state
+- 1 data point → renders correctly
+- 100+ data points → performance, scrolling
+- Very long labels → truncation / rotation
+- Unicode in labels
+- Negative values
+- Mixed types in a table
 
 ---
 
-## 9. Хостинг (для remote-режима)
+## 9. Hosting (for remote mode)
 
-### 9.1 Для разработки
-`cloudflared tunnel` — бесплатно, без регистрации, временный URL.
+### 9.1 For development
+`cloudflared tunnel` — free, no signup, ephemeral URL.
 
-### 9.2 Для продакшена (выбрать один)
+### 9.2 For production (pick one)
 
-| Вариант | Стоимость | Плюсы | Минусы |
-|---------|-----------|-------|--------|
-| Railway | ~$5/мес | Простой деплой, Git integration | Платный |
-| Cloudflare Workers | Free tier | Бесплатно, глобальный edge | Ограничения Workers runtime |
-| Render | Free tier | Бесплатный инстанс | Cold start на free tier |
-| VPS (Hetzner) | ~€4/мес | Полный контроль | Нужен DevOps |
+| Option | Cost | Pros | Cons |
+|--------|------|------|------|
+| Railway | ~$5/mo | Simple deploy, Git integration | Paid |
+| Cloudflare Workers | Free tier | Free, global edge | Workers runtime constraints |
+| Render | Free tier | Free instance | Cold start on free tier |
+| VPS (Hetzner) | ~€4/mo | Full control | Requires DevOps |
 
 ---
 
-## 10. Риски и митигация
+## 10. Risks and mitigations
 
-| Риск | Вероятность | Импакт | Митигация |
-|------|-------------|--------|-----------|
-| Claude не выбирает тул | Средняя | Высокий | Итерировать tool descriptions, тестировать разные формулировки |
-| Anthropic встроит charts нативно | Низкая (краткосрочно) | Высокий | Расширять за пределы базовых графиков (drill-down, combo charts) |
-| Iframe ограничивает UX | Средняя | Средний | Максимизировать интерактивность в рамках sandbox |
-| Recharts bundle size слишком большой | Средняя | Средний | Профилировать, при необходимости → Chart.js или uPlot |
-| MCP Apps spec изменится | Низкая | Средний | Следить за ext-apps changelog, обновлять SDK |
-| Custom Connectors только на платных планах | Факт | Средний | Stdio-режим через npx покрывает Claude Desktop / VS Code бесплатно |
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|-----------|
+| Claude doesn't pick the tool | Medium | High | Iterate on tool descriptions, test alternative phrasings |
+| Anthropic ships native charts | Low (short-term) | High | Push beyond basic charts (drill-down, combo charts) |
+| Iframe constrains UX | Medium | Medium | Maximise interactivity within sandbox limits |
+| Recharts bundle size too large | Medium | Medium | Profile, switch to Chart.js or uPlot if needed |
+| MCP Apps spec changes | Low | Medium | Track ext-apps changelog, keep SDK current |
+| Custom Connectors gated behind paid plans | Confirmed | Medium | Stdio mode via npx covers Claude Desktop / VS Code for free |
 
 ---
 
 ## 11. Open Questions
 
-1. **Bundle size budget** — какой максимальный размер single-file HTML допустим? Нужен бенчмарк Recharts bundle.
-2. **Iframe dimensions** — какой размер iframe выделяют разные хосты (Claude web, Desktop, VS Code)? Нужно тестировать.
-3. **Remote hosting** — Railway vs Cloudflare Workers vs Render для demo-инстанса?
-4. **Monorepo** — один пакет `sigil` со всеми виджетами (рекомендуется для простоты).
-5. **GitHub org** — публиковать под личным аккаунтом или создать org `sigil`?
+1. **Bundle size budget** — what's the max acceptable single-file HTML size? Need a Recharts bundle benchmark.
+2. **Iframe dimensions** — what size do different hosts (Claude web, Desktop, VS Code) allocate? Needs testing.
+3. **Remote hosting** — Railway vs Cloudflare Workers vs Render for the demo instance?
+4. **Monorepo** — single `sigil` package containing all widgets (recommended for simplicity).
+5. **GitHub org** — publish under the personal account or create a `sigil` org?
 
 ---
 
-## 12. Метрики успеха
+## 12. Success metrics
 
-| Метрика | Цель (1 месяц) | Цель (3 месяца) |
-|---------|----------------|-----------------|
+| Metric | Target (1 month) | Target (3 months) |
+|--------|------------------|-------------------|
 | GitHub stars | 100+ | 500+ |
 | npm weekly downloads | 50+ | 200+ |
-| Маркетплейсы | Попадание в MCPHub / Glama.ai | Попадание в curated MCP lists |
-| Контент | 1 статья + демо-видео | 3+ упоминания в сторонних обзорах |
-| Tool selection rate | Claude вызывает тулы в 80%+ релевантных случаев | — |
+| Marketplaces | Listed on MCPHub / Glama.ai | Featured in curated MCP lists |
+| Content | 1 article + demo video | 3+ third-party mentions |
+| Tool selection rate | Claude calls the tools in 80%+ of relevant cases | — |
