@@ -7,6 +7,7 @@ import {
   registerScatterChartTool,
   SCATTER_CHART_UI_URI,
 } from "./tools/scatter-chart.js";
+import { registerTreemapTool, TREEMAP_UI_URI } from "./tools/treemap.js";
 
 export interface WidgetEntry {
   name: string;
@@ -20,4 +21,5 @@ export const WIDGETS: readonly WidgetEntry[] = [
   { name: "pie-chart", uri: PIE_CHART_UI_URI, register: registerPieChartTool },
   { name: "table", uri: TABLE_UI_URI, register: registerTableTool },
   { name: "scatter-chart", uri: SCATTER_CHART_UI_URI, register: registerScatterChartTool },
+  { name: "treemap", uri: TREEMAP_UI_URI, register: registerTreemapTool },
 ] as const;

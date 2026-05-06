@@ -63,6 +63,18 @@ export interface ScatterChartPayload {
   ylabel?: string;
 }
 
+export interface TreemapNode {
+  label: string;
+  value: number;
+  color?: string;
+  children?: TreemapNode[];
+}
+
+export interface TreemapPayload {
+  title: string;
+  data: TreemapNode[];
+}
+
 export type ColumnAlign = "left" | "right" | "center";
 
 export interface TableColumn {
