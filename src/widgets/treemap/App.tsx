@@ -15,7 +15,7 @@ function isTreemapNode(value: unknown): value is TreemapNode {
   return true;
 }
 
-function isTreemapPayload(value: unknown): value is TreemapPayload {
+export function isTreemapPayload(value: unknown): value is TreemapPayload {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (

@@ -40,6 +40,7 @@ function Status({ message }: { message: string }) {
 }
 
 export function mountWidget<P>(opts: MountWidgetOptions<P>): void {
+  if (typeof document === "undefined") return;
   installThemeStyles();
 
   const { name, isPayload, View } = opts;

@@ -20,7 +20,7 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((v) => typeof v === "string");
 }
 
-function isHeatmapPayload(value: unknown): value is HeatmapPayload {
+export function isHeatmapPayload(value: unknown): value is HeatmapPayload {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (

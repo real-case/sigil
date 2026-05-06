@@ -26,7 +26,7 @@ function isScatterSeries(value: unknown): value is ScatterSeries {
   );
 }
 
-function isScatterChartPayload(value: unknown): value is ScatterChartPayload {
+export function isScatterChartPayload(value: unknown): value is ScatterChartPayload {
   if (!value || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (
