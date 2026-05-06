@@ -9,6 +9,6 @@
     "declaration": false,
     "sourceMap": true
   },
-  "include": ["src/server.ts", "src/stdio.ts", "src/tools/**/*.ts", "src/resources/**/*.ts"],
+  "include": ["src/server.ts", "src/stdio.ts", "src/tools/**/*.ts", "src/resources/**/*.ts", "src/registry.ts"],
   "exclude": ["src/widgets/**"]
 }

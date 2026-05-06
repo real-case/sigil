@@ -6,23 +6,7 @@ import {
   registerAppResource,
   RESOURCE_MIME_TYPE,
 } from "@modelcontextprotocol/ext-apps/server";
-import { BAR_CHART_UI_URI } from "../tools/bar-chart.js";
-import { LINE_CHART_UI_URI } from "../tools/line-chart.js";
-import { PIE_CHART_UI_URI } from "../tools/pie-chart.js";
-import { TABLE_UI_URI } from "../tools/table.js";
-
-type WidgetEntry = {
-  name: string;
-  uri: string;
-  distSubpath: string;
-};
-
-const WIDGETS: WidgetEntry[] = [
-  { name: "bar-chart", uri: BAR_CHART_UI_URI, distSubpath: "bar-chart" },
-  { name: "line-chart", uri: LINE_CHART_UI_URI, distSubpath: "line-chart" },
-  { name: "pie-chart", uri: PIE_CHART_UI_URI, distSubpath: "pie-chart" },
-  { name: "table", uri: TABLE_UI_URI, distSubpath: "table" },
-];
+import { WIDGETS } from "../registry.js";
 
 function findPackageRoot(start: string): string {
   let current = start;
@@ -39,17 +23,17 @@ const WIDGETS_DIR = join(PACKAGE_ROOT, "dist", "widgets");
 
 const htmlCache = new Map<string, string>();
 
-function loadWidgetHtml(subpath: string): string {
-  const cached = htmlCache.get(subpath);
+function loadWidgetHtml(name: string): string {
+  const cached = htmlCache.get(name);
   if (cached) return cached;
-  const file = join(WIDGETS_DIR, subpath, "index.html");
+  const file = join(WIDGETS_DIR, name, "index.html");
   if (!existsSync(file)) {
     throw new Error(
       `Widget bundle missing at ${file}. Run 'npm run build:widgets'.`,
     );
   }
   const html = readFileSync(file, "utf-8");
-  htmlCache.set(subpath, html);
+  htmlCache.set(name, html);
   return html;
 }
 
@@ -65,7 +49,7 @@ export function registerAllResources(server: McpServer) {
           {
             uri: uri.toString(),
             mimeType: RESOURCE_MIME_TYPE,
-            text: loadWidgetHtml(widget.distSubpath),
+            text: loadWidgetHtml(widget.name),
           },
         ],
       }),
