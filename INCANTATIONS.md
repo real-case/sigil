@@ -2,6 +2,8 @@
 
 > *A sigil is a sign carrying compressed meaning. Speak the right words, and one rises from your data.*
 
+> **Note on language:** this file is bilingual by design and is the deliberate exception to the project's English-only rule for Markdown (see `CLAUDE.md`). The Russian trigger phrases are not commentary — they are *feature data* the host LLM is taught to recognise, so translating them would remove functionality.
+
 This is an **optional preset** that teaches Claude (or any MCP-Apps host) to interpret ritual phrasings — including homages to *Might and Magic* and *Heroes of Might and Magic* — as invocations of Sigil's tools.
 
 Without the preset, Sigil works in plain mode (`render_bar_chart`, normal English/Russian prompts). With it, you can speak in ritual register: *«призываю bar chart»*, *«View Earth on these numbers»*, *«Astrologers proclaim a chart of Q1 sales»*.
