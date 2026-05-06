@@ -45,6 +45,24 @@ export interface PieChartPayload {
   variant: PieVariant;
 }
 
+export interface ScatterDatum {
+  x: number;
+  y: number;
+  size?: number;
+}
+
+export interface ScatterSeries {
+  name: string;
+  data: ScatterDatum[];
+}
+
+export interface ScatterChartPayload {
+  title: string;
+  series: ScatterSeries[];
+  xlabel?: string;
+  ylabel?: string;
+}
+
 export type ColumnAlign = "left" | "right" | "center";
 
 export interface TableColumn {
