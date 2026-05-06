@@ -75,6 +75,21 @@ export interface TreemapPayload {
   data: TreemapNode[];
 }
 
+export interface HeatmapCell {
+  x: number;
+  y: number;
+  value: number;
+}
+
+export interface HeatmapPayload {
+  title: string;
+  xLabels: string[];
+  yLabels: string[];
+  cells: HeatmapCell[];
+  xlabel?: string;
+  ylabel?: string;
+}
+
 export type ColumnAlign = "left" | "right" | "center";
 
 export interface TableColumn {
