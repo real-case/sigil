@@ -21,7 +21,10 @@ dist/server/stdio.js          # has shebang + executable bit
 dist/widgets/bar-chart/index.html
 dist/widgets/line-chart/index.html
 dist/widgets/pie-chart/index.html
+dist/widgets/scatter-chart/index.html
 dist/widgets/table/index.html
+dist/widgets/treemap/index.html
+dist/widgets/heatmap/index.html
 ```
 
 If anything is missing, stop and fix the build first.
@@ -55,7 +58,7 @@ In a new chat, ask:
 
 > What MCP tools do you have available?
 
-You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_table`** in the list. If not — see [Debugging](#debugging) below.
+You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_scatter_chart`**, **`render_treemap`**, **`render_heatmap`**, and **`render_table`** in the list. If not — see [Debugging](#debugging) below.
 
 ### A3. Smoke test each widget with explicit prompts
 
@@ -101,6 +104,38 @@ Now test **without** naming the tool. Each prompt should pick the listed tool:
 - shorten the description — selection accuracy often improves with fewer words
 
 Re-run `npm run build:server` and restart Claude Desktop after each change.
+
+### A5. Design-system visual QA
+
+After §A3 confirms widgets render at all, walk through this checklist to verify the v0.3.0 design system (tokens + primitives) is intact across every widget. Run it once in **light** and once in **dark** — switch your OS appearance preference between passes. Each widget gets ~30 seconds.
+
+**Per-widget checks (× 7):**
+
+| Widget | Look for |
+|---|---|
+| `bar-chart` | IBM Plex Mono ticks, uppercase, letter-spaced. Soft cursor highlight on hover (8 % series-0 tint). Frosted-glass tooltip with `surface-elevated` bg + mid shadow. |
+| `line-chart` | Primary line 1.75 px, secondaries 1.5 px, round joins. Active dot has a `surface`-colored ring (looks "punched out" against the line). Hover tooltip lists all series with `tabular-nums` values. |
+| `scatter-chart` | Dots at 70 % opacity. Tooltip hides the label (only series rows visible). Legend dots are circles. |
+| `pie-chart` | Slice labels show percent only when ≥ 4 %. Stroke between slices = `surfaces.bg` (looks like a thin gap, not a border). Donut variant has 60 % inner radius. Tooltip formats as `<value> (<pct>%)`. |
+| `treemap` | Leaves have rounded `radius.sm` corners and 3 px gaps. Two-line labels (name + tabular value) appear only when the leaf is ≥ 60 × 30 px. White text has a subtle drop shadow. |
+| `heatmap` | **Single-hue ramp** — cells go from barely-visible `series-0` tint to full intensity. No multi-colored cells. Cells have 2 px gaps and rounded corners. |
+| `table` | Header row in mono uppercase tick font. Numeric cells use mono with `tabular-nums`. Row hover gets `surface-sunken` background. Filter input gets a 2 px focus ring when tabbed into. |
+
+**Cross-cutting checks:**
+
+- [ ] Toolbar buttons get a focus ring (Tab into them and observe) — confirms `--sigil-focus-ring` is wired.
+- [ ] On a slow network, the loading skeleton appears (shimmer rectangles) instead of "Connecting…" text. Easy to test: throttle in DevTools, then trigger a tool.
+- [ ] Triggering an error (e.g. break the JSON payload) shows the new `EmptyState variant="error"` card — accent in `danger.text`, icon-shaped glyph slot.
+- [ ] Switch OS between light and dark while a widget is open — series colors *should* visibly change (palette is split per theme, not shared). Tooltips re-tint without flicker.
+- [ ] Press Tab repeatedly inside any widget — focus rings appear on toolbar buttons and the table filter. Cells in Recharts SVGs don't ring (intentional — see `.recharts-wrapper :focus:not(:focus-visible)` in styles.css).
+- [ ] OS-level "Reduce motion" preference disables shimmer + tooltip fade (test via macOS System Settings → Accessibility → Display → Reduce motion).
+
+**If any check fails:**
+
+- Wrong font → check that the IBM Plex `<link>` made it into the compiled `dist/widgets/*/index.html` (`grep "IBM+Plex" dist/widgets/bar-chart/index.html`). The host iframe needs network access to `fonts.googleapis.com`.
+- Wrong color/series → verify `oklch(…)` is parsing in your browser (Chrome ≥ 111, Safari ≥ 15.4, Firefox ≥ 113). If you see fallback grey, OKLCH support is missing.
+- No frosted tooltip → `backdrop-filter` may be sandboxed in this host. The `color-mix` fallback should still render a tinted surface; the blur just disappears.
+- Token vars look unset (`var(--sigil-foo)` showing literal text) → token-surface test should catch this; run `npm test` to find a missing emitter.
 
 ---
 

@@ -1,0 +1,328 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "$meta": {
+    "name": "Sigil",
+    "version": "0.3.0",
+    "description": "Token surface, primitives, and motion language for Sigil's interactive chart widgets. Themed entirely through --sigil-* CSS variables.",
+    "updated": "2026-05-14",
+    "prefix": "sigil",
+    "themes": ["light", "dark"]
+  },
+
+  "color": {
+    "surface": {
+      "bg":             { "light": "#FAFAFB", "dark": "#131418", "description": "Page background; outermost surface." },
+      "surface":        { "light": "#FFFFFF", "dark": "#1B1C21", "description": "Resting card surface." },
+      "surface-elevated": { "light": "#FFFFFF", "dark": "#23252B", "description": "Tooltips, popovers, menus." },
+      "surface-sunken":   { "light": "#F2F2F4", "dark": "#0E0F12", "description": "Resting well under skeletons / empty states." }
+    },
+
+    "border": {
+      "subtle":  { "light": "#ECECEE", "dark": "#26282E", "description": "Hairlines inside cards, dividers." },
+      "default": { "light": "#DDDDE0", "dark": "#34363D", "description": "Card outlines, control borders." },
+      "strong":  { "light": "#B8B8BD", "dark": "#545761", "description": "Dashed guides, hover outlines, regression lines." }
+    },
+
+    "text": {
+      "text":           { "light": "#1A1B1F", "dark": "#F2F3F5", "description": "Primary body / value text." },
+      "text-secondary": { "light": "#4D4E55", "dark": "#AEB0B8", "description": "Labels, captions, legend text." },
+      "text-muted":     { "light": "#888A92", "dark": "#7B7D86", "description": "Tick marks, axis labels, helper copy." }
+    },
+
+    "chart": {
+      "grid": { "light": "#EBEBED", "dark": "#25272D", "description": "Horizontal/vertical gridlines." },
+      "axis": { "light": "#C6C6CB", "dark": "#3D3F47", "description": "Baseline + axis stroke." }
+    },
+
+    "tooltip": {
+      "tooltip-bg":     { "light": "#FFFFFF", "dark": "#23252B" },
+      "tooltip-border": { "light": "#DDDDE0", "dark": "#34363D" },
+      "tooltip-text":   { "light": "#1A1B1F", "dark": "#F2F3F5" }
+    },
+
+    "semantic": {
+      "success": {
+        "surface": { "light": "#E8F4ED", "dark": "#0F2A1E" },
+        "border":  { "light": "#BDDDC8", "dark": "#1F4E36" },
+        "text":    { "light": "#1F6E43", "dark": "#6AC58F" }
+      },
+      "warning": {
+        "surface": { "light": "#FAF1DE", "dark": "#2E2410" },
+        "border":  { "light": "#E6D3A2", "dark": "#553F1A" },
+        "text":    { "light": "#7A5806", "dark": "#E2B856" }
+      },
+      "danger": {
+        "surface": { "light": "#FAE9E9", "dark": "#2C1414" },
+        "border":  { "light": "#E5BFC0", "dark": "#582828" },
+        "text":    { "light": "#9C2A2A", "dark": "#F08A8A" }
+      },
+      "info": {
+        "surface": { "light": "#E9EFFA", "dark": "#15203A" },
+        "border":  { "light": "#BFCDE5", "dark": "#2C3F6E" },
+        "text":    { "light": "#2D4D8F", "dark": "#88A8E8" }
+      }
+    },
+
+    "series": {
+      "description": "Categorical palette for chart series. Independently tuned per theme — light around L≈58%, dark around L≈72%. Chromas clamped under 0.20.",
+      "series-0": { "light": "oklch(58% 0.16 250)", "dark": "oklch(72% 0.14 250)", "hint": "blue" },
+      "series-1": { "light": "oklch(60% 0.14 150)", "dark": "oklch(74% 0.13 150)", "hint": "green" },
+      "series-2": { "light": "oklch(68% 0.16 65)",  "dark": "oklch(80% 0.15 70)",  "hint": "amber" },
+      "series-3": { "light": "oklch(58% 0.20 25)",  "dark": "oklch(70% 0.17 25)",  "hint": "red" },
+      "series-4": { "light": "oklch(54% 0.19 295)", "dark": "oklch(68% 0.18 295)", "hint": "violet" },
+      "series-5": { "light": "oklch(62% 0.12 200)", "dark": "oklch(74% 0.11 200)", "hint": "teal" },
+      "series-6": { "light": "oklch(64% 0.18 40)",  "dark": "oklch(74% 0.16 40)",  "hint": "orange" },
+      "series-7": { "light": "oklch(58% 0.18 325)", "dark": "oklch(70% 0.16 325)", "hint": "magenta" },
+      "series-8": { "light": "oklch(48% 0.13 240)", "dark": "oklch(62% 0.12 240)", "hint": "indigo" },
+      "series-9": { "light": "oklch(56% 0.10 110)", "dark": "oklch(70% 0.10 110)", "hint": "lime" }
+    },
+
+    "focus": {
+      "focus-ring": {
+        "light": "oklch(58% 0.16 250 / 0.45)",
+        "dark":  "oklch(72% 0.14 250 / 0.55)",
+        "description": "Derived from series-0 with alpha so the ring stays visible on any series fill."
+      }
+    }
+  },
+
+  "spacing": {
+    "$description": "4px grid. xs–lg covers compact layouts; xl/2xl reserved for bento gaps between stacked widgets.",
+    "0":   { "value": 0,  "unit": "px" },
+    "xs":  { "value": 4,  "unit": "px" },
+    "sm":  { "value": 8,  "unit": "px" },
+    "md":  { "value": 12, "unit": "px" },
+    "lg":  { "value": 16, "unit": "px" },
+    "xl":  { "value": 24, "unit": "px" },
+    "2xl": { "value": 32, "unit": "px" }
+  },
+
+  "radius": {
+    "sm":   { "value": 4,   "unit": "px", "use": "Chips, skeletons, small cells." },
+    "md":   { "value": 8,   "unit": "px", "use": "Tooltips, toolbars, controls." },
+    "lg":   { "value": 12,  "unit": "px", "use": "Cards, widgets." },
+    "full": { "value": 999, "unit": "px", "use": "Avatars, dots, pills." }
+  },
+
+  "elevation": {
+    "$description": "Two-layer shadows: ambient hairline + directional drop. Tuned for light surfaces.",
+    "low": {
+      "use": "Resting card.",
+      "value": "0 0 0 0.5px rgba(0,0,0,0.04), 0 1px 2px rgba(15,17,21,0.04)"
+    },
+    "mid": {
+      "use": "Tooltip, popover.",
+      "value": "0 0 0 0.5px rgba(0,0,0,0.04), 0 2px 4px rgba(15,17,21,0.06), 0 8px 16px rgba(15,17,21,0.06)"
+    },
+    "high": {
+      "use": "Modal, sheet.",
+      "value": "0 0 0 0.5px rgba(0,0,0,0.04), 0 4px 8px rgba(15,17,21,0.06), 0 20px 36px rgba(15,17,21,0.10)"
+    },
+    "low-dark":  { "value": "0 0 0 0.5px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5)" },
+    "mid-dark":  { "value": "0 0 0 0.5px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.5)" },
+    "high-dark": { "value": "0 0 0 0.5px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.4), 0 20px 36px rgba(0,0,0,0.6)" }
+  },
+
+  "motion": {
+    "duration": {
+      "fast": { "value": 120, "unit": "ms", "use": "Hover, tooltip enter, color shifts." },
+      "base": { "value": 200, "unit": "ms", "use": "Legend toggle, focus bloom." },
+      "slow": { "value": 320, "unit": "ms", "use": "Chart axis re-tick on data update." }
+    },
+    "easing": {
+      "standard":   { "value": "cubic-bezier(0.2, 0, 0, 1)",   "use": "Default. Apple-leaning for everything that isn't one-shot." },
+      "emphasized": { "value": "cubic-bezier(0.3, 1.4, 0.4, 1)", "use": "Toolbar selection, focus bloom — gentle overshoot." },
+      "linear":     { "value": "linear",                         "use": "Shimmer loops only." }
+    }
+  },
+
+  "typography": {
+    "family": {
+      "sans": { "value": "\"IBM Plex Sans\", system-ui, sans-serif", "use": "All UI text." },
+      "mono": { "value": "\"IBM Plex Mono\", ui-monospace, monospace", "use": "All value-bearing text; tabular numerals always on." }
+    },
+
+    "feature-settings": {
+      "$description": "Default OpenType features applied to body text.",
+      "value": "\"ss01\", \"cv11\""
+    },
+
+    "scale": {
+      "title": {
+        "family":         "sans",
+        "font-size":      { "value": 13, "unit": "px" },
+        "line-height":    { "value": 18, "unit": "px" },
+        "letter-spacing": { "value": 0,  "unit": "em" },
+        "font-weight":    400,
+        "use": "Widget titles, card headers."
+      },
+      "label": {
+        "family":         "sans",
+        "font-size":      { "value": 11, "unit": "px" },
+        "line-height":    { "value": 16, "unit": "px" },
+        "letter-spacing": { "value": 0,  "unit": "em" },
+        "font-weight":    400,
+        "use": "Legend, captions, secondary copy."
+      },
+      "tick": {
+        "family":         "mono",
+        "font-size":      { "value": 10, "unit": "px" },
+        "line-height":    { "value": 14, "unit": "px" },
+        "letter-spacing": { "value": 0.04, "unit": "em" },
+        "font-weight":    400,
+        "transform":      "uppercase",
+        "use": "Axis labels, ticks, table column headers."
+      },
+      "value": {
+        "family":         "mono",
+        "font-size":      { "value": 28, "unit": "px" },
+        "line-height":    { "value": 28, "unit": "px" },
+        "letter-spacing": { "value": -0.02, "unit": "em" },
+        "font-weight":    500,
+        "font-variant-numeric": "tabular-nums",
+        "use": "Hero KPI."
+      },
+      "value-sm": {
+        "family":         "mono",
+        "font-size":      { "value": 16, "unit": "px" },
+        "line-height":    { "value": 18, "unit": "px" },
+        "letter-spacing": { "value": 0, "unit": "em" },
+        "font-weight":    500,
+        "font-variant-numeric": "tabular-nums",
+        "use": "Inline values, table cells."
+      },
+      "value-inline": {
+        "family":         "mono",
+        "font-size":      { "value": 13, "unit": "px" },
+        "line-height":    { "value": 18, "unit": "px" },
+        "letter-spacing": { "value": 0, "unit": "em" },
+        "font-weight":    400,
+        "font-variant-numeric": "tabular-nums",
+        "use": "Inline numeric runs within prose."
+      },
+      "tooltip": {
+        "family":         "sans",
+        "font-size":      { "value": 12, "unit": "px" },
+        "line-height":    { "value": 17, "unit": "px" },
+        "letter-spacing": { "value": 0, "unit": "em" },
+        "font-weight":    400,
+        "use": "Tooltip rows."
+      }
+    }
+  },
+
+  "focus-ring": {
+    "width":  { "value": 2, "unit": "px" },
+    "offset": { "value": 1, "unit": "px" },
+    "color":  "color.focus.focus-ring",
+    "$description": "3-token bundle. Color derives from series-0 with 45–55% alpha so the ring is readable on any series fill, semantic tint, or surface."
+  },
+
+  "chart": {
+    "$description": "Cross-cutting chart primitives that compose with the color and typography scales.",
+    "bar": {
+      "radius":            "radius.sm 1.5px",
+      "group-gap":         "= bar-width",
+      "hover-brighten":    "+6%",
+      "hover-duration":    "motion.duration.fast"
+    },
+    "line": {
+      "stroke-primary":    { "value": 1.75, "unit": "px" },
+      "stroke-secondary":  { "value": 1.5,  "unit": "px" },
+      "linecap":           "round",
+      "area-fill":         "series-0 linear-gradient 18% (light) / 22% (dark) → 0%",
+      "end-cap-radius":    { "primary": 3, "secondary": 2.5, "unit": "px" }
+    },
+    "pie": {
+      "outer-radius":      { "value": 64, "unit": "px" },
+      "ring-width":        { "value": 22, "unit": "px" },
+      "inner-ratio":       0.6,
+      "start-angle":       "-90deg",
+      "max-segments":      5,
+      "hover-scale":       1.04,
+      "siblings-dim":      0.5,
+      "hover-duration":    "motion.duration.base"
+    },
+    "scatter": {
+      "dot-radius":        { "value": 3, "unit": "px" },
+      "fill-opacity":      { "light": 0.7, "dark": 0.75 },
+      "regression": {
+        "stroke":          "color.border.strong",
+        "stroke-width":    { "value": 1, "unit": "px" },
+        "dasharray":       "2 3",
+        "opacity":         0.7
+      }
+    },
+    "treemap": {
+      "gap":               { "value": 3, "unit": "px" },
+      "radius":            "radius.sm",
+      "label-text-shadow": "0 1px 1px rgba(0,0,0,0.18)",
+      "collapse-value":    "< 60×30px hide value",
+      "collapse-name":     "< 40×20px hide name → tooltip-only",
+      "hover-brightness":  1.04,
+      "hover-duration":    "motion.duration.base"
+    },
+    "heatmap": {
+      "cell-radius":       { "value": 2, "unit": "px" },
+      "cell-gap":          { "value": 2, "unit": "px" },
+      "ramp":              "single-hue intensity, series-0 with 8% / 35% / 75% / 100% alpha stops",
+      "hover-scale":       1.18,
+      "hover-duration":    "motion.duration.fast"
+    },
+    "table": {
+      "header-font":       "typography.scale.tick",
+      "body-font-size":    { "value": 12, "unit": "px" },
+      "row-padding":       "7px 10px",
+      "row-hover-bg":      "color.surface.surface-sunken",
+      "spark-width":       { "value": 56, "unit": "px" },
+      "spark-height":      { "value": 16, "unit": "px" }
+    }
+  },
+
+  "components": {
+    "card": {
+      "radius":    "radius.lg",
+      "padding":   "spacing.lg",
+      "border":    "1px solid color.border.subtle",
+      "elevation": "elevation.low"
+    },
+    "tooltip": {
+      "radius":    "radius.md",
+      "padding":   "10px 12px",
+      "min-width": { "value": 180, "unit": "px" },
+      "border":    "1px solid color.border.default",
+      "background":"color.surface.surface-elevated",
+      "elevation": "elevation.mid",
+      "enter":     "motion.duration.base motion.easing.standard",
+      "frosted":   "backdrop-filter: blur(20px) saturate(140%); background color-mix surface-elevated 78%"
+    },
+    "toolbar": {
+      "radius":          "radius.md",
+      "padding":         { "value": 3, "unit": "px" },
+      "button-padding":  "5px 9px",
+      "button-radius":   "radius.sm",
+      "button-font":     "typography.scale.tick (no uppercase)",
+      "transition":      "all motion.duration.fast motion.easing.standard"
+    },
+    "legend": {
+      "gap":             "spacing.md",
+      "item-padding":    "3px 4px",
+      "item-radius":     "radius.sm",
+      "swatch-size":     { "value": 10, "unit": "px" },
+      "muted-opacity":   0.4,
+      "transition":      "background motion.duration.fast motion.easing.standard"
+    },
+    "skeleton": {
+      "radius":          "radius.sm",
+      "shimmer-duration": { "value": 1400, "unit": "ms" },
+      "shimmer-easing":  "linear",
+      "stops":           "surface-sunken → border-subtle → surface-sunken"
+    },
+    "empty-state": {
+      "max-width":       { "value": 280, "unit": "px" },
+      "padding":         { "value": 28, "unit": "px" },
+      "glyph-size":      { "value": 36, "unit": "px" },
+      "glyph-radius":    "radius.md"
+    }
+  }
+}

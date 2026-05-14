@@ -45,4 +45,5 @@ mountWidget({
   name: "sigil-table",
   isPayload: isTablePayload,
   View: TableView,
+  loadingVariant: "table",
 });

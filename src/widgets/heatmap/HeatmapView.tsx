@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { HeatmapPayload, HeatmapCell } from "../../shared/payloads.js";
-import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { useTheme } from "../shared/theme.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const CHART_HEIGHT = 360;
@@ -13,7 +14,32 @@ const Y_LABEL_PER_CHAR = 6.5;
 const Y_LABEL_MAX_CHARS = 16;
 const AXIS_TITLE_GUTTER = 22;
 const X_LABEL_TILT_THRESHOLD = 8;
+const CELL_GAP = 2;
+const CELL_RADIUS = 2;
 const NUMBER_FMT = new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 });
+
+// Single-hue intensity ramp: series-0 with alpha stops 8% / 35% / 75% / 100%.
+// Piecewise-linear interpolation gives smooth gradients without banding.
+const ALPHA_STOPS = [
+  { t: 0.0, a: 0.08 },
+  { t: 0.33, a: 0.35 },
+  { t: 0.67, a: 0.75 },
+  { t: 1.0, a: 1.0 },
+];
+
+function intensityAlpha(value: number, min: number, max: number): number {
+  const range = max - min;
+  const t = range === 0 ? 0.5 : Math.max(0, Math.min(1, (value - min) / range));
+  for (let i = 0; i < ALPHA_STOPS.length - 1; i++) {
+    const a = ALPHA_STOPS[i]!;
+    const b = ALPHA_STOPS[i + 1]!;
+    if (t <= b.t) {
+      const local = (t - a.t) / (b.t - a.t);
+      return a.a + (b.a - a.a) * local;
+    }
+  }
+  return 1;
+}
 
 interface CellLookup {
   values: Map<number, HeatmapCell>;
@@ -36,36 +62,6 @@ function buildLookup(cells: HeatmapCell[], cols: number): CellLookup {
     max = 0;
   }
   return { values, min, max };
-}
-
-function parseHex(hex: string): [number, number, number] | null {
-  const cleaned = hex.replace("#", "");
-  if (cleaned.length !== 6) return null;
-  const r = parseInt(cleaned.slice(0, 2), 16);
-  const g = parseInt(cleaned.slice(2, 4), 16);
-  const b = parseInt(cleaned.slice(4, 6), 16);
-  if ([r, g, b].some(Number.isNaN)) return null;
-  return [r, g, b];
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function colorForValue(
-  value: number,
-  min: number,
-  max: number,
-  tokens: ChartDesignTokens,
-): string {
-  const range = max - min;
-  const t = range === 0 ? 0.5 : Math.max(0, Math.min(1, (value - min) / range));
-  const surface = parseHex(tokens.surfaceBackground) ?? [255, 255, 255];
-  const accent = parseHex(tokens.seriesColors[0]!) ?? [99, 102, 241];
-  const r = Math.round(lerp(surface[0], accent[0], t));
-  const g = Math.round(lerp(surface[1], accent[1], t));
-  const b = Math.round(lerp(surface[2], accent[2], t));
-  return `rgb(${r}, ${g}, ${b})`;
 }
 
 function truncate(s: string, max: number): string {
@@ -108,7 +104,14 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
   );
 
   if (xLabels.length === 0 || yLabels.length === 0 || cells.length === 0) {
-    return <EmptyState title={title} />;
+    return (
+      <div className="sigil-root">
+        <div className="sigil-header">
+          <h2 className="sigil-title">{title}</h2>
+        </div>
+        <EmptyState title="No data to display" description="The payload was empty." />
+      </div>
+    );
   }
 
   const longestY = yLabels.reduce((m, s) => Math.max(m, s.length), 0);
@@ -123,13 +126,15 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
   const usableHeight =
     CHART_HEIGHT - X_LABEL_HEIGHT - BOTTOM_MARGIN - xAxisOffset;
   const cellHeight = Math.max(8, usableHeight / yLabels.length);
-  const xLabelTilt = xLabels.length > X_LABEL_TILT_THRESHOLD || xLabels.some((l) => l.length > 6);
+  const xLabelTilt =
+    xLabels.length > X_LABEL_TILT_THRESHOLD || xLabels.some((l) => l.length > 6);
 
   const matrixLeft = yLabelWidth + yAxisOffset;
   const matrixTop = X_LABEL_HEIGHT;
   const totalHeight = matrixTop + cellHeight * yLabels.length + BOTTOM_MARGIN + xAxisOffset;
   const totalWidth = Math.max(matrixLeft + cellWidth * xLabels.length + RIGHT_MARGIN, 1);
 
+  const seriesHue = tokens.series[0]!;
   const cellKey = (x: number, y: number) => `${x}:${y}`;
 
   const copyCsv = () => {
@@ -148,7 +153,7 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
   const copyPng = async () => {
     const svg = canvasRef.current?.querySelector("svg");
     if (!svg) throw new Error("Chart SVG not found");
-    await copySvgAsPng(svg as SVGSVGElement, "heatmap", tokens.background);
+    await copySvgAsPng(svg as SVGSVGElement, "heatmap", tokens.surfaces.bg);
   };
 
   const handleCellEnter = (cell: HeatmapCell, ev: React.MouseEvent) => {
@@ -165,6 +170,20 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
     selected === null || selected === key ? 1 : 0.3;
   const toggleSelection = (key: string) =>
     setSelected((prev) => (prev === key ? null : key));
+
+  const axisLabelStyle = {
+    fill: tokens.texts.secondary,
+    fontSize: tokens.typography.scale.label.fontSize,
+    fontFamily: tokens.typography.family.sans,
+  };
+
+  const tickLabelStyle = {
+    fill: tokens.texts.muted,
+    fontSize: tokens.typography.scale.tick.fontSize,
+    fontFamily: tokens.typography.family.mono,
+    letterSpacing: `${tokens.typography.scale.tick.letterSpacing}em`,
+    textTransform: "uppercase" as const,
+  };
 
   return (
     <div className="sigil-root" ref={containerRef}>
@@ -183,14 +202,11 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
             viewBox={`0 0 ${totalWidth} ${totalHeight}`}
             style={{ display: "block", maxWidth: "100%" }}
           >
-            {/* y-axis title */}
             {ylabel && (
               <text
                 x={0}
                 y={matrixTop + (cellHeight * yLabels.length) / 2}
-                fill={tokens.textSecondary}
-                fontSize={tokens.fontSize.label}
-                fontFamily={tokens.fontFamily}
+                {...axisLabelStyle}
                 textAnchor="middle"
                 transform={`rotate(-90 0 ${matrixTop + (cellHeight * yLabels.length) / 2})`}
               >
@@ -198,15 +214,12 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
               </text>
             )}
 
-            {/* y-axis labels */}
             {yLabels.map((label, y) => (
               <text
                 key={`yl-${y}`}
                 x={matrixLeft - 8}
                 y={matrixTop + cellHeight * y + cellHeight / 2}
-                fill={tokens.textSecondary}
-                fontSize={tokens.fontSize.label}
-                fontFamily={tokens.fontFamily}
+                {...tickLabelStyle}
                 textAnchor="end"
                 dominantBaseline="middle"
               >
@@ -214,7 +227,6 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
               </text>
             ))}
 
-            {/* x-axis labels */}
             {xLabels.map((label, x) => {
               const cx = matrixLeft + cellWidth * x + cellWidth / 2;
               const cy = matrixTop - 6;
@@ -223,9 +235,7 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
                   key={`xl-${x}`}
                   x={cx}
                   y={cy}
-                  fill={tokens.textSecondary}
-                  fontSize={tokens.fontSize.label}
-                  fontFamily={tokens.fontFamily}
+                  {...tickLabelStyle}
                   textAnchor={xLabelTilt ? "start" : "middle"}
                   transform={xLabelTilt ? `rotate(-30 ${cx} ${cy})` : undefined}
                 >
@@ -234,26 +244,31 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
               );
             })}
 
-            {/* cells */}
             {Array.from({ length: yLabels.length }).flatMap((_, y) =>
               Array.from({ length: xLabels.length }).map((_, x) => {
                 const cell = lookup.values.get(y * xLabels.length + x);
-                const fill = cell
-                  ? colorForValue(cell.value, lookup.min, lookup.max, tokens)
-                  : tokens.surfaceBackground;
                 const key = cellKey(x, y);
+                const alpha = cell
+                  ? intensityAlpha(cell.value, lookup.min, lookup.max)
+                  : 0;
+                const drawWidth = Math.max(0, cellWidth - CELL_GAP);
+                const drawHeight = Math.max(0, cellHeight - CELL_GAP);
                 return (
                   <rect
                     key={key}
-                    x={matrixLeft + cellWidth * x}
-                    y={matrixTop + cellHeight * y}
-                    width={cellWidth}
-                    height={cellHeight}
-                    fill={fill}
-                    fillOpacity={opacityFor(key)}
-                    stroke={tokens.background}
-                    strokeWidth={1}
-                    style={{ cursor: cell ? "pointer" : "default", transition: "fill-opacity 150ms ease" }}
+                    x={matrixLeft + cellWidth * x + CELL_GAP / 2}
+                    y={matrixTop + cellHeight * y + CELL_GAP / 2}
+                    width={drawWidth}
+                    height={drawHeight}
+                    rx={CELL_RADIUS}
+                    ry={CELL_RADIUS}
+                    fill={cell ? seriesHue : tokens.surfaces.surfaceSunken}
+                    fillOpacity={cell ? alpha * opacityFor(key) : 1}
+                    style={{
+                      cursor: cell ? "pointer" : "default",
+                      transition:
+                        "fill-opacity var(--sigil-duration-fast) var(--sigil-easing-standard)",
+                    }}
                     onMouseEnter={cell ? (e) => handleCellEnter(cell, e) : undefined}
                     onMouseMove={cell ? handleCellMove : undefined}
                     onMouseLeave={cell ? handleCellLeave : undefined}
@@ -263,14 +278,11 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
               }),
             )}
 
-            {/* x-axis title */}
             {xlabel && (
               <text
                 x={matrixLeft + (cellWidth * xLabels.length) / 2}
                 y={totalHeight - 4}
-                fill={tokens.textSecondary}
-                fontSize={tokens.fontSize.label}
-                fontFamily={tokens.fontFamily}
+                {...axisLabelStyle}
                 textAnchor="middle"
               >
                 {xlabel}
@@ -285,34 +297,46 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
               position: "fixed",
               top: tooltip.pageY + 12,
               left: tooltip.pageX + 12,
-              background: tokens.tooltipBackground,
-              border: `1px solid ${tokens.tooltipBorder}`,
-              borderRadius: tokens.borderRadius,
-              color: tokens.tooltipText,
-              fontSize: tokens.fontSize.tooltip,
-              fontFamily: tokens.fontFamily,
-              padding: "6px 10px",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+              background:
+                "color-mix(in oklab, var(--sigil-surface-elevated) 78%, transparent)",
+              backdropFilter: "blur(20px) saturate(140%)",
+              WebkitBackdropFilter: "blur(20px) saturate(140%)",
+              border: "1px solid var(--sigil-border-default)",
+              borderRadius: "var(--sigil-radius-md)",
+              color: "var(--sigil-text)",
+              fontFamily: "var(--sigil-font-tooltip-family)",
+              fontSize: "var(--sigil-font-tooltip-size)",
+              lineHeight: "var(--sigil-font-tooltip-line-height)",
+              padding: "10px 12px",
+              minWidth: 180,
+              boxShadow: "var(--sigil-shadow-mid)",
               pointerEvents: "none",
               zIndex: 10,
+              animation:
+                "sigil-tooltip-enter var(--sigil-duration-base) var(--sigil-easing-standard)",
             }}
           >
-            <div style={{ fontWeight: 600 }}>
+            <div
+              style={{
+                color: "var(--sigil-text-secondary)",
+                marginBottom: 4,
+              }}
+            >
               {yLabels[tooltip.cell.y]} · {xLabels[tooltip.cell.x]}
             </div>
-            <div>{NUMBER_FMT.format(tooltip.cell.value)}</div>
+            <div
+              style={{
+                fontFamily: "var(--sigil-font-value-sm-family)",
+                fontSize: "var(--sigil-font-value-sm-size)",
+                fontWeight: 500,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {NUMBER_FMT.format(tooltip.cell.value)}
+            </div>
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function EmptyState({ title }: { title: string }) {
-  return (
-    <div className="sigil-root sigil-empty">
-      <h2 className="sigil-title">{title}</h2>
-      <p>No data to display.</p>
     </div>
   );
 }

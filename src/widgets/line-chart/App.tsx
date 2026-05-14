@@ -39,4 +39,5 @@ mountWidget({
   name: "sigil-line-chart",
   isPayload: isLineChartPayload,
   View: LineChartView,
+  loadingVariant: "line",
 });

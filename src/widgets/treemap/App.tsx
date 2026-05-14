@@ -29,4 +29,5 @@ mountWidget({
   name: "sigil-treemap",
   isPayload: isTreemapPayload,
   View: TreemapView,
+  loadingVariant: "treemap",
 });

@@ -2,12 +2,16 @@ import { useState, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import { useApp } from "@modelcontextprotocol/ext-apps/react";
 import { installThemeStyles } from "./theme.js";
+import { LoadingSkeleton, type LoadingVariant } from "./LoadingSkeleton.js";
+import { EmptyState } from "./EmptyState.js";
 import "./styles.css";
 
 export interface MountWidgetOptions<P> {
   name: string;
   isPayload: (value: unknown) => value is P;
   View: ComponentType<{ payload: P }>;
+  /** Hint for loading skeleton shape; defaults to "generic". */
+  loadingVariant?: LoadingVariant;
 }
 
 function extractPayload<P>(
@@ -31,19 +35,15 @@ function extractPayload<P>(
   return null;
 }
 
-function Status({ message }: { message: string }) {
-  return (
-    <div className="sigil-root sigil-empty">
-      <p>{message}</p>
-    </div>
-  );
+function ShellFrame({ children }: { children: React.ReactNode }) {
+  return <div className="sigil-root">{children}</div>;
 }
 
 export function mountWidget<P>(opts: MountWidgetOptions<P>): void {
   if (typeof document === "undefined") return;
   installThemeStyles();
 
-  const { name, isPayload, View } = opts;
+  const { name, isPayload, View, loadingVariant = "generic" } = opts;
 
   function App() {
     const [payload, setPayload] = useState<P | null>(null);
@@ -69,10 +69,35 @@ export function mountWidget<P>(opts: MountWidgetOptions<P>): void {
       },
     });
 
-    if (error) return <Status message={`Connection error: ${error.message}`} />;
-    if (parseError) return <Status message={parseError} />;
-    if (!isConnected) return <Status message="Connecting…" />;
-    if (!payload) return <Status message="Waiting for data…" />;
+    if (error) {
+      return (
+        <ShellFrame>
+          <EmptyState
+            variant="error"
+            title="Connection error"
+            description={error.message}
+          />
+        </ShellFrame>
+      );
+    }
+    if (parseError) {
+      return (
+        <ShellFrame>
+          <EmptyState
+            variant="error"
+            title="Could not load data"
+            description={parseError}
+          />
+        </ShellFrame>
+      );
+    }
+    if (!isConnected || !payload) {
+      return (
+        <ShellFrame>
+          <LoadingSkeleton variant={loadingVariant} />
+        </ShellFrame>
+      );
+    }
     return <View payload={payload} />;
   }
 
