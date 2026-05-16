@@ -13,10 +13,11 @@ import {
 import type { BarChartPayload } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { SigilTooltip } from "../shared/SigilTooltip.js";
+import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 
 const DIMMED_OPACITY = 0.28;
-const CELL_TRANSITION = "fill-opacity 150ms ease";
 const ROTATE_AFTER_ITEMS = 6;
 const ROTATE_AFTER_LABEL_LEN = 8;
 const HORIZONTAL_LABEL_MAX = 16;
@@ -31,7 +32,7 @@ function colorFor(
   index: number,
   tokens: ChartDesignTokens,
 ): string {
-  return datum.color ?? tokens.seriesColors[index % tokens.seriesColors.length]!;
+  return datum.color ?? tokens.series[index % tokens.series.length]!;
 }
 
 export function BarChartView({ payload }: { payload: BarChartPayload }) {
@@ -42,7 +43,14 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
   const isHorizontal = orientation === "horizontal";
 
   if (data.length === 0) {
-    return <EmptyState title={title} />;
+    return (
+      <div className="sigil-root">
+        <div className="sigil-header">
+          <h2 className="sigil-title">{title}</h2>
+        </div>
+        <EmptyState title="No data to display" description="The payload was empty." />
+      </div>
+    );
   }
 
   const copyCsv = () =>
@@ -56,7 +64,7 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
   const copyPng = async () => {
     const svg = canvasRef.current?.querySelector("svg");
     if (!svg) throw new Error("Chart SVG not found");
-    await copySvgAsPng(svg as SVGSVGElement, "bar-chart", tokens.background);
+    await copySvgAsPng(svg as SVGSVGElement, "bar-chart", tokens.surfaces.bg);
   };
 
   const toggleSelection = (label: string) =>
@@ -81,19 +89,21 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
     };
   }, [data, isHorizontal]);
 
-  const axisStyle = { fontSize: tokens.fontSize.label, fill: tokens.textSecondary };
-  const labelStyle = { fill: tokens.textSecondary, fontSize: tokens.fontSize.label };
-  const tooltipStyle = {
-    background: tokens.tooltipBackground,
-    border: `1px solid ${tokens.tooltipBorder}`,
-    borderRadius: tokens.borderRadius,
-    color: tokens.tooltipText,
-    fontSize: tokens.fontSize.tooltip,
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+  const tickStyle = {
+    fontFamily: tokens.typography.family.mono,
+    fontSize: tokens.typography.scale.tick.fontSize,
+    letterSpacing: `${tokens.typography.scale.tick.letterSpacing}em`,
+    textTransform: "uppercase" as const,
+    fill: tokens.texts.muted,
   };
-  const tooltipLabelStyle = { color: tokens.tooltipText, fontWeight: 600 };
-  const tooltipItemStyle = { color: tokens.tooltipText };
-  const cursorFill = hexWithAlpha(tokens.seriesColors[0]!, 0.08);
+
+  const axisLabelStyle = {
+    fill: tokens.texts.secondary,
+    fontSize: tokens.typography.scale.label.fontSize,
+    fontFamily: tokens.typography.family.sans,
+  };
+
+  const cursorFill = "color-mix(in oklab, var(--sigil-series-0) 8%, transparent)";
 
   return (
     <div className="sigil-root">
@@ -111,16 +121,16 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
             layout={isHorizontal ? "vertical" : "horizontal"}
             margin={{ top: 8, right: 16, bottom: 24, left: 16 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke={tokens.gridLine} />
+            <CartesianGrid strokeDasharray="3 3" stroke={tokens.chartLines.grid} />
             {isHorizontal ? (
               <>
                 <XAxis
                   type="number"
-                  tick={axisStyle}
-                  stroke={tokens.axisLine}
+                  tick={tickStyle}
+                  stroke={tokens.chartLines.axis}
                   label={
                     xlabel
-                      ? { value: xlabel, position: "insideBottom", offset: -8, style: labelStyle }
+                      ? { value: xlabel, position: "insideBottom", offset: -8, style: axisLabelStyle }
                       : undefined
                   }
                 />
@@ -128,13 +138,13 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   type="category"
                   dataKey="label"
                   width={horizontalYAxisWidth}
-                  tick={axisStyle}
-                  stroke={tokens.axisLine}
+                  tick={tickStyle}
+                  stroke={tokens.chartLines.axis}
                   tickFormatter={(v: string) => truncateLabel(v, HORIZONTAL_LABEL_MAX)}
                   interval={0}
                   label={
                     ylabel
-                      ? { value: ylabel, angle: -90, position: "insideLeft", style: labelStyle }
+                      ? { value: ylabel, angle: -90, position: "insideLeft", style: axisLabelStyle }
                       : undefined
                   }
                 />
@@ -144,25 +154,25 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                 <XAxis
                   type="category"
                   dataKey="label"
-                  tick={axisStyle}
-                  stroke={tokens.axisLine}
+                  tick={tickStyle}
+                  stroke={tokens.chartLines.axis}
                   interval={0}
                   height={needsRotation ? 64 : 30}
                   angle={needsRotation ? -30 : 0}
                   textAnchor={needsRotation ? "end" : "middle"}
                   label={
                     xlabel
-                      ? { value: xlabel, position: "insideBottom", offset: -8, style: labelStyle }
+                      ? { value: xlabel, position: "insideBottom", offset: -8, style: axisLabelStyle }
                       : undefined
                   }
                 />
                 <YAxis
                   type="number"
-                  tick={axisStyle}
-                  stroke={tokens.axisLine}
+                  tick={tickStyle}
+                  stroke={tokens.chartLines.axis}
                   label={
                     ylabel
-                      ? { value: ylabel, angle: -90, position: "insideLeft", style: labelStyle }
+                      ? { value: ylabel, angle: -90, position: "insideLeft", style: axisLabelStyle }
                       : undefined
                   }
                 />
@@ -171,15 +181,27 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
             {hasMixedSign && (
               <ReferenceLine
                 {...(isHorizontal ? { x: 0 } : { y: 0 })}
-                stroke={tokens.axisLine}
+                stroke={tokens.chartLines.axis}
                 strokeWidth={1.5}
               />
             )}
             <Tooltip
               cursor={{ fill: cursorFill }}
-              contentStyle={tooltipStyle}
-              labelStyle={tooltipLabelStyle}
-              itemStyle={tooltipItemStyle}
+              content={(props) => (
+                <SigilTooltip
+                  active={props.active}
+                  label={props.label as string | number | undefined}
+                  payload={
+                    props.payload?.map((p) => ({
+                      color: typeof p.color === "string" ? p.color : undefined,
+                      name: typeof p.name === "string" ? p.name : undefined,
+                      dataKey: p.dataKey as string | number | undefined,
+                      value: p.value as number | string | undefined,
+                    }))
+                  }
+                  hideLabel={false}
+                />
+              )}
             />
             <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive={false}>
               {data.map((datum, i) => (
@@ -188,7 +210,10 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   fill={colorFor(datum, i, tokens)}
                   fillOpacity={opacityFor(datum.label)}
                   onClick={() => toggleSelection(datum.label)}
-                  style={{ cursor: "pointer", transition: CELL_TRANSITION }}
+                  style={{
+                    cursor: "pointer",
+                    transition: `fill-opacity var(--sigil-duration-fast) var(--sigil-easing-standard)`,
+                  }}
                 />
               ))}
             </Bar>
@@ -199,20 +224,3 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
   );
 }
 
-function EmptyState({ title }: { title: string }) {
-  return (
-    <div className="sigil-root sigil-empty">
-      <h2 className="sigil-title">{title}</h2>
-      <p>No data to display.</p>
-    </div>
-  );
-}
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const cleaned = hex.replace("#", "");
-  if (cleaned.length !== 6) return hex;
-  const r = parseInt(cleaned.slice(0, 2), 16);
-  const g = parseInt(cleaned.slice(2, 4), 16);
-  const b = parseInt(cleaned.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}

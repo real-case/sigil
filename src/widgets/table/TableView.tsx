@@ -5,8 +5,8 @@ import type {
   TablePayload,
   TableRow,
 } from "../../shared/payloads.js";
-import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, type CsvCell } from "../shared/export-utils.js";
 
 type SortState = { key: string; direction: "asc" | "desc" } | null;
@@ -22,10 +22,7 @@ function detectNumericColumn(rows: TableRow[], key: string): boolean {
   return seenValue;
 }
 
-function alignFor(
-  col: TableColumn,
-  isNumeric: boolean,
-): ColumnAlign {
+function alignFor(col: TableColumn, isNumeric: boolean): ColumnAlign {
   return col.align ?? (isNumeric ? "right" : "left");
 }
 
@@ -42,12 +39,11 @@ function compareValues(a: unknown, b: unknown, direction: "asc" | "desc"): numbe
 
 function matchesFilter(row: TableRow, terms: string[]): boolean {
   if (terms.length === 0) return true;
-  const haystack = Object.values(row).map((v) => String(v).toLowerCase()).join("\u0001");
+  const haystack = Object.values(row).map((v) => String(v).toLowerCase()).join("");
   return terms.every((t) => haystack.includes(t));
 }
 
 export function TableView({ payload }: { payload: TablePayload }) {
-  const tokens = useTheme();
   const [sort, setSort] = useState<SortState>(null);
   const [filter, setFilter] = useState<string>("");
 
@@ -116,9 +112,14 @@ export function TableView({ payload }: { payload: TablePayload }) {
       </div>
       <div className="sigil-table-scroll">
         {sorted.length === 0 ? (
-          <p className="sigil-table-empty">
-            {rows.length === 0 ? "No data to display." : "No rows match the filter."}
-          </p>
+          <EmptyState
+            title={rows.length === 0 ? "No data to display" : "No matching rows"}
+            description={
+              rows.length === 0
+                ? "The payload was empty."
+                : "Try adjusting your filter terms."
+            }
+          />
         ) : (
           <table className="sigil-table">
             <thead>
@@ -158,9 +159,19 @@ export function TableView({ payload }: { payload: TablePayload }) {
                 <tr key={ri}>
                   {columns.map((col) => {
                     const align = alignFor(col, numericByKey[col.key] ?? false);
+                    const isNumeric = numericByKey[col.key] ?? false;
                     const v = row[col.key];
                     return (
-                      <td key={col.key} style={{ textAlign: align }}>
+                      <td
+                        key={col.key}
+                        style={{
+                          textAlign: align,
+                          fontFamily: isNumeric
+                            ? "var(--sigil-font-mono)"
+                            : "inherit",
+                          fontVariantNumeric: isNumeric ? "tabular-nums" : "normal",
+                        }}
+                      >
                         {v === undefined || v === null ? "" : String(v)}
                       </td>
                     );
@@ -171,42 +182,72 @@ export function TableView({ payload }: { payload: TablePayload }) {
           </table>
         )}
       </div>
-      <TableStyles tokens={tokens} />
+      <TableStyles />
     </div>
   );
 }
 
-function TableStyles({ tokens }: { tokens: ChartDesignTokens }) {
+function TableStyles() {
   const css = `
-.sigil-table-root { padding: 16px; }
-.sigil-table-controls { display: flex; gap: 8px; align-items: center; }
+.sigil-table-root { padding: var(--sigil-space-lg); }
+.sigil-table-controls { display: flex; gap: var(--sigil-space-sm); align-items: center; }
 .sigil-table-filter {
-  background: ${tokens.surfaceBackground};
-  color: ${tokens.textPrimary};
-  border: 1px solid ${tokens.axisLine};
-  border-radius: ${tokens.borderRadius}px;
+  background: var(--sigil-surface);
+  color: var(--sigil-text);
+  border: 1px solid var(--sigil-border-default);
+  border-radius: var(--sigil-radius-md);
   padding: 6px 10px;
-  font-size: ${tokens.fontSize.label}px;
-  font-family: inherit;
+  font-family: var(--sigil-font-sans);
+  font-size: var(--sigil-font-label-size);
   outline: none;
   min-width: 160px;
+  transition: border-color var(--sigil-duration-fast) var(--sigil-easing-standard);
 }
-.sigil-table-filter:focus { border-color: ${tokens.seriesColors[0]}; }
-.sigil-table-scroll { flex: 1 1 auto; overflow: auto; border: 1px solid ${tokens.axisLine}; border-radius: ${tokens.borderRadius}px; background: ${tokens.surfaceBackground}; }
-.sigil-table { width: 100%; border-collapse: collapse; font-size: ${tokens.fontSize.label}px; color: ${tokens.textPrimary}; }
+.sigil-table-filter:hover { border-color: var(--sigil-border-strong); }
+.sigil-table-filter:focus-visible {
+  border-color: var(--sigil-series-0);
+  outline: var(--sigil-focus-ring-width) solid var(--sigil-focus-ring);
+  outline-offset: var(--sigil-focus-ring-offset);
+}
+.sigil-table-scroll {
+  flex: 1 1 auto;
+  overflow: auto;
+  border: 1px solid var(--sigil-border-subtle);
+  border-radius: var(--sigil-radius-lg);
+  background: var(--sigil-surface);
+  box-shadow: var(--sigil-shadow-low);
+}
+.sigil-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sigil-font-sans);
+  font-size: 12px;
+  color: var(--sigil-text);
+}
 .sigil-table thead th {
-  position: sticky; top: 0;
-  background: ${tokens.surfaceBackground};
-  border-bottom: 1px solid ${tokens.axisLine};
-  color: ${tokens.textSecondary};
-  font-weight: 600;
-  padding: 8px 12px;
+  position: sticky;
+  top: 0;
+  background: var(--sigil-surface);
+  border-bottom: 1px solid var(--sigil-border-subtle);
+  color: var(--sigil-text-muted);
+  font-family: var(--sigil-font-tick-family);
+  font-size: var(--sigil-font-tick-size);
+  font-weight: var(--sigil-font-tick-weight);
+  letter-spacing: var(--sigil-font-tick-letter-spacing);
+  text-transform: var(--sigil-font-tick-transform);
+  padding: 7px 10px;
   user-select: none;
 }
-.sigil-table tbody td { padding: 8px 12px; border-bottom: 1px solid ${tokens.gridLine}; }
+.sigil-table thead th:hover { color: var(--sigil-text-secondary); }
+.sigil-table tbody td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--sigil-border-subtle);
+}
 .sigil-table tbody tr:last-child td { border-bottom: none; }
-.sigil-table tbody tr:hover td { background: ${tokens.gridLine}; }
-.sigil-table-empty { color: ${tokens.textMuted}; padding: 24px; text-align: center; }
+.sigil-table tbody tr {
+  transition: background var(--sigil-duration-fast) var(--sigil-easing-standard);
+}
+.sigil-table tbody tr:hover td { background: var(--sigil-surface-sunken); }
 `;
   return <style>{css}</style>;
 }

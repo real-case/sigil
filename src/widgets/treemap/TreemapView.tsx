@@ -3,11 +3,15 @@ import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
 import type { TreemapPayload, TreemapNode } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { SigilTooltip } from "../shared/SigilTooltip.js";
+import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
-const MIN_LABEL_WIDTH = 64;
-const MIN_LABEL_HEIGHT = 24;
-const DIMMED_OPACITY = 0.25;
+const MIN_NAME_WIDTH = 40;
+const MIN_NAME_HEIGHT = 20;
+const MIN_VALUE_WIDTH = 60;
+const MIN_VALUE_HEIGHT = 30;
+const DIMMED_OPACITY = 0.3;
 
 interface RechartsTreemapNode {
   name: string;
@@ -25,7 +29,7 @@ function toRechartsTree(
     const paletteIndex = inheritedIndex ?? i;
     const fill =
       node.color ??
-      tokens.seriesColors[paletteIndex % tokens.seriesColors.length]!;
+      tokens.series[paletteIndex % tokens.series.length]!;
     const out: RechartsTreemapNode = {
       name: node.label,
       value: node.value,
@@ -38,7 +42,10 @@ function toRechartsTree(
   });
 }
 
-function flattenLeaves(nodes: TreemapNode[], path: string[] = []): Array<{ path: string; value: number }> {
+function flattenLeaves(
+  nodes: TreemapNode[],
+  path: string[] = [],
+): Array<{ path: string; value: number }> {
   const out: Array<{ path: string; value: number }> = [];
   for (const node of nodes) {
     const here = [...path, node.label];
@@ -57,6 +64,7 @@ interface NodeContentProps {
   width?: number;
   height?: number;
   name?: string;
+  value?: number;
   fill?: string;
   depth?: number;
   selectedName: string | null;
@@ -70,6 +78,7 @@ function NodeContent({
   width = 0,
   height = 0,
   name = "",
+  value,
   fill,
   depth = 0,
   selectedName,
@@ -78,33 +87,61 @@ function NodeContent({
 }: NodeContentProps) {
   if (width <= 0 || height <= 0) return null;
   const isLeaf = depth >= 1;
-  const showLabel = isLeaf && width >= MIN_LABEL_WIDTH && height >= MIN_LABEL_HEIGHT;
+  const showName = isLeaf && width >= MIN_NAME_WIDTH && height >= MIN_NAME_HEIGHT;
+  const showValue = isLeaf && width >= MIN_VALUE_WIDTH && height >= MIN_VALUE_HEIGHT;
   const opacity =
     selectedName === null || selectedName === name ? 1 : DIMMED_OPACITY;
+
   return (
     <g
-      style={{ cursor: isLeaf ? "pointer" : "default", transition: "opacity 150ms ease" }}
+      style={{
+        cursor: isLeaf ? "pointer" : "default",
+        transition:
+          "opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
+      }}
       opacity={opacity}
       onClick={() => isLeaf && onToggle(name)}
     >
       <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        fill={isLeaf ? (fill ?? tokens.seriesColors[0]!) : "transparent"}
-        stroke={tokens.background}
-        strokeWidth={depth === 0 ? 2 : 1}
+        x={x + (isLeaf ? 1.5 : 0)}
+        y={y + (isLeaf ? 1.5 : 0)}
+        width={Math.max(0, width - (isLeaf ? 3 : 0))}
+        height={Math.max(0, height - (isLeaf ? 3 : 0))}
+        rx={isLeaf ? tokens.radius.sm : 0}
+        ry={isLeaf ? tokens.radius.sm : 0}
+        fill={isLeaf ? fill ?? tokens.series[0]! : "transparent"}
+        stroke={isLeaf ? "transparent" : tokens.surfaces.bg}
+        strokeWidth={depth === 0 ? 2 : 0}
       />
-      {showLabel && (
+      {showName && (
         <text
           x={x + 8}
           y={y + 16}
-          fill={tokens.tooltipText}
-          fontSize={tokens.fontSize.label}
-          fontFamily={tokens.fontFamily}
+          fill="rgba(255,255,255,0.95)"
+          style={{
+            fontFamily: tokens.typography.family.sans,
+            fontSize: tokens.typography.scale.label.fontSize,
+            fontWeight: 500,
+            textShadow: "0 1px 1px rgba(0,0,0,0.18)",
+            paintOrder: "stroke",
+          }}
         >
           {name}
+        </text>
+      )}
+      {showValue && value !== undefined && (
+        <text
+          x={x + 8}
+          y={y + 32}
+          fill="rgba(255,255,255,0.8)"
+          style={{
+            fontFamily: tokens.typography.family.mono,
+            fontSize: tokens.typography.scale.tick.fontSize,
+            fontVariantNumeric: "tabular-nums",
+            textShadow: "0 1px 1px rgba(0,0,0,0.18)",
+          }}
+        >
+          {value}
         </text>
       )}
     </g>
@@ -118,7 +155,14 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
   const { title, data } = payload;
 
   if (data.length === 0) {
-    return <EmptyState title={title} />;
+    return (
+      <div className="sigil-root">
+        <div className="sigil-header">
+          <h2 className="sigil-title">{title}</h2>
+        </div>
+        <EmptyState title="No data to display" description="The payload was empty." />
+      </div>
+    );
   }
 
   const tree = useMemo(() => toRechartsTree(data, tokens), [data, tokens]);
@@ -132,22 +176,11 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
   const copyPng = async () => {
     const svg = canvasRef.current?.querySelector("svg");
     if (!svg) throw new Error("Chart SVG not found");
-    await copySvgAsPng(svg as SVGSVGElement, "treemap", tokens.background);
+    await copySvgAsPng(svg as SVGSVGElement, "treemap", tokens.surfaces.bg);
   };
 
   const toggleSelection = (name: string) =>
     setSelectedName((prev) => (prev === name ? null : name));
-
-  const tooltipStyle = {
-    background: tokens.tooltipBackground,
-    border: `1px solid ${tokens.tooltipBorder}`,
-    borderRadius: tokens.borderRadius,
-    color: tokens.tooltipText,
-    fontSize: tokens.fontSize.tooltip,
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-  };
-  const tooltipLabelStyle = { color: tokens.tooltipText, fontWeight: 600 };
-  const tooltipItemStyle = { color: tokens.tooltipText };
 
   return (
     <div className="sigil-root">
@@ -164,7 +197,7 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
             data={tree}
             dataKey="value"
             nameKey="name"
-            stroke={tokens.background}
+            stroke={tokens.surfaces.bg}
             isAnimationActive={false}
             content={
               <NodeContent
@@ -175,22 +208,24 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
             }
           >
             <Tooltip
-              contentStyle={tooltipStyle}
-              labelStyle={tooltipLabelStyle}
-              itemStyle={tooltipItemStyle}
+              content={(props) => (
+                <SigilTooltip
+                  active={props.active}
+                  hideLabel
+                  payload={
+                    props.payload?.map((p) => ({
+                      color: typeof p.color === "string" ? p.color : undefined,
+                      name: typeof p.name === "string" ? p.name : undefined,
+                      dataKey: p.dataKey as string | number | undefined,
+                      value: p.value as number | string | undefined,
+                    }))
+                  }
+                />
+              )}
             />
           </Treemap>
         </ResponsiveContainer>
       </div>
-    </div>
-  );
-}
-
-function EmptyState({ title }: { title: string }) {
-  return (
-    <div className="sigil-root sigil-empty">
-      <h2 className="sigil-title">{title}</h2>
-      <p>No data to display.</p>
     </div>
   );
 }

@@ -233,43 +233,61 @@ structured data. Supports column sorting and text search.
 
 ## 6. Design
 
+> **Canonical sources (v0.3.0+):**
+> - [`specs/design-system-tokens.json`](./specs/design-system-tokens.json) — the W3C-style token bundle (handoff from Claude Design).
+> - [`src/widgets/shared/theme.ts`](./src/widgets/shared/theme.ts) — TypeScript implementation: types, light/dark objects, CSS-variable emission.
+> - [`specs/design-system-brief.md`](./specs/design-system-brief.md) — the ingestion brief that drove the token surface (references, constraints, premium tells).
+> - [`specs/design-system-followups.md`](./specs/design-system-followups.md) — deferred feature work that the token spec anticipates but doesn't enforce yet.
+>
+> The summary below is descriptive — when in doubt, read the canonical sources.
+
 ### 6.1 Approach
-Collect chart-design screenshots from reference products (Vercel Analytics, Linear, PostHog, Stripe Dashboard), feed them to Claude, and generate a design token set.
 
-### 6.2 Design Token Set (structure)
+The current design language draws from Apple charts (iOS Health, Stocks), Google / Material 3 (color accessibility), and top Dribbble chart compositions (bento layouts, layered tints). The full reference set and reasoning live in the brief. Earlier drafts of this spec referenced Linear / Vercel / Stripe; that direction was superseded when chat-window distribution became the primary constraint.
 
-```typescript
-interface ChartDesignTokens {
-  // Series palette (10 colors; charts wrap around with `i % length`)
-  seriesColors: string[];
+### 6.2 Token surface (v0.3.0)
 
-  // Backgrounds
-  background: string;
-  surfaceBackground: string; // tooltip, legend
+The TypeScript shape is [`ChartDesignTokens`](./src/widgets/shared/theme.ts) — too large to inline here. Categories:
 
-  // Text
-  textPrimary: string;
-  textSecondary: string;  // axis labels, legend
-  textMuted: string;      // grid labels
+| Category | What it covers |
+|---|---|
+| Series (10) | OKLCH, independently tuned per theme (light ≈ L 58 %, dark ≈ L 72 %; chroma ≤ 0.20) |
+| Surfaces (4) | `bg`, `surface`, `surfaceElevated`, `surfaceSunken` |
+| Borders (3) | `subtle`, `default`, `strong` |
+| Text (3) | `primary`, `secondary`, `muted` |
+| Chart lines | `grid`, `axis` |
+| Tooltip | `background`, `border`, `text` |
+| Semantic (4 × 3) | `success` / `warning` / `danger` / `info`, each `surface` / `border` / `text` |
+| Focus ring | derived from `series-0` with alpha 0.45 / 0.55 |
+| Spacing | 4 px grid: `0`, `xs`, `sm`, `md`, `lg`, `xl`, `2xl` |
+| Radius | `sm` (4), `md` (8), `lg` (12), `full` (999) |
+| Elevation | `low` / `mid` / `high`, two-layer shadows, dark variants |
+| Motion | duration `fast/base/slow` (120 / 200 / 320 ms); easing `standard/emphasized/linear` |
+| Typography | `sans` / `mono` (IBM Plex), feature-settings `ss01 cv11`; scale steps `title`, `label`, `tick`, `value`, `value-sm`, `value-inline`, `tooltip` |
 
-  // Grid & Axes
-  gridLine: string;
-  axisLine: string;
+**Legacy flat fields** (`seriesColors`, `background`, `tooltipBackground`, etc.) are preserved on `ChartDesignTokens` for backward compatibility and continue to be emitted as `--sigil-*` CSS variables.
 
-  // Tooltip
-  tooltipBackground: string;
-  tooltipBorder: string;
-  tooltipText: string;
+### 6.3 Light / dark theming
 
-  // Shared
-  borderRadius: number;
-  fontFamily: string;
-  fontSize: { label: number; title: number; tooltip: number };
-}
-```
+Driven by the `prefers-color-scheme` media query. [`installThemeStyles()`](./src/widgets/shared/theme.ts) injects a `<style>` element with `:root { … }` plus a `@media (prefers-color-scheme: dark) { :root { … } }` override. Both blocks emit the same set of `--sigil-*` variable names; only the values differ. The series palette is *not* shared across themes — one of the deliberate v0.3.0 changes for perceptual contrast.
 
-### 6.3 Dark / Light Theme
-Driven by the `prefers-color-scheme` media query. Both token sets live in `shared/theme.ts` and are applied via CSS variables.
+### 6.4 Cross-widget primitives
+
+Lives in [`src/widgets/shared/`](./src/widgets/shared/):
+
+| Primitive | Role |
+|---|---|
+| [`Card`](./src/widgets/shared/Card.tsx) | Token-consuming container: bg, border, radius, padding, elevation. Used opt-in by widgets. |
+| [`SigilTooltip`](./src/widgets/shared/SigilTooltip.tsx) | Recharts `content`-compatible tooltip with frosted-glass + `mid` elevation. |
+| `Legend` *(deferred)* | See [followups §5](./specs/design-system-followups.md). Widgets currently use Recharts `<Legend>` with `wrapperStyle`. |
+| [`EmptyState`](./src/widgets/shared/EmptyState.tsx) | Glyph + headline + sub; `empty` and `error` variants. |
+| [`LoadingSkeleton`](./src/widgets/shared/LoadingSkeleton.tsx) | Shimmer rectangles, per-widget layouts (`bar`, `pie`, `table`, …). |
+| [`SeriesSwatch`](./src/widgets/shared/SeriesSwatch.tsx) | Colored swatch dot or square. |
+| [`ValueText`](./src/widgets/shared/ValueText.tsx) | Typography primitive with `tabular-nums` always on. |
+
+### 6.5 Distribution constraint (reminder)
+
+Each widget bundles to a **single-file HTML** via `vite-plugin-singlefile`. There is no shared runtime CSS, no npm runtime dependency for widgets. Tokens travel as an inlined `<style>` injected at boot. New design-system contributions must respect this — no Tailwind, no CSS-in-JS runtime, no portals to host DOM.
 
 ---
 

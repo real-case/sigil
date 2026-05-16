@@ -27,4 +27,5 @@ mountWidget({
   name: "sigil-bar-chart",
   isPayload: isBarChartPayload,
   View: BarChartView,
+  loadingVariant: "bar",
 });

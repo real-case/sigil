@@ -36,4 +36,5 @@ mountWidget({
   name: "sigil-heatmap",
   isPayload: isHeatmapPayload,
   View: HeatmapView,
+  loadingVariant: "heatmap",
 });

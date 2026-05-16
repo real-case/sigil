@@ -40,4 +40,5 @@ mountWidget({
   name: "sigil-scatter-chart",
   isPayload: isScatterChartPayload,
   View: ScatterChartView,
+  loadingVariant: "scatter",
 });

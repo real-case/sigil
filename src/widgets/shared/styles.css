@@ -13,14 +13,17 @@ body,
   padding: 0;
   background: var(--sigil-bg);
   color: var(--sigil-text);
-  font-family: var(--sigil-font-family);
+  font-family: var(--sigil-font-sans);
+  font-feature-settings: var(--sigil-font-feature-settings);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .sigil-root {
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 16px;
+  padding: var(--sigil-space-lg);
   box-sizing: border-box;
 }
 
@@ -28,15 +31,18 @@ body,
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: var(--sigil-space-md);
+  margin-bottom: var(--sigil-space-md);
   flex-wrap: wrap;
 }
 
 .sigil-title {
-  margin: 0 0 12px 0;
-  font-size: var(--sigil-font-title);
+  margin: 0 0 var(--sigil-space-md) 0;
+  font-family: var(--sigil-font-title-family);
+  font-size: var(--sigil-font-title-size);
+  line-height: var(--sigil-font-title-line-height);
   font-weight: 600;
+  letter-spacing: var(--sigil-font-title-letter-spacing);
   color: var(--sigil-text);
 }
 
@@ -46,26 +52,34 @@ body,
 
 .sigil-toolbar {
   display: flex;
-  gap: 6px;
+  gap: var(--sigil-space-xs);
   align-items: center;
+  padding: 3px;
+  border-radius: var(--sigil-radius-md);
 }
 
 .sigil-toolbar-btn {
   background: transparent;
   color: var(--sigil-text-secondary);
-  border: 1px solid var(--sigil-axis);
-  border-radius: var(--sigil-radius);
-  padding: 4px 10px;
-  font-size: var(--sigil-font-label);
-  font-family: inherit;
+  border: 1px solid var(--sigil-border-default);
+  border-radius: var(--sigil-radius-sm);
+  padding: 5px 9px;
+  font-family: var(--sigil-font-tick-family);
+  font-size: var(--sigil-font-tick-size);
+  letter-spacing: var(--sigil-font-tick-letter-spacing);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition: all var(--sigil-duration-fast) var(--sigil-easing-standard);
 }
 
 .sigil-toolbar-btn:hover:not(:disabled) {
-  background: var(--sigil-surface);
+  background: var(--sigil-surface-sunken);
   color: var(--sigil-text);
-  border-color: var(--sigil-text-secondary);
+  border-color: var(--sigil-border-strong);
+}
+
+.sigil-toolbar-btn:focus-visible {
+  outline: var(--sigil-focus-ring-width) solid var(--sigil-focus-ring);
+  outline-offset: var(--sigil-focus-ring-offset);
 }
 
 .sigil-toolbar-btn:disabled {
@@ -74,8 +88,9 @@ body,
 }
 
 .sigil-toolbar-btn.is-error {
-  color: #EF4444;
-  border-color: #EF4444;
+  color: var(--sigil-danger-text);
+  border-color: var(--sigil-danger-border);
+  background: var(--sigil-danger-surface);
 }
 
 .sigil-canvas {
@@ -95,7 +110,39 @@ body,
   outline: none;
 }
 
+.recharts-wrapper :focus-visible {
+  outline: var(--sigil-focus-ring-width) solid var(--sigil-focus-ring);
+  outline-offset: var(--sigil-focus-ring-offset);
+}
+
 .sigil-empty p {
   margin: 0;
-  font-size: var(--sigil-font-label);
+  font-size: var(--sigil-font-label-size);
+  line-height: var(--sigil-font-label-line-height);
+}
+
+/* Shared keyframes used by primitives. */
+@keyframes sigil-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes sigil-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

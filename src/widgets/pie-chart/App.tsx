@@ -27,4 +27,5 @@ mountWidget({
   name: "sigil-pie-chart",
   isPayload: isPieChartPayload,
   View: PieChartView,
+  loadingVariant: "pie",
 });
