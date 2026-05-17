@@ -119,7 +119,12 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
           <BarChart
             data={data}
             layout={isHorizontal ? "vertical" : "horizontal"}
-            margin={{ top: 8, right: 16, bottom: 24, left: 16 }}
+            margin={{
+              top: 16,
+              right: 16,
+              bottom: xlabel ? 32 : 8,
+              left: ylabel && !isHorizontal ? 24 : 8,
+            }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke={tokens.chartLines.grid} />
             {isHorizontal ? (
@@ -128,23 +133,36 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   type="number"
                   tick={tickStyle}
                   stroke={tokens.chartLines.axis}
+                  height={xlabel ? 48 : 30}
                   label={
                     xlabel
-                      ? { value: xlabel, position: "insideBottom", offset: -8, style: axisLabelStyle }
+                      ? {
+                          value: xlabel,
+                          position: "insideBottom",
+                          offset: 0,
+                          textAnchor: "middle",
+                          style: axisLabelStyle,
+                        }
                       : undefined
                   }
                 />
                 <YAxis
                   type="category"
                   dataKey="label"
-                  width={horizontalYAxisWidth}
+                  width={horizontalYAxisWidth + (ylabel ? 20 : 0)}
                   tick={tickStyle}
                   stroke={tokens.chartLines.axis}
                   tickFormatter={(v: string) => truncateLabel(v, HORIZONTAL_LABEL_MAX)}
                   interval={0}
                   label={
                     ylabel
-                      ? { value: ylabel, angle: -90, position: "insideLeft", style: axisLabelStyle }
+                      ? {
+                          value: ylabel,
+                          angle: -90,
+                          position: "insideLeft",
+                          textAnchor: "middle",
+                          style: axisLabelStyle,
+                        }
                       : undefined
                   }
                 />
@@ -157,12 +175,18 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   tick={tickStyle}
                   stroke={tokens.chartLines.axis}
                   interval={0}
-                  height={needsRotation ? 64 : 30}
+                  height={needsRotation ? (xlabel ? 80 : 64) : xlabel ? 48 : 30}
                   angle={needsRotation ? -30 : 0}
                   textAnchor={needsRotation ? "end" : "middle"}
                   label={
                     xlabel
-                      ? { value: xlabel, position: "insideBottom", offset: -8, style: axisLabelStyle }
+                      ? {
+                          value: xlabel,
+                          position: "insideBottom",
+                          offset: 0,
+                          textAnchor: "middle",
+                          style: axisLabelStyle,
+                        }
                       : undefined
                   }
                 />
@@ -170,9 +194,16 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   type="number"
                   tick={tickStyle}
                   stroke={tokens.chartLines.axis}
+                  width={ylabel ? 64 : 48}
                   label={
                     ylabel
-                      ? { value: ylabel, angle: -90, position: "insideLeft", style: axisLabelStyle }
+                      ? {
+                          value: ylabel,
+                          angle: -90,
+                          position: "insideLeft",
+                          textAnchor: "middle",
+                          style: axisLabelStyle,
+                        }
                       : undefined
                   }
                 />

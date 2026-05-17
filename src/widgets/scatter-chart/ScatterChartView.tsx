@@ -99,7 +99,14 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
       </div>
       <div className="sigil-canvas" ref={canvasRef}>
         <ResponsiveContainer width="100%" height={360}>
-          <ScatterChart margin={{ top: 8, right: 16, bottom: 24, left: 16 }}>
+          <ScatterChart
+            margin={{
+              top: 16,
+              right: 16,
+              bottom: xlabel ? 56 : 32,
+              left: ylabel ? 24 : 8,
+            }}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke={tokens.chartLines.grid} />
             <XAxis
               type="number"
@@ -107,9 +114,16 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
               name={xlabel ?? "x"}
               tick={tickStyle}
               stroke={tokens.chartLines.axis}
+              height={xlabel ? 48 : 30}
               label={
                 xlabel
-                  ? { value: xlabel, position: "insideBottom", offset: -8, style: axisLabelStyle }
+                  ? {
+                      value: xlabel,
+                      position: "insideBottom",
+                      offset: 0,
+                      textAnchor: "middle",
+                      style: axisLabelStyle,
+                    }
                   : undefined
               }
             />
@@ -119,9 +133,16 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
               name={ylabel ?? "y"}
               tick={tickStyle}
               stroke={tokens.chartLines.axis}
+              width={ylabel ? 64 : 48}
               label={
                 ylabel
-                  ? { value: ylabel, angle: -90, position: "insideLeft", style: axisLabelStyle }
+                  ? {
+                      value: ylabel,
+                      angle: -90,
+                      position: "insideLeft",
+                      textAnchor: "middle",
+                      style: axisLabelStyle,
+                    }
                   : undefined
               }
             />
@@ -147,11 +168,13 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
               )}
             />
             <Legend
+              verticalAlign="bottom"
               wrapperStyle={{
                 fontFamily: tokens.typography.family.sans,
                 fontSize: tokens.typography.scale.label.fontSize,
                 color: tokens.texts.secondary,
                 paddingTop: 8,
+                bottom: 0,
               }}
               iconType="circle"
               iconSize={9}
