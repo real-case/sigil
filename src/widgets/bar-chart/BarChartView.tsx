@@ -101,6 +101,7 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
     fill: tokens.texts.secondary,
     fontSize: tokens.typography.scale.label.fontSize,
     fontFamily: tokens.typography.family.sans,
+    textAnchor: "middle" as const,
   };
 
   const cursorFill = "color-mix(in oklab, var(--sigil-series-0) 8%, transparent)";

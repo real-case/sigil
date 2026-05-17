@@ -86,6 +86,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
     fill: tokens.texts.secondary,
     fontSize: tokens.typography.scale.label.fontSize,
     fontFamily: tokens.typography.family.sans,
+    textAnchor: "middle" as const,
   };
 
   return (
