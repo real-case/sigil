@@ -6,13 +6,13 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import type { LineChartPayload, LineSeries } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
+import { ChartLegend } from "../shared/ChartLegend.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
@@ -124,7 +124,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
             margin={{
               top: 16,
               right: 16,
-              bottom: xlabel ? 56 : 32,
+              bottom: 8,
               left: ylabel ? 24 : 8,
             }}
           >
@@ -186,21 +186,6 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
                 />
               )}
             />
-            <Legend
-              verticalAlign="bottom"
-              wrapperStyle={{
-                fontFamily: tokens.typography.family.sans,
-                fontSize: tokens.typography.scale.label.fontSize,
-                color: tokens.texts.secondary,
-                paddingTop: 8,
-                bottom: 0,
-              }}
-              iconType="circle"
-              iconSize={9}
-              onClick={(entry) => {
-                if (typeof entry.dataKey === "string") toggleSelection(entry.dataKey);
-              }}
-            />
             {series.map((s, i) => {
               const isPrimary = i === 0;
               return (
@@ -227,6 +212,14 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
             })}
           </LineChart>
         </ResponsiveContainer>
+        <ChartLegend
+          items={series.map((s, i) => ({
+            name: s.name,
+            color: seriesColor(i, tokens),
+          }))}
+          selected={selectedSeries}
+          onToggle={toggleSelection}
+        />
       </div>
     </div>
   );
