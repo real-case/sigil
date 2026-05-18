@@ -34,6 +34,7 @@ Key entry points:
 ```bash
 npm run dev          # HTTP server on :3001 (Claude web via cloudflared)
 npm run dev:stdio    # stdio server (Claude Desktop / VS Code)
+npm run dev:sandbox  # in-browser sandbox: pick any widget + preset dataset, toggle theme/viewport/debug overlay (src/widgets/sandbox)
 npm run typecheck    # tsc --noEmit
 npm run build        # bundle widgets + compile server
 ```

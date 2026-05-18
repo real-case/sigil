@@ -344,7 +344,25 @@ export const dark: ChartDesignTokens = {
 
 // ----- Active theme + React hook ---------------------------------------------
 
+export type ThemeName = "light" | "dark";
+
+let forcedTheme: ThemeName | null = null;
+const forcedThemeListeners = new Set<() => void>();
+
+// Dev-only override (used by the sandbox). When null, the hook follows
+// prefers-color-scheme as before; production widget code never calls this.
+export function setForcedTheme(theme: ThemeName | null): void {
+  if (forcedTheme === theme) return;
+  forcedTheme = theme;
+  forcedThemeListeners.forEach((fn) => fn());
+}
+
+export function getForcedTheme(): ThemeName | null {
+  return forcedTheme;
+}
+
 export function activeTheme(): ChartDesignTokens {
+  if (forcedTheme) return forcedTheme === "dark" ? dark : light;
   const prefersDark =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-color-scheme: dark)").matches;
@@ -355,11 +373,15 @@ export function useTheme(): ChartDesignTokens {
   const [tokens, setTokens] = useState<ChartDesignTokens>(() => activeTheme());
 
   useEffect(() => {
+    const update = () => setTokens(activeTheme());
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setTokens(mq.matches ? dark : light);
     update();
     mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+    forcedThemeListeners.add(update);
+    return () => {
+      mq.removeEventListener("change", update);
+      forcedThemeListeners.delete(update);
+    };
   }, []);
 
   return tokens;
@@ -481,6 +503,16 @@ export function renderThemeCss(): string {
   return [
     `:root {\n  ${tokensToDeclarations(light)}\n}`,
     `@media (prefers-color-scheme: dark) {\n  :root {\n    ${tokensToDeclarations(dark)}\n  }\n}`,
+  ].join("\n\n");
+}
+
+// Dev-only: emit CSS that lets a `data-sigil-theme` attribute on `<html>`
+// override the prefers-color-scheme defaults. Used by the sandbox; not
+// referenced by any production widget bundle.
+export function renderForcedThemeCss(): string {
+  return [
+    `:root[data-sigil-theme="light"] {\n  ${tokensToDeclarations(light)}\n}`,
+    `:root[data-sigil-theme="dark"] {\n  ${tokensToDeclarations(dark)}\n}`,
   ].join("\n\n");
 }
 
