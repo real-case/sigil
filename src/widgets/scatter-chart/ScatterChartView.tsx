@@ -7,7 +7,6 @@ import {
   ZAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import type {
@@ -17,6 +16,7 @@ import type {
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
+import { ChartLegend } from "../shared/ChartLegend.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
@@ -86,6 +86,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
     fill: tokens.texts.secondary,
     fontSize: tokens.typography.scale.label.fontSize,
     fontFamily: tokens.typography.family.sans,
+    textAnchor: "middle" as const,
   };
 
   return (
@@ -103,7 +104,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
             margin={{
               top: 16,
               right: 16,
-              bottom: xlabel ? 56 : 32,
+              bottom: 8,
               left: ylabel ? 24 : 8,
             }}
           >
@@ -167,21 +168,6 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
                 />
               )}
             />
-            <Legend
-              verticalAlign="bottom"
-              wrapperStyle={{
-                fontFamily: tokens.typography.family.sans,
-                fontSize: tokens.typography.scale.label.fontSize,
-                color: tokens.texts.secondary,
-                paddingTop: 8,
-                bottom: 0,
-              }}
-              iconType="circle"
-              iconSize={9}
-              onClick={(entry) => {
-                if (typeof entry.value === "string") toggleSelection(entry.value);
-              }}
-            />
             {series.map((s, i) => (
               <Scatter
                 key={s.name}
@@ -194,6 +180,14 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
             ))}
           </ScatterChart>
         </ResponsiveContainer>
+        <ChartLegend
+          items={series.map((s, i) => ({
+            name: s.name,
+            color: seriesColor(i, tokens),
+          }))}
+          selected={selectedSeries}
+          onToggle={toggleSelection}
+        />
       </div>
     </div>
   );
