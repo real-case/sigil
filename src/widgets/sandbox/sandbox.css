@@ -1,0 +1,125 @@
+.sandbox-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+  background: var(--sigil-bg);
+  color: var(--sigil-text);
+  font-family: var(--sigil-font-sans);
+}
+
+.sandbox-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sigil-space-md);
+  padding: var(--sigil-space-md) var(--sigil-space-lg);
+  border-bottom: 1px solid var(--sigil-border-subtle);
+  background: var(--sigil-surface);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.sandbox-toolbar > .group {
+  display: flex;
+  align-items: center;
+  gap: var(--sigil-space-sm);
+}
+
+.sandbox-toolbar .label {
+  font-size: 11px;
+  color: var(--sigil-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sandbox-toolbar select,
+.sandbox-toolbar button {
+  font: inherit;
+  font-size: 12px;
+  background: var(--sigil-surface);
+  color: var(--sigil-text);
+  border: 1px solid var(--sigil-border-default);
+  border-radius: var(--sigil-radius-sm);
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background-color var(--sigil-duration-fast) var(--sigil-easing-standard);
+}
+
+.sandbox-toolbar button[data-active="true"] {
+  background: var(--sigil-info-surface);
+  border-color: var(--sigil-info-border);
+  color: var(--sigil-info-text);
+}
+
+.sandbox-toolbar button:hover:not([data-active="true"]) {
+  background: var(--sigil-surface-sunken);
+}
+
+.sandbox-toolbar .group .pills {
+  display: flex;
+  gap: 2px;
+}
+
+.sandbox-toolbar .group .pills button {
+  border-radius: 0;
+}
+.sandbox-toolbar .group .pills button:first-child {
+  border-top-left-radius: var(--sigil-radius-sm);
+  border-bottom-left-radius: var(--sigil-radius-sm);
+}
+.sandbox-toolbar .group .pills button:last-child {
+  border-top-right-radius: var(--sigil-radius-sm);
+  border-bottom-right-radius: var(--sigil-radius-sm);
+}
+
+.sandbox-stage-wrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--sigil-space-xl);
+  overflow: auto;
+}
+
+.sandbox-stage {
+  background: var(--sigil-bg);
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sigil-space-sm);
+}
+
+.sandbox-stage-meta {
+  font-size: 11px;
+  color: var(--sigil-text-muted);
+  font-family: var(--sigil-font-mono);
+}
+
+.sandbox-stage-frame {
+  border: 1px dashed transparent;
+  background: var(--sigil-surface);
+  border-radius: var(--sigil-radius-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.sandbox-stage-frame[data-debug="true"] {
+  border-color: var(--sigil-warning-border);
+  outline: 1px solid var(--sigil-warning-border);
+  outline-offset: 4px;
+}
+
+.sandbox-stage-frame[data-debug="true"] .sigil-root {
+  outline: 1px dashed var(--sigil-info-border);
+  outline-offset: -1px;
+}
+
+.sandbox-stage-frame[data-debug="true"] svg {
+  outline: 1px dashed var(--sigil-danger-border);
+}
+
+.sandbox-empty {
+  padding: var(--sigil-space-xl);
+  color: var(--sigil-text-muted);
+  text-align: center;
+}

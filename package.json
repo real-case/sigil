@@ -20,6 +20,7 @@
     "dev": "tsx watch src/server.ts",
     "dev:stdio": "tsx src/stdio.ts",
     "dev:preview": "WIDGET=palette-preview vite",
+    "dev:sandbox": "WIDGET=sandbox vite",
     "build": "npm run build:widgets && npm run build:server",
     "build:widgets": "tsx scripts/build-widgets.ts",
     "build:server": "tsc -p tsconfig.server.json && chmod +x dist/server/stdio.js",

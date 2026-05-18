@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { WIDGETS } from "./src/registry.js";
 
 const PRODUCTION_WIDGETS = WIDGETS.map((w) => w.name);
-const DEV_ONLY_WIDGETS = ["palette-preview"] as const;
+const DEV_ONLY_WIDGETS = ["palette-preview", "sandbox"] as const;
 const ALL_WIDGETS: readonly string[] = [...PRODUCTION_WIDGETS, ...DEV_ONLY_WIDGETS];
 
 const widget = process.env.WIDGET ?? "bar-chart";

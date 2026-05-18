@@ -198,6 +198,7 @@ Render an interactive heatmap matrix: a 2D grid where each cell's color encodes 
 npm install
 npm run dev                 # HTTP server on :3001 (for Claude Web via cloudflared)
 npm run dev:stdio           # stdio server (for Claude Desktop / VS Code)
+npm run dev:sandbox         # in-browser widget sandbox — pick any widget + preset, toggle theme / viewport / debug overlay
 npm run typecheck           # tsc --noEmit
 npm test                    # vitest: payload guards, registry, tool registration
 npm run build               # bundle 7 widgets + compile server
