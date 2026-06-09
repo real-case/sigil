@@ -1,0 +1,59 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/MCP Integration" />
+
+# MCP integration
+
+The stories in this catalog render a widget's **View** directly from a `payload`
+prop. In production the same View is wrapped by a thin shell that connects it to
+the host over the [MCP Apps](https://github.com/modelcontextprotocol/ext-apps)
+protocol. This page explains the gap between "story" and "production" so the
+catalog is honest about what it does and does not exercise.
+
+## The two layers
+
+| Layer | What it is | Exercised by |
+|-------|------------|--------------|
+| **View** | A pure `ComponentType<{ payload: P }>` — all rendering, no transport. | These stories + the sandbox. |
+| **Shell** | `mountWidget` — connects to the host, validates the payload, feeds it to the View. | The live MCP server + the vitest suite. |
+
+Because the View is decoupled from the transport, Storybook can render it in
+isolation with a literal payload. Nothing in this catalog touches the MCP
+plumbing — that is deliberate.
+
+## What `mountWidget` adds in production
+
+`src/widgets/shared/widget-shell.tsx` exports `mountWidget`, the HOC every widget
+entry uses. It handles everything between the host and the View:
+
+1. **Connect.** Calls `useApp(...)` from `@modelcontextprotocol/ext-apps/react`
+   to establish the host connection inside the sandboxed iframe.
+2. **Receive.** On `app.ontoolresult`, it reads the tool result — preferring
+   `structuredContent`, falling back to parsing the first text content block as
+   JSON.
+3. **Guard.** A per-widget type guard (`isPayload`) validates the incoming data
+   before it ever reaches the View. Bad or unparseable data renders an
+   `EmptyState` error, not a crash.
+4. **State.** Until a valid payload arrives (or if the connection errors), it
+   renders a `LoadingSkeleton` / error state instead of the View.
+
+```ts
+mountWidget({
+  name: "sigil-bar-chart",
+  isPayload: isBarChartPayload, // payload guard — same contract the tests assert
+  View: BarChartView,           // the exact component these stories render
+  loadingVariant: "bar",
+});
+```
+
+The host renders the bundled single-file HTML in a sandboxed iframe and talks to
+it via `postMessage` per the MCP Apps spec; `mountWidget` is the widget side of
+that conversation.
+
+## Why stories don't drive the shell
+
+Driving `mountWidget` from a story would mean mocking the host transport to
+exercise code that the vitest suite (`src/__tests__/`) already covers via the
+payload guards and registration tests. The catalog's job is the **visual**
+surface — the View under real payloads, themes, and viewports. Transport
+correctness lives with the tests; rendering correctness lives here.
