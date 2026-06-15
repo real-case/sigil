@@ -1,0 +1,116 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+// Extensionless: MDX is not compiled by tsc (so the repo's `.js`-specifier
+// convention, which exists for moduleResolution: "Bundler", does not apply),
+// and the MDX loader's emitted imports don't get Vite's `.js`→`.ts` remapping.
+import { light, dark } from "../widgets/shared/theme";
+
+<Meta title="Docs/Design Tokens" />
+
+# Design tokens
+
+Every widget renders entirely from a single token set, `ChartDesignTokens`
+(`src/widgets/shared/theme.ts`). Two instances exist — `light` and `dark` — and
+they are emitted to the document as CSS custom properties (`--sigil-*`). Widgets
+never hard-code colors; they read these variables, which is what lets a single
+View adapt to both themes and to the host's `prefers-color-scheme`.
+
+This page is the live reference for the palette. It draws directly from the same
+`light` / `dark` token objects the widgets use, so it can never drift from
+production.
+
+export const Swatches = ({ colors }) => (
+  <div style={{ display: "flex", flexWrap: "wrap", gap: 12, margin: "12px 0" }}>
+    {colors.map((c, i) => (
+      <div key={i} style={{ width: 132 }}>
+        <div
+          style={{
+            background: c,
+            height: 48,
+            borderRadius: 8,
+            border: "1px solid rgba(128,128,128,0.25)",
+          }}
+        />
+        <div style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>series-{i}</div>
+        <code style={{ fontSize: 10, wordBreak: "break-all" }}>{c}</code>
+      </div>
+    ))}
+  </div>
+);
+
+export const Tokens = ({ rows }) => (
+  <div style={{ display: "flex", flexWrap: "wrap", gap: 12, margin: "12px 0" }}>
+    {rows.map(([name, value]) => (
+      <div key={name} style={{ width: 160 }}>
+        <div
+          style={{
+            background: value,
+            height: 40,
+            borderRadius: 8,
+            border: "1px solid rgba(128,128,128,0.25)",
+          }}
+        />
+        <div style={{ fontSize: 11, marginTop: 4 }}>{name}</div>
+        <code style={{ fontSize: 10 }}>{value}</code>
+      </div>
+    ))}
+  </div>
+);
+
+## Series palette
+
+The categorical series colors, in order. They are authored in OKLCH so lightness
+stays perceptually even across hues, and each theme has its own tuned set.
+
+**Light**
+
+<Swatches colors={light.series} />
+
+**Dark**
+
+<Swatches colors={dark.series} />
+
+## Surfaces & text (light)
+
+<Tokens
+  rows={[
+    ["bg", light.surfaces.bg],
+    ["surface", light.surfaces.surface],
+    ["surfaceElevated", light.surfaces.surfaceElevated],
+    ["surfaceSunken", light.surfaces.surfaceSunken],
+    ["text", light.texts.primary],
+    ["text-secondary", light.texts.secondary],
+    ["text-muted", light.texts.muted],
+    ["grid", light.chartLines.grid],
+    ["axis", light.chartLines.axis],
+  ]}
+/>
+
+## Surfaces & text (dark)
+
+<Tokens
+  rows={[
+    ["bg", dark.surfaces.bg],
+    ["surface", dark.surfaces.surface],
+    ["surfaceElevated", dark.surfaces.surfaceElevated],
+    ["surfaceSunken", dark.surfaces.surfaceSunken],
+    ["text", dark.texts.primary],
+    ["text-secondary", dark.texts.secondary],
+    ["text-muted", dark.texts.muted],
+    ["grid", dark.chartLines.grid],
+    ["axis", dark.chartLines.axis],
+  ]}
+/>
+
+## Non-color scales
+
+These are theme-independent (structural) and shared by both themes:
+
+- **Spacing** — `--sigil-space-xs … --sigil-space-2xl` (4 / 8 / 12 / 16 / 24 / 32 px).
+- **Radius** — `--sigil-radius-sm | md | lg | full` (4 / 8 / 12 / 999 px).
+- **Typography** — IBM Plex Sans for labels/titles, IBM Plex Mono for ticks and
+  numeric values, with a tabular-numeric value scale. Exposed as
+  `--sigil-font-<step>-*`.
+- **Motion** — `--sigil-duration-fast | base | slow` and matching easing curves.
+
+> This page subsumes the purpose of the dev-only `palette-preview` widget: the
+> palette is documented here, against the same source of truth.

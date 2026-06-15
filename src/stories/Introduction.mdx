@@ -1,0 +1,43 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Introduction" />
+
+# Sigil — widget catalog
+
+**Live, interactive data widgets for Claude and other [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) hosts.**
+
+A _sigil_ is a symbol that carries compressed meaning. Same idea, applied to
+data: a chart you can hover, click, and copy — embedded directly in a
+conversation, instead of a flat PNG. Unlike chart servers that return static
+images, Sigil renders **live widgets** inside the host's sandboxed iframe.
+
+This Storybook is the **visual catalog and component documentation** for the
+widget set. It renders each widget's React View in isolation, exactly as the
+in-browser sandbox does — no MCP transport involved.
+
+## How to read this catalog
+
+- **Widgets** — one section per widget (bar, line, pie, table, scatter,
+  heatmap, treemap). Each widget has an **autodocs** page (its payload API as
+  an args table) plus one named story per dataset state. The states come from a
+  deliberate taxonomy — `minimal`, `small`, `medium`, `large`, `edgeLabels`,
+  `negatives`, `multiSeries`, `nested` — that brackets the heuristic boundaries
+  in the render code (e.g. when a bar chart starts rotating tick labels).
+- **Theme toggle** (toolbar) — flips every story between light and dark by
+  setting `data-sigil-theme` on the document. See **Theming**.
+- **Viewport** (toolbar) — resizes the canvas to the 320 / 480 / 768 / 1024
+  presets the widgets are tuned against.
+
+## Where the data comes from
+
+Every story sources its payload from the shared dataset catalog in
+`src/widgets/sandbox/datasets/`, read by id through a small typed helper
+(`payloadById`). There is exactly **one** payload catalog, shared between this
+Storybook and the development sandbox — story files never redefine payloads
+inline.
+
+## Further reading
+
+- **Design Tokens** — the palette and token system every widget draws from.
+- **Theming** — the light/dark model and the `data-sigil-theme` mechanism.
+- **MCP Integration** — how a static View becomes a live MCP widget in a host.

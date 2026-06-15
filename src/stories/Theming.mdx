@@ -1,0 +1,58 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Theming" />
+
+# Theming
+
+Sigil ships two themes — `light` and `dark` — defined as token objects in
+`src/widgets/shared/theme.ts`. The rendering rule is the same everywhere: widgets
+read CSS custom properties (`--sigil-*`); the theme just decides which set of
+values those properties hold.
+
+## How a theme is selected
+
+There are two selection paths, both emitted as CSS by `theme.ts`:
+
+1. **Production — follow the host.** `installThemeStyles()` injects
+   `renderThemeCss()`, which sets the light tokens under `:root` and overrides
+   them under `@media (prefers-color-scheme: dark)`. Production widgets therefore
+   match the host's appearance automatically; they never force a theme.
+
+2. **Dev / catalog — force a theme.** `renderForcedThemeCss()` emits the same
+   tokens keyed off an attribute instead:
+
+   ```css
+   :root[data-sigil-theme="light"] { /* light tokens */ }
+   :root[data-sigil-theme="dark"]  { /* dark tokens  */ }
+   ```
+
+   Setting `data-sigil-theme="dark"` on the document overrides
+   `prefers-color-scheme`. This is exactly what the toolbar toggle drives.
+
+## How the toolbar toggle works
+
+`.storybook/preview.tsx` does two things at load:
+
+- Injects both stylesheets once (base tokens via `installThemeStyles()`, plus
+  the forced-theme override CSS) — the same pair the sandbox's `App.tsx` injects.
+- Registers `@storybook/addon-themes`' `withThemeByDataAttribute` decorator,
+  configured to write `data-sigil-theme`:
+
+  ```ts
+  withThemeByDataAttribute({
+    attributeName: "data-sigil-theme",
+    themes: { light: "light", dark: "dark" },
+    defaultTheme: "light",
+  });
+  ```
+
+So flipping the theme in the toolbar sets `data-sigil-theme`, the forced-theme
+CSS takes over, and every story re-renders in the chosen theme — **no
+theming-specific code in the stories themselves**, and no change to any widget
+View. The same decorator contract the addon expects already existed in the
+codebase, which is why theming wired up with zero new theming code.
+
+## Verifying
+
+The bar chart and pie chart are the quickest visual confirmations: toggle the
+toolbar and the surfaces, text, grid lines, and series colors all swap together.

@@ -9,6 +9,7 @@ dist/
 coverage/
 .cache/
 .playwright-mcp/
+storybook-static/
 
 # Stray macOS path created by accidental tilde-expansion mishaps
 /Support/
