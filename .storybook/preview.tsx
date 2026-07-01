@@ -1,10 +1,24 @@
 import type { Preview } from "@storybook/react-vite";
+import { useLayoutEffect } from "react";
 import { withThemeByDataAttribute } from "@storybook/addon-themes";
 import {
   installThemeStyles,
   renderForcedThemeCss,
+  setForcedTheme,
+  type ThemeName,
 } from "../src/widgets/shared/theme.js";
 import "../src/widgets/shared/styles.css";
+
+// Keep the JS `useTheme()` tokens in lock-step with the `data-sigil-theme`
+// attribute the addon toggles. Without this, chart colours that come from JS
+// tokens (series, grid, axis, SVG strokes) would follow `prefers-color-scheme`
+// while the CSS chrome follows the toolbar — mixing light data with dark chrome.
+function ThemeSync({ theme, children }: { theme: ThemeName; children: React.ReactNode }) {
+  useLayoutEffect(() => {
+    setForcedTheme(theme);
+  }, [theme]);
+  return <>{children}</>;
+}
 
 // Inject base tokens + the forced-theme override CSS once, exactly as the
 // sandbox's App.tsx does. The decorator below flips `data-sigil-theme`.
@@ -50,6 +64,11 @@ const preview: Preview = {
     viewport: { value: "m1024", isRotated: false },
   },
   decorators: [
+    (Story, context) => (
+      <ThemeSync theme={context.globals.theme === "dark" ? "dark" : "light"}>
+        <Story />
+      </ThemeSync>
+    ),
     withThemeByDataAttribute({
       attributeName: "data-sigil-theme",
       themes: { light: "light", dark: "dark" },

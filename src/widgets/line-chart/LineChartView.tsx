@@ -17,6 +17,10 @@ import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const DIMMED_OPACITY = 0.2;
+// Below this many points per series, draw point markers: a dense line reads
+// cleanly without them, but a sparse series (especially a single point, which
+// forms no line segment at all) would otherwise render invisibly.
+const SPARSE_DOT_THRESHOLD = 12;
 
 type MergedRow = { x: string | number } & Record<string, unknown>;
 
@@ -188,17 +192,30 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
             />
             {series.map((s, i) => {
               const isPrimary = i === 0;
+              const color = seriesColor(i, tokens);
+              const showDots = s.data.length <= SPARSE_DOT_THRESHOLD;
+              const dotRadius = s.data.length === 1 ? 4 : isPrimary ? 2.75 : 2.25;
               return (
                 <Line
                   key={s.name}
                   type="monotone"
                   dataKey={s.name}
-                  stroke={seriesColor(i, tokens)}
+                  stroke={color}
                   strokeWidth={isPrimary ? 1.75 : 1.5}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeOpacity={opacityFor(s.name)}
-                  dot={{ r: 0 }}
+                  dot={
+                    showDots
+                      ? {
+                          r: dotRadius,
+                          fill: color,
+                          fillOpacity: opacityFor(s.name),
+                          stroke: tokens.surfaces.surface,
+                          strokeWidth: s.data.length === 1 ? 1.5 : 0,
+                        }
+                      : false
+                  }
                   activeDot={{ r: 4, strokeWidth: 2, stroke: tokens.surfaces.surface }}
                   isAnimationActive={false}
                   style={{
