@@ -230,20 +230,24 @@ Render a multi-widget dashboard: a grid of tiles where each tile is one of the o
 
 ### `render_map`
 
-Render an interactive choropleth map: regions shaded by a numeric value. Use for country- or state-level metrics — population, GDP, sales or users by region, any per-region intensity. Hover a region for its exact value; click to focus it.
+Render an interactive map with two encodings: a **choropleth** (regions shaded by value, from `data`) or **bubbles** (sized markers at coordinates, from `points`). Use choropleth for per-region intensity (population, GDP, counts by country/state); use bubbles for point data (cities, offices, events). Hover for the exact value; on a choropleth, click to focus a region.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | `string` | yes | Chart title above the map |
 | `scope` | `"world" \| "us-states"` | no | Base map: world countries or US states. Defaults to `"world"` |
-| `variant` | `"choropleth"` | no | Encoding. Currently `"choropleth"`; defaults to `"choropleth"` |
-| `data` | `Array<{ id, value, label? }>` | yes | One entry per region |
+| `variant` | `"choropleth" \| "bubble"` | no | Encoding. Defaults to `"choropleth"` |
+| `data` | `Array<{ id, value, label? }>` | choropleth | One entry per region (required for `choropleth`) |
 | `data[].id` | `string` | yes | **World:** ISO 3166-1 alpha-3 (preferred, e.g. `"USA"`), alpha-2, numeric, or common English name. **US states:** USPS code (preferred, e.g. `"CA"`), full name, or FIPS |
 | `data[].value` | `number` | yes | Numeric value shading the region (negatives supported) |
 | `data[].label` | `string` | no | Display-name override for the tooltip |
+| `points` | `Array<{ lat, lon, value, label? }>` | bubble | One marker per point (required for `bubble`) |
+| `points[].lat` / `points[].lon` | `number` | yes | Coordinates in degrees |
+| `points[].value` | `number` | yes | Non-negative magnitude; marker **area** scales with it |
+| `points[].label` | `string` | no | Label shown in the tooltip |
 | `valueLabel` | `string` | no | Label for the value in the tooltip and legend, e.g. `"GDP per capita"` |
 
-Geometry is the bundled [world-atlas](https://github.com/topojson/world-atlas) / [us-atlas](https://github.com/topojson/us-atlas) TopoJSON, projected with `d3-geo` (Natural Earth for the world, Albers USA for states); the low→high fill ramp reuses the heatmap colour scale and adapts to dark/light themes. Regions with no matching datum stay a neutral land colour; unmatched ids are reported below the map.
+Geometry is the bundled [world-atlas](https://github.com/topojson/world-atlas) / [us-atlas](https://github.com/topojson/us-atlas) TopoJSON, projected with `d3-geo` (Natural Earth for the world, Albers USA for states). Choropleth uses the heatmap colour scale; bubbles are area-proportional with a size legend. Both adapt to dark/light themes. Regions with no matching datum stay a neutral land colour; unmatched ids (or points that fall off the map) are reported below it.
 
 ---
 
