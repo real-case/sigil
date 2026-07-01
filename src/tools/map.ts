@@ -6,22 +6,26 @@ import type { MapPayload } from "../shared/payloads.js";
 export const MAP_UI_URI = "ui://sigil/map";
 
 const description = [
-  "Render an interactive choropleth world map: countries shaded by a numeric value.",
-  "Use for country-level metrics — population, GDP, sales or users by country, counts by nation, any per-country intensity you want to see geographically.",
-  "Identify each country by ISO 3166-1 alpha-3 code (preferred, e.g. 'USA', 'DEU', 'JPN'), alpha-2 ('US'), numeric ('840'), or common English name ('United States').",
+  "Render an interactive choropleth map: regions shaded by a numeric value.",
+  "Set scope to 'world' for a country map (default) or 'us-states' for a United States state map.",
+  "Use for country- or state-level metrics — population, GDP, sales or users by region, counts, any per-region intensity you want to see geographically.",
+  "World: identify each country by ISO 3166-1 alpha-3 (preferred, e.g. 'USA', 'DEU', 'JPN'), alpha-2, numeric, or common English name.",
+  "US states: identify each state by 2-letter USPS code (preferred, e.g. 'CA', 'TX', 'NY'), full name, or FIPS number.",
   "For non-geographic categorical comparison use render_bar_chart; for a category × category matrix use render_heatmap.",
 ].join(" ");
 
 const inputSchema = {
   title: z.string().min(1).describe("Chart title shown above the map."),
   scope: z
-    .enum(["world"])
+    .enum(["world", "us-states"])
     .optional()
-    .describe("Base map. Currently 'world' (country choropleth). Defaults to 'world'."),
+    .describe(
+      "Base map: 'world' (country choropleth) or 'us-states' (US state choropleth). Defaults to 'world'.",
+    ),
   variant: z
     .enum(["choropleth"])
     .optional()
-    .describe("Encoding. Currently 'choropleth' (countries shaded by value). Defaults to 'choropleth'."),
+    .describe("Encoding. Currently 'choropleth' (regions shaded by value). Defaults to 'choropleth'."),
   data: z
     .array(
       z.object({
@@ -29,7 +33,7 @@ const inputSchema = {
           .string()
           .min(1)
           .describe(
-            "Country identifier: ISO 3166-1 alpha-3 (preferred, e.g. 'USA'), alpha-2, numeric, or common English name.",
+            "Region identifier. World: ISO 3166-1 alpha-3 (preferred, e.g. 'USA'), alpha-2, numeric, or common English name. US states: USPS code (preferred, e.g. 'CA'), full name, or FIPS.",
           ),
         value: z.number().describe("Numeric value shading this country."),
         label: z

@@ -27,7 +27,7 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 | [`render_heatmap`](#render_heatmap) | 2D categorical × numeric intensity | matrix with palette gradient, hover tooltip per cell |
 | [`render_stat_panel`](#render_stat_panel) | KPIs / scorecards, at-a-glance metrics | grid of metric cards with coloured trend deltas and status accents |
 | [`render_dashboard`](#render_dashboard) | several related views at once | grid of tiles, each tile any other widget rendered from its own payload |
-| [`render_map`](#render_map) | country-level metrics, geographic intensity | world choropleth — countries shaded by value, hover tooltip, click-to-focus |
+| [`render_map`](#render_map) | country- or state-level metrics, geographic intensity | world / US-state choropleth — regions shaded by value, hover tooltip, click-to-focus |
 
 All chart widgets expose **Copy CSV** and **Copy PNG** buttons; the table and stat panel expose **Copy CSV**. The dashboard composes other widgets, so each tile keeps its own controls.
 
@@ -230,20 +230,20 @@ Render a multi-widget dashboard: a grid of tiles where each tile is one of the o
 
 ### `render_map`
 
-Render an interactive choropleth world map: countries shaded by a numeric value. Use for country-level metrics — population, GDP, sales or users by country, any per-country intensity. Hover a country for its exact value; click to focus it.
+Render an interactive choropleth map: regions shaded by a numeric value. Use for country- or state-level metrics — population, GDP, sales or users by region, any per-region intensity. Hover a region for its exact value; click to focus it.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | `string` | yes | Chart title above the map |
-| `scope` | `"world"` | no | Base map. Currently `"world"`; defaults to `"world"` |
+| `scope` | `"world" \| "us-states"` | no | Base map: world countries or US states. Defaults to `"world"` |
 | `variant` | `"choropleth"` | no | Encoding. Currently `"choropleth"`; defaults to `"choropleth"` |
-| `data` | `Array<{ id, value, label? }>` | yes | One entry per country |
-| `data[].id` | `string` | yes | ISO 3166-1 alpha-3 (preferred, e.g. `"USA"`), alpha-2, numeric, or common English name |
-| `data[].value` | `number` | yes | Numeric value shading the country (negatives supported) |
+| `data` | `Array<{ id, value, label? }>` | yes | One entry per region |
+| `data[].id` | `string` | yes | **World:** ISO 3166-1 alpha-3 (preferred, e.g. `"USA"`), alpha-2, numeric, or common English name. **US states:** USPS code (preferred, e.g. `"CA"`), full name, or FIPS |
+| `data[].value` | `number` | yes | Numeric value shading the region (negatives supported) |
 | `data[].label` | `string` | no | Display-name override for the tooltip |
 | `valueLabel` | `string` | no | Label for the value in the tooltip and legend, e.g. `"GDP per capita"` |
 
-Country geometry is the bundled [world-atlas](https://github.com/topojson/world-atlas) TopoJSON, projected with `d3-geo` (Natural Earth); the low→high fill ramp reuses the heatmap colour scale and adapts to dark/light themes. Countries with no matching datum stay a neutral land colour; unmatched ids are reported below the map.
+Geometry is the bundled [world-atlas](https://github.com/topojson/world-atlas) / [us-atlas](https://github.com/topojson/us-atlas) TopoJSON, projected with `d3-geo` (Natural Earth for the world, Albers USA for states); the low→high fill ramp reuses the heatmap colour scale and adapts to dark/light themes. Regions with no matching datum stay a neutral land colour; unmatched ids are reported below the map.
 
 ---
 

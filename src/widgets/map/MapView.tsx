@@ -1,21 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { geoNaturalEarth1, geoPath, type GeoPermissibleObjects } from "d3-geo";
+import { geoPath, type GeoPermissibleObjects } from "d3-geo";
 import type { MapPayload, MapRegionDatum } from "../../shared/payloads.js";
 import { useTheme } from "../shared/theme.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { ColorScaleLegend, intensityAlpha } from "../shared/color-scale.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
-import {
-  WORLD_FEATURES,
-  resolveFeature,
-  countryName,
-  type CountryFeature,
-} from "./geo.js";
+import { scopeGeo, regionName, type RegionFeature, type ScopeGeo } from "./geo.js";
 
 const NUMBER_FMT = new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 });
-// Natural Earth (Antarctica dropped) has a land aspect close to 1.9:1.
-const MAP_ASPECT = 0.52;
 const MIN_HEIGHT = 200;
 const MAX_HEIGHT = 520;
 
@@ -42,19 +35,19 @@ interface TooltipState {
 }
 
 interface Resolved {
-  byFeature: Map<CountryFeature, number>;
+  byFeature: Map<RegionFeature, number>;
   min: number;
   max: number;
   unmatched: number;
 }
 
-function resolveData(data: MapRegionDatum[]): Resolved {
-  const byFeature = new Map<CountryFeature, number>();
+function resolveData(data: MapRegionDatum[], geo: ScopeGeo): Resolved {
+  const byFeature = new Map<RegionFeature, number>();
   let min = Infinity;
   let max = -Infinity;
   let unmatched = 0;
   for (const d of data) {
-    const f = resolveFeature(d.id);
+    const f = geo.resolve(d.id);
     if (!f) {
       unmatched++;
       continue;
@@ -74,30 +67,31 @@ function resolveData(data: MapRegionDatum[]): Resolved {
 
 export function MapView({ payload }: { payload: MapPayload }) {
   const tokens = useTheme();
-  const [selected, setSelected] = useState<CountryFeature | null>(null);
+  const [selected, setSelected] = useState<RegionFeature | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const width = useContainerWidth(containerRef);
   const { title, data, valueLabel } = payload;
 
-  const resolved = useMemo(() => resolveData(data), [data]);
+  const geo = scopeGeo(payload.scope ?? "world");
+  const resolved = useMemo(() => resolveData(data, geo), [data, geo]);
 
   const height = Math.round(
-    Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, width * MAP_ASPECT)),
+    Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, width * geo.aspect)),
   );
 
-  // Fit a fixed projection to the full world so the map extent stays stable
-  // regardless of which countries carry data.
+  // Fit the scope's projection to its full feature set so the map extent stays
+  // stable regardless of which regions carry data.
   const pathFor = useMemo(() => {
     if (width <= 0) return null;
-    const projection = geoNaturalEarth1().fitSize([width, height], {
+    const projection = geo.projection().fitSize([width, height], {
       type: "FeatureCollection",
-      features: WORLD_FEATURES as CountryFeature[],
+      features: geo.features as RegionFeature[],
     } as unknown as GeoPermissibleObjects);
     const gen = geoPath(projection);
-    return (f: CountryFeature) => gen(f as unknown as GeoPermissibleObjects) ?? "";
-  }, [width, height]);
+    return (f: RegionFeature) => gen(f as unknown as GeoPermissibleObjects) ?? "";
+  }, [width, height, geo]);
 
   if (data.length === 0 || resolved.byFeature.size === 0) {
     return (
@@ -110,7 +104,9 @@ export function MapView({ payload }: { payload: MapPayload }) {
           description={
             data.length === 0
               ? "The payload was empty."
-              : "No country ids matched. Use ISO 3166-1 alpha-3 codes (e.g. USA, DEU) or common names."
+              : geo.regionLabel === "State"
+                ? "No state ids matched. Use USPS codes (e.g. CA, TX), full names, or FIPS."
+                : "No country ids matched. Use ISO 3166-1 alpha-3 codes (e.g. USA, DEU) or common names."
           }
         />
       </div>
@@ -123,7 +119,7 @@ export function MapView({ payload }: { payload: MapPayload }) {
   const land = `color-mix(in oklab, ${tokens.texts.muted} 16%, ${tokens.surfaces.bg})`;
   const ocean = tokens.surfaces.bg;
 
-  const fillFor = (f: CountryFeature): string => {
+  const fillFor = (f: RegionFeature): string => {
     const value = resolved.byFeature.get(f);
     if (value === undefined) return land;
     const alpha = intensityAlpha(value, resolved.min, resolved.max);
@@ -131,10 +127,10 @@ export function MapView({ payload }: { payload: MapPayload }) {
   };
 
   const copyCsv = () => {
-    const header = ["Country", valueLabel ?? "Value"];
+    const header = [geo.regionLabel, valueLabel ?? "Value"];
     const body: CsvCell[][] = data.map((d) => {
-      const f = resolveFeature(d.id);
-      return [d.label ?? (f ? countryName(f) : d.id), d.value];
+      const f = geo.resolve(d.id);
+      return [d.label ?? (f ? regionName(f) : d.id), d.value];
     });
     return copyText(toCsv(header, body));
   };
@@ -145,9 +141,9 @@ export function MapView({ payload }: { payload: MapPayload }) {
     await copySvgAsPng(svg as SVGSVGElement, "map", ocean);
   };
 
-  const showTooltip = (f: CountryFeature, value: number, ev: React.MouseEvent) => {
+  const showTooltip = (f: RegionFeature, value: number, ev: React.MouseEvent) => {
     setTooltip({
-      name: countryName(f),
+      name: regionName(f),
       value,
       pageX: ev.clientX,
       pageY: ev.clientY,
@@ -159,7 +155,7 @@ export function MapView({ payload }: { payload: MapPayload }) {
     );
   const hideTooltip = () => setTooltip(null);
 
-  const toggleSelection = (f: CountryFeature) =>
+  const toggleSelection = (f: RegionFeature) =>
     setSelected((prev) => (prev === f ? null : f));
 
   return (
@@ -179,7 +175,7 @@ export function MapView({ payload }: { payload: MapPayload }) {
             viewBox={`0 0 ${width} ${height}`}
             style={{ display: "block", maxWidth: "100%" }}
           >
-            {WORLD_FEATURES.map((f, i) => {
+            {geo.features.map((f, i) => {
               const value = resolved.byFeature.get(f);
               const hasData = value !== undefined;
               const isSelected = selected === f;

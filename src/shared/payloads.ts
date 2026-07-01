@@ -90,8 +90,8 @@ export interface HeatmapPayload {
   ylabel?: string;
 }
 
-/** Base map for the map widget. Currently only the world country map. */
-export type MapScope = "world";
+/** Base map for the map widget: world countries or US states. */
+export type MapScope = "world" | "us-states";
 
 /** How the map encodes data. Currently only country choropleth shading. */
 export type MapVariant = "choropleth";

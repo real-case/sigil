@@ -1,4 +1,5 @@
 import type { MapPayload } from "../../../shared/payloads.js";
+import { US_STATE_FIPS } from "../../map/us-state-codes.js";
 import { type Dataset } from "./types.js";
 
 // Deterministic pseudo-random in [0, 1) so procedural datasets stay stable
@@ -125,6 +126,40 @@ export const mapDatasets: Dataset<MapPayload>[] = [
         { id: "Atlantis", value: 99 },
         { id: "ZZZ", value: 50 },
       ],
+    },
+  },
+  {
+    id: "map-us-population",
+    label: "US states — population (partial)",
+    category: "small",
+    payload: {
+      title: "Population by state (millions, 2024)",
+      scope: "us-states",
+      variant: "choropleth",
+      valueLabel: "million people",
+      data: [
+        { id: "CA", value: 39.0 }, { id: "TX", value: 30.5 }, { id: "FL", value: 22.6 },
+        { id: "NY", value: 19.6 }, { id: "PA", value: 13.0 }, { id: "IL", value: 12.5 },
+        { id: "OH", value: 11.8 }, { id: "GA", value: 11.0 }, { id: "NC", value: 10.8 },
+        { id: "MI", value: 10.0 }, { id: "NJ", value: 9.3 }, { id: "VA", value: 8.7 },
+        { id: "WA", value: 7.8 }, { id: "AZ", value: 7.4 }, { id: "TN", value: 7.1 },
+        { id: "MA", value: 7.0 },
+      ],
+    },
+  },
+  {
+    id: "map-us-index",
+    label: "US states — full (procedural)",
+    category: "large",
+    payload: {
+      title: "State index (procedural)",
+      scope: "us-states",
+      variant: "choropleth",
+      valueLabel: "score",
+      data: Object.keys(US_STATE_FIPS).map((id, i) => ({
+        id,
+        value: Math.round(20 + det(i) * 80),
+      })),
     },
   },
 ];
