@@ -90,6 +90,33 @@ export interface HeatmapPayload {
   ylabel?: string;
 }
 
+/** Base map for the map widget. Currently only the world country map. */
+export type MapScope = "world";
+
+/** How the map encodes data. Currently only country choropleth shading. */
+export type MapVariant = "choropleth";
+
+export interface MapRegionDatum {
+  /**
+   * Region identifier: ISO 3166-1 alpha-3 (e.g. "USA"), alpha-2 ("US"),
+   * numeric ("840"), or a common English country name ("United States").
+   */
+  id: string;
+  /** Numeric intensity shading this region. */
+  value: number;
+  /** Optional display-name override for the tooltip (defaults to the country name). */
+  label?: string;
+}
+
+export interface MapPayload {
+  title: string;
+  scope: MapScope;
+  variant: MapVariant;
+  data: MapRegionDatum[];
+  /** Optional label for the value in the tooltip and legend, e.g. "GDP per capita". */
+  valueLabel?: string;
+}
+
 export type StatStatus = "success" | "warning" | "danger" | "info";
 
 export interface StatItem {

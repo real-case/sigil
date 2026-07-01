@@ -8,6 +8,7 @@ import { HeatmapView } from "../../heatmap/HeatmapView.js";
 import { TreemapView } from "../../treemap/TreemapView.js";
 import { StatPanelView } from "../../stat-panel/StatPanelView.js";
 import { DashboardView } from "../../dashboard/DashboardView.js";
+import { MapView } from "../../map/MapView.js";
 import type { Dataset } from "./types.js";
 import { barDatasets } from "./bar.js";
 import { lineDatasets } from "./line.js";
@@ -18,6 +19,7 @@ import { heatmapDatasets } from "./heatmap.js";
 import { treemapDatasets } from "./treemap.js";
 import { statPanelDatasets } from "./stat-panel.js";
 import { dashboardDatasets } from "./dashboard.js";
+import { mapDatasets } from "./map.js";
 
 export type WidgetKey =
   | "bar-chart"
@@ -28,7 +30,8 @@ export type WidgetKey =
   | "heatmap"
   | "treemap"
   | "stat-panel"
-  | "dashboard";
+  | "dashboard"
+  | "map";
 
 // `View` and `datasets` are linked by the same payload type `P` at
 // construction (via `defineEntry` below), but the registry array stores
@@ -59,4 +62,6 @@ export const WIDGET_ENTRIES: WidgetEntry[] = [
   defineEntry({ key: "treemap", label: "Treemap", View: TreemapView, datasets: treemapDatasets }),
   defineEntry({ key: "stat-panel", label: "Stat panel", View: StatPanelView, datasets: statPanelDatasets }),
   defineEntry({ key: "dashboard", label: "Dashboard", View: DashboardView, datasets: dashboardDatasets }),
+  defineEntry({ key: "map", label: "Map", View: MapView, datasets: mapDatasets }),
 ];
+

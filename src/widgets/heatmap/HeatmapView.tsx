@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { HeatmapPayload, HeatmapCell } from "../../shared/payloads.js";
-import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { useTheme } from "../shared/theme.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
+import { ColorScaleLegend, intensityAlpha } from "../shared/color-scale.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const CHART_HEIGHT = 360;
@@ -19,29 +20,6 @@ const X_LABEL_TILT_THRESHOLD = 8;
 const CELL_GAP = 2;
 const CELL_RADIUS = 2;
 const NUMBER_FMT = new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 });
-
-// Single-hue intensity ramp: series-0 with alpha stops 8% / 35% / 75% / 100%.
-// Piecewise-linear interpolation gives smooth gradients without banding.
-const ALPHA_STOPS = [
-  { t: 0.0, a: 0.08 },
-  { t: 0.33, a: 0.35 },
-  { t: 0.67, a: 0.75 },
-  { t: 1.0, a: 1.0 },
-];
-
-function intensityAlpha(value: number, min: number, max: number): number {
-  const range = max - min;
-  const t = range === 0 ? 0.5 : Math.max(0, Math.min(1, (value - min) / range));
-  for (let i = 0; i < ALPHA_STOPS.length - 1; i++) {
-    const a = ALPHA_STOPS[i]!;
-    const b = ALPHA_STOPS[i + 1]!;
-    if (t <= b.t) {
-      const local = (t - a.t) / (b.t - a.t);
-      return a.a + (b.a - a.a) * local;
-    }
-  }
-  return 1;
-}
 
 interface CellLookup {
   values: Map<number, HeatmapCell>;
@@ -68,55 +46,6 @@ function buildLookup(cells: HeatmapCell[], cols: number): CellLookup {
 
 function truncate(s: string, max: number): string {
   return s.length <= max ? s : `${s.slice(0, max - 1)}…`;
-}
-
-// Continuous min→max legend mirroring the cell intensity ramp. The gradient
-// mixes the series hue toward the widget background at the same alpha stops
-// used by `intensityAlpha`, so the bar reads as "what colour means what value".
-function ColorScaleLegend({
-  min,
-  max,
-  hue,
-  tokens,
-}: {
-  min: number;
-  max: number;
-  hue: string;
-  tokens: ChartDesignTokens;
-}) {
-  const stop = (pct: number, pos: number) =>
-    `color-mix(in oklab, ${hue} ${pct}%, var(--sigil-bg)) ${pos}%`;
-  const gradient = `linear-gradient(90deg, ${stop(8, 0)}, ${stop(35, 33)}, ${stop(75, 67)}, ${hue} 100%)`;
-  const labelStyle = {
-    fontFamily: tokens.typography.family.mono,
-    fontSize: tokens.typography.scale.tick.fontSize,
-    fontVariantNumeric: "tabular-nums" as const,
-    color: tokens.texts.muted,
-  };
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        paddingTop: 12,
-      }}
-    >
-      <span style={labelStyle}>{NUMBER_FMT.format(min)}</span>
-      <div
-        aria-hidden
-        style={{
-          width: 160,
-          height: 8,
-          borderRadius: tokens.radius.full,
-          background: gradient,
-          border: `0.5px solid ${tokens.borders.subtle}`,
-        }}
-      />
-      <span style={labelStyle}>{NUMBER_FMT.format(max)}</span>
-    </div>
-  );
 }
 
 function useContainerWidth(ref: React.RefObject<HTMLElement>): number {
