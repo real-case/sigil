@@ -93,8 +93,11 @@ export interface HeatmapPayload {
 /** Base map for the map widget: world countries or US states. */
 export type MapScope = "world" | "us-states";
 
-/** How the map encodes data. Currently only country choropleth shading. */
-export type MapVariant = "choropleth";
+/**
+ * How the map encodes data: region shading (`choropleth`, driven by `data`)
+ * or sized markers at coordinates (`bubble`, driven by `points`).
+ */
+export type MapVariant = "choropleth" | "bubble";
 
 export interface MapRegionDatum {
   /**
@@ -108,11 +111,25 @@ export interface MapRegionDatum {
   label?: string;
 }
 
+export interface MapPoint {
+  /** Latitude in degrees (−90..90). */
+  lat: number;
+  /** Longitude in degrees (−180..180). */
+  lon: number;
+  /** Non-negative magnitude controlling the marker's area. */
+  value: number;
+  /** Label shown in the tooltip. */
+  label?: string;
+}
+
 export interface MapPayload {
   title: string;
   scope: MapScope;
   variant: MapVariant;
-  data: MapRegionDatum[];
+  /** Choropleth regions (used when variant is "choropleth"). */
+  data?: MapRegionDatum[];
+  /** Bubble markers at coordinates (used when variant is "bubble"). */
+  points?: MapPoint[];
   /** Optional label for the value in the tooltip and legend, e.g. "GDP per capita". */
   valueLabel?: string;
 }
