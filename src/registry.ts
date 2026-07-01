@@ -9,6 +9,8 @@ import {
 } from "./tools/scatter-chart.js";
 import { registerTreemapTool, TREEMAP_UI_URI } from "./tools/treemap.js";
 import { registerHeatmapTool, HEATMAP_UI_URI } from "./tools/heatmap.js";
+import { registerStatPanelTool, STAT_PANEL_UI_URI } from "./tools/stat-panel.js";
+import { registerDashboardTool, DASHBOARD_UI_URI } from "./tools/dashboard.js";
 
 export interface WidgetEntry {
   name: string;
@@ -24,4 +26,6 @@ export const WIDGETS: readonly WidgetEntry[] = [
   { name: "scatter-chart", uri: SCATTER_CHART_UI_URI, register: registerScatterChartTool },
   { name: "treemap", uri: TREEMAP_UI_URI, register: registerTreemapTool },
   { name: "heatmap", uri: HEATMAP_UI_URI, register: registerHeatmapTool },
+  { name: "stat-panel", uri: STAT_PANEL_UI_URI, register: registerStatPanelTool },
+  { name: "dashboard", uri: DASHBOARD_UI_URI, register: registerDashboardTool },
 ] as const;

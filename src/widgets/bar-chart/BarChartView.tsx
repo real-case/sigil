@@ -23,6 +23,10 @@ const ROTATE_AFTER_LABEL_LEN = 8;
 const HORIZONTAL_LABEL_MAX = 16;
 const HORIZONTAL_LABEL_WIDTH_BASE = 80;
 const HORIZONTAL_LABEL_WIDTH_PER_CHAR = 6.5;
+// Vertical (category-on-X) ticks: truncate so rotated labels stay readable and
+// don't overrun the plot. Wider cap when straight, tighter when rotated.
+const VERTICAL_LABEL_MAX_STRAIGHT = 12;
+const VERTICAL_LABEL_MAX_ROTATED = 16;
 
 const truncateLabel = (s: string, max: number): string =>
   s.length <= max ? s : `${s.slice(0, max - 1)}…`;
@@ -176,8 +180,16 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   tick={tickStyle}
                   stroke={tokens.chartLines.axis}
                   interval={0}
-                  height={needsRotation ? (xlabel ? 80 : 64) : xlabel ? 48 : 30}
-                  angle={needsRotation ? -30 : 0}
+                  tickFormatter={(v: string) =>
+                    truncateLabel(
+                      v,
+                      needsRotation
+                        ? VERTICAL_LABEL_MAX_ROTATED
+                        : VERTICAL_LABEL_MAX_STRAIGHT,
+                    )
+                  }
+                  height={needsRotation ? (xlabel ? 96 : 68) : xlabel ? 48 : 30}
+                  angle={needsRotation ? -35 : 0}
                   textAnchor={needsRotation ? "end" : "middle"}
                   label={
                     xlabel

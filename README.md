@@ -8,7 +8,7 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 
 🌐 [sigil.live](https://sigil.live) · [TESTING.md](./TESTING.md) · [INCANTATIONS.md](./INCANTATIONS.md) · [SPEC.md](./SPEC.md)
 
-> **Status:** v0.2.0 — 7 widgets + payload-guard / registry / registration test harness.
+> **Status:** v0.2.0 — 9 widgets + payload-guard / registry / registration test harness.
 
 ## Demo
 
@@ -25,8 +25,10 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 | [`render_scatter_chart`](#render_scatter_chart) | (x, y) relationships, correlation, clusters | multi-series scatter with optional point-size encoding |
 | [`render_treemap`](#render_treemap) | hierarchical part-of-whole, many leaves | nested rectangles sized by value, palette-tinted by branch |
 | [`render_heatmap`](#render_heatmap) | 2D categorical × numeric intensity | matrix with palette gradient, hover tooltip per cell |
+| [`render_stat_panel`](#render_stat_panel) | KPIs / scorecards, at-a-glance metrics | grid of metric cards with coloured trend deltas and status accents |
+| [`render_dashboard`](#render_dashboard) | several related views at once | grid of tiles, each tile any other widget rendered from its own payload |
 
-All chart widgets expose **Copy CSV** and **Copy PNG** buttons; the table exposes **Copy CSV**.
+All chart widgets expose **Copy CSV** and **Copy PNG** buttons; the table and stat panel expose **Copy CSV**. The dashboard composes other widgets, so each tile keeps its own controls.
 
 ### Optional: Ritual Mode
 
@@ -190,6 +192,41 @@ Render an interactive heatmap matrix: a 2D grid where each cell's color encodes 
 | `xlabel` | `string` | no | X-axis title |
 | `ylabel` | `string` | no | Y-axis title |
 
+### `render_stat_panel`
+
+Render an interactive panel of key metrics (KPI / scorecard cards). Each card shows a headline value with an optional unit, a trend delta vs a prior period (coloured good/bad), a short description, and an optional status accent. Use for dashboards-at-a-glance: KPIs, health summaries, before/after numbers.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Panel title |
+| `items` | `Array<{ label, value, ... }>` | yes | Metric cards; at least one |
+| `items[].label` | `string` | yes | Metric name |
+| `items[].value` | `string \| number` | yes | Headline figure; numbers are grouped/formatted, strings shown as-is |
+| `items[].unit` | `string` | no | Unit after the value, e.g. `ms`, `%`, `GB` |
+| `items[].delta` | `number` | no | Signed change vs the comparison period; shows a coloured up/down arrow |
+| `items[].deltaUnit` | `string` | no | Unit for the delta (default `%`) |
+| `items[].deltaCaption` | `string` | no | Caption beside the delta, e.g. `vs last week` |
+| `items[].higherIsBetter` | `boolean` | no | Whether a rising value is good — controls delta colour (default `true`) |
+| `items[].description` | `string` | no | Small caption under the value |
+| `items[].status` | `"success" \| "warning" \| "danger" \| "info"` | no | Optional semantic accent bar (and badge colour) |
+| `items[].trend` | `number[]` | no | Recent values (oldest→newest) drawn as a compact sparkline |
+| `items[].target` | `number` | no | Goal for the metric; with a numeric value, draws a progress bar |
+| `items[].badge` | `string` | no | Short status pill next to the label, coloured by `status` |
+| `columns` | `number` | no | Fixed column count (1–4); defaults to an auto-fit grid |
+
+### `render_dashboard`
+
+Render a multi-widget dashboard: a grid of tiles where each tile is one of the other Sigil widgets, rendered from its own payload. Use to show several related views at once — e.g. a KPI row above a couple of charts.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Dashboard title |
+| `columns` | `number` | no | Grid column count (1–4); defaults to `2` |
+| `tiles` | `Array<{ type, payload, colSpan? }>` | yes | Ordered tiles, laid out left-to-right, top-to-bottom |
+| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel"` | yes | Which widget to render |
+| `tiles[].payload` | `object` | yes | That widget's own payload — the same object its `render_<type>` tool accepts |
+| `tiles[].colSpan` | `number` | no | How many columns the tile spans (1..`columns`); defaults to `1` |
+
 ---
 
 ## Development
@@ -201,7 +238,7 @@ npm run dev:stdio           # stdio server (for Claude Desktop / VS Code)
 npm run dev:sandbox         # in-browser widget sandbox — pick any widget + preset, toggle theme / viewport / debug overlay
 npm run typecheck           # tsc --noEmit
 npm test                    # vitest: payload guards, registry, tool registration
-npm run build               # bundle 7 widgets + compile server
+npm run build               # bundle 8 widgets + compile server
 npm start                   # run compiled HTTP server
 npm run start:stdio         # run compiled stdio server
 ```

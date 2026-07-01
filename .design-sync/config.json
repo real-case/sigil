@@ -1,0 +1,38 @@
+{
+  "projectId": "6968912e-d1d5-4d38-965e-048f6d1374e8",
+  "pkg": "@real-case/sigil",
+  "globalName": "Sigil",
+  "shape": "storybook",
+  "storybookConfigDir": ".storybook",
+  "storybookStatic": ".design-sync/sb-reference",
+  "entry": ".design-sync/entry.tsx",
+  "extraEntries": ["./.design-sync/entry.tsx"],
+  "cssEntry": ".design-sync/styles-bundle.css",
+  "provider": { "component": "SigilThemeProvider" },
+  "readmeHeader": ".design-sync/conventions.md",
+  "titleMap": {
+    "Barchart": "BarChartView",
+    "Linechart": "LineChartView",
+    "Piechart": "PieChartView",
+    "Table": "TableView",
+    "Heatmap": "HeatmapView",
+    "Scatterchart": "ScatterChartView",
+    "Treemap": "TreemapView",
+    "Statpanel": "StatPanelView",
+    "Dashboard": "DashboardView"
+  },
+  "overrides": {
+    "TreemapView": { "cardMode": "column" }
+  },
+  "dtsPropsFor": {
+    "BarChartView": "/** The chart data and configuration. Each datum is one bar. */\n  payload: {\n    title: string;\n    data: { label: string; value: number; color?: string }[];\n    orientation: \"vertical\" | \"horizontal\";\n    xlabel?: string;\n    ylabel?: string;\n  }",
+    "LineChartView": "/** The chart data and configuration. One entry in `series` per line. */\n  payload: {\n    title: string;\n    series: { name: string; data: { x: string | number; y: number }[] }[];\n    xlabel?: string;\n    ylabel?: string;\n  }",
+    "PieChartView": "/** The chart data and configuration. Set `variant` to \"donut\" for a hole. */\n  payload: {\n    title: string;\n    data: { label: string; value: number; color?: string }[];\n    variant: \"pie\" | \"donut\";\n  }",
+    "ScatterChartView": "/** The chart data and configuration. One entry in `series` per point group; `size` scales the marker. */\n  payload: {\n    title: string;\n    series: { name: string; data: { x: number; y: number; size?: number }[] }[];\n    xlabel?: string;\n    ylabel?: string;\n  }",
+    "TreemapView": "/** The chart data. `data` nodes nest via `children` for a hierarchical treemap. */\n  payload: {\n    title: string;\n    data: { label: string; value: number; color?: string; children?: { label: string; value: number; color?: string; children?: unknown[] }[] }[];\n  }",
+    "HeatmapView": "/** The chart data and configuration. `cells` index into the `xLabels`/`yLabels` axes by position. */\n  payload: {\n    title: string;\n    xLabels: string[];\n    yLabels: string[];\n    cells: { x: number; y: number; value: number }[];\n    xlabel?: string;\n    ylabel?: string;\n  }",
+    "TableView": "/** The table data and configuration. `rows` are keyed by each column's `key`. */\n  payload: {\n    title: string;\n    columns: { key: string; label: string; align?: \"left\" | \"right\" | \"center\" }[];\n    rows: Record<string, string | number>[];\n    sortable: boolean;\n    filterable: boolean;\n  }",
+    "StatPanelView": "/** The panel data. Each item is a KPI card; `delta` drives a coloured trend arrow, `trend` a sparkline, `target` a progress bar. */\n  payload: {\n    title: string;\n    items: { label: string; value: string | number; unit?: string; delta?: number; deltaUnit?: string; deltaCaption?: string; higherIsBetter?: boolean; description?: string; status?: \"success\" | \"warning\" | \"danger\" | \"info\"; trend?: number[]; target?: number; badge?: string }[];\n    columns?: number;\n  }",
+    "DashboardView": "/** A grid of tiles; each tile renders another Sigil widget from its own payload. */\n  payload: {\n    title: string;\n    columns?: number;\n    tiles: { type: \"bar-chart\" | \"line-chart\" | \"pie-chart\" | \"table\" | \"scatter-chart\" | \"treemap\" | \"heatmap\" | \"stat-panel\"; payload: unknown; colSpan?: number }[];\n  }"
+  }
+}

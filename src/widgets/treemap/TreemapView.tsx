@@ -27,9 +27,16 @@ function toRechartsTree(
 ): RechartsTreemapNode[] {
   return nodes.map((node, i) => {
     const paletteIndex = inheritedIndex ?? i;
+    const baseHue =
+      node.color ?? tokens.series[paletteIndex % tokens.series.length]!;
+    // Nested leaves share their group's hue; shade siblings along a tonal
+    // family so adjacent tiles of the same group stay distinguishable.
+    const isNestedLeaf =
+      inheritedIndex !== undefined && !node.children?.length;
     const fill =
-      node.color ??
-      tokens.series[paletteIndex % tokens.series.length]!;
+      isNestedLeaf && !node.color && nodes.length > 1
+        ? `color-mix(in oklab, ${baseHue}, white ${Math.round((i / (nodes.length - 1)) * 32)}%)`
+        : baseHue;
     const out: RechartsTreemapNode = {
       name: node.label,
       value: node.value,
@@ -67,6 +74,7 @@ interface NodeContentProps {
   value?: number;
   fill?: string;
   depth?: number;
+  children?: unknown[];
   selectedName: string | null;
   onToggle: (name: string) => void;
   tokens: ChartDesignTokens;
@@ -81,12 +89,17 @@ function NodeContent({
   value,
   fill,
   depth = 0,
+  children,
   selectedName,
   onToggle,
   tokens,
 }: NodeContentProps) {
   if (width <= 0 || height <= 0) return null;
-  const isLeaf = depth >= 1;
+  // A leaf is any node without children — robust to irregular nesting depth
+  // (some branches go deeper than others). Internal nodes below the invisible
+  // root (depth 0) are groups.
+  const isLeaf = !(children && children.length > 0);
+  const isGroup = !isLeaf && depth >= 1;
   const showName = isLeaf && width >= MIN_NAME_WIDTH && height >= MIN_NAME_HEIGHT;
   const showValue = isLeaf && width >= MIN_VALUE_WIDTH && height >= MIN_VALUE_HEIGHT;
   const opacity =
@@ -110,8 +123,11 @@ function NodeContent({
         rx={isLeaf ? tokens.radius.sm : 0}
         ry={isLeaf ? tokens.radius.sm : 0}
         fill={isLeaf ? fill ?? tokens.series[0]! : "transparent"}
-        stroke={isLeaf ? "transparent" : tokens.surfaces.bg}
-        strokeWidth={depth === 0 ? 2 : 0}
+        // Groups paint a background "moat" on their border so adjacent groups
+        // read as separate blocks, wider than the gaps between leaves. Top-level
+        // groups get a wider moat than sub-groups, conveying the hierarchy.
+        stroke={isGroup ? tokens.surfaces.bg : "transparent"}
+        strokeWidth={isGroup ? (depth === 1 ? 6 : 3) : 0}
       />
       {showName && (
         <text
@@ -167,6 +183,16 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
 
   const tree = useMemo(() => toRechartsTree(data, tokens), [data, tokens]);
   const leaves = useMemo(() => flattenLeaves(data), [data]);
+  // Parent groups can't carry an on-canvas header (Recharts lays children over
+  // the whole parent rect), so surface the full breadcrumb in the tooltip.
+  const pathByLeaf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const l of leaves) {
+      const leaf = l.path.split(" / ").pop()!;
+      m.set(leaf, l.path);
+    }
+    return m;
+  }, [leaves]);
 
   const copyCsv = () => {
     const body: CsvCell[][] = leaves.map((l) => [l.path, l.value]);
@@ -215,7 +241,10 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
                   payload={
                     props.payload?.map((p) => ({
                       color: typeof p.color === "string" ? p.color : undefined,
-                      name: typeof p.name === "string" ? p.name : undefined,
+                      name:
+                        typeof p.name === "string"
+                          ? pathByLeaf.get(p.name) ?? p.name
+                          : undefined,
                       dataKey: p.dataKey as string | number | undefined,
                       value: p.value as number | string | undefined,
                     }))

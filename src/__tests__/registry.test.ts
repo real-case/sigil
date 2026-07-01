@@ -13,10 +13,12 @@ describe("widget registry", () => {
     const names = WIDGETS.map((w) => w.name).sort();
     expect(names).toEqual([
       "bar-chart",
+      "dashboard",
       "heatmap",
       "line-chart",
       "pie-chart",
       "scatter-chart",
+      "stat-panel",
       "table",
       "treemap",
     ]);

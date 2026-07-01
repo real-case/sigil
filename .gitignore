@@ -13,3 +13,13 @@ storybook-static/
 
 # Stray macOS path created by accidental tilde-expansion mishaps
 /Support/
+
+# design-sync (claude.ai/design) — staged scripts, build output, transient state.
+# Durable inputs (config.json, NOTES.md, conventions.md, entry.tsx, previews/,
+# overrides/) are NOT ignored and get committed.
+.ds-sync/
+ds-bundle/
+.design-sync/sb-reference/
+.design-sync/learnings/
+.design-sync/.cache/
+.design-sync/node_modules

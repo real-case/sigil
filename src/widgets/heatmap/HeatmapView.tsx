@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { HeatmapPayload, HeatmapCell } from "../../shared/payloads.js";
-import { useTheme } from "../shared/theme.js";
+import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
@@ -8,7 +8,9 @@ import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-ut
 const CHART_HEIGHT = 360;
 const RIGHT_MARGIN = 16;
 const BOTTOM_MARGIN = 8;
-const X_LABEL_HEIGHT = 56;
+const X_LABEL_HEIGHT = 84;
+const X_LABEL_MAX_CHARS = 16;
+const X_LABEL_TILT_RIGHT_PAD = 72;
 const Y_LABEL_BASE_WIDTH = 48;
 const Y_LABEL_PER_CHAR = 6.5;
 const Y_LABEL_MAX_CHARS = 16;
@@ -68,6 +70,55 @@ function truncate(s: string, max: number): string {
   return s.length <= max ? s : `${s.slice(0, max - 1)}…`;
 }
 
+// Continuous min→max legend mirroring the cell intensity ramp. The gradient
+// mixes the series hue toward the widget background at the same alpha stops
+// used by `intensityAlpha`, so the bar reads as "what colour means what value".
+function ColorScaleLegend({
+  min,
+  max,
+  hue,
+  tokens,
+}: {
+  min: number;
+  max: number;
+  hue: string;
+  tokens: ChartDesignTokens;
+}) {
+  const stop = (pct: number, pos: number) =>
+    `color-mix(in oklab, ${hue} ${pct}%, var(--sigil-bg)) ${pos}%`;
+  const gradient = `linear-gradient(90deg, ${stop(8, 0)}, ${stop(35, 33)}, ${stop(75, 67)}, ${hue} 100%)`;
+  const labelStyle = {
+    fontFamily: tokens.typography.family.mono,
+    fontSize: tokens.typography.scale.tick.fontSize,
+    fontVariantNumeric: "tabular-nums" as const,
+    color: tokens.texts.muted,
+  };
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        paddingTop: 12,
+      }}
+    >
+      <span style={labelStyle}>{NUMBER_FMT.format(min)}</span>
+      <div
+        aria-hidden
+        style={{
+          width: 160,
+          height: 8,
+          borderRadius: tokens.radius.full,
+          background: gradient,
+          border: `0.5px solid ${tokens.borders.subtle}`,
+        }}
+      />
+      <span style={labelStyle}>{NUMBER_FMT.format(max)}</span>
+    </div>
+  );
+}
+
 function useContainerWidth(ref: React.RefObject<HTMLElement>): number {
   const [width, setWidth] = useState(0);
   useEffect(() => {
@@ -121,18 +172,21 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
   );
   const yAxisOffset = ylabel ? AXIS_TITLE_GUTTER : 0;
   const xAxisOffset = xlabel ? AXIS_TITLE_GUTTER : 0;
-  const usableWidth = Math.max(width - yLabelWidth - RIGHT_MARGIN - yAxisOffset, 80);
+  const xLabelTilt =
+    xLabels.length > X_LABEL_TILT_THRESHOLD || xLabels.some((l) => l.length > 6);
+  // Tilted (-45°) labels are anchored at the column centre and ascend to the
+  // upper-right, so the rightmost label needs room past the matrix edge.
+  const rightPad = xLabelTilt ? X_LABEL_TILT_RIGHT_PAD : RIGHT_MARGIN;
+  const usableWidth = Math.max(width - yLabelWidth - rightPad - yAxisOffset, 80);
   const cellWidth = usableWidth / xLabels.length;
   const usableHeight =
     CHART_HEIGHT - X_LABEL_HEIGHT - BOTTOM_MARGIN - xAxisOffset;
   const cellHeight = Math.max(8, usableHeight / yLabels.length);
-  const xLabelTilt =
-    xLabels.length > X_LABEL_TILT_THRESHOLD || xLabels.some((l) => l.length > 6);
 
   const matrixLeft = yLabelWidth + yAxisOffset;
   const matrixTop = X_LABEL_HEIGHT;
   const totalHeight = matrixTop + cellHeight * yLabels.length + BOTTOM_MARGIN + xAxisOffset;
-  const totalWidth = Math.max(matrixLeft + cellWidth * xLabels.length + RIGHT_MARGIN, 1);
+  const totalWidth = Math.max(matrixLeft + cellWidth * xLabels.length + rightPad, 1);
 
   const seriesHue = tokens.series[0]!;
   const cellKey = (x: number, y: number) => `${x}:${y}`;
@@ -204,11 +258,12 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
           >
             {ylabel && (
               <text
-                x={0}
+                x={AXIS_TITLE_GUTTER / 2}
                 y={matrixTop + (cellHeight * yLabels.length) / 2}
-                {...axisLabelStyle}
+                style={axisLabelStyle}
                 textAnchor="middle"
-                transform={`rotate(-90 0 ${matrixTop + (cellHeight * yLabels.length) / 2})`}
+                dominantBaseline="central"
+                transform={`rotate(-90 ${AXIS_TITLE_GUTTER / 2} ${matrixTop + (cellHeight * yLabels.length) / 2})`}
               >
                 {ylabel}
               </text>
@@ -219,7 +274,7 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
                 key={`yl-${y}`}
                 x={matrixLeft - 8}
                 y={matrixTop + cellHeight * y + cellHeight / 2}
-                {...tickLabelStyle}
+                style={tickLabelStyle}
                 textAnchor="end"
                 dominantBaseline="middle"
               >
@@ -229,17 +284,17 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
 
             {xLabels.map((label, x) => {
               const cx = matrixLeft + cellWidth * x + cellWidth / 2;
-              const cy = matrixTop - 6;
+              const cy = matrixTop - 8;
               return (
                 <text
                   key={`xl-${x}`}
                   x={cx}
                   y={cy}
-                  {...tickLabelStyle}
+                  style={tickLabelStyle}
                   textAnchor={xLabelTilt ? "start" : "middle"}
-                  transform={xLabelTilt ? `rotate(-30 ${cx} ${cy})` : undefined}
+                  transform={xLabelTilt ? `rotate(-45 ${cx} ${cy})` : undefined}
                 >
-                  {truncate(label, 12)}
+                  {truncate(label, xLabelTilt ? X_LABEL_MAX_CHARS : 12)}
                 </text>
               );
             })}
@@ -282,13 +337,22 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
               <text
                 x={matrixLeft + (cellWidth * xLabels.length) / 2}
                 y={totalHeight - 4}
-                {...axisLabelStyle}
+                style={axisLabelStyle}
                 textAnchor="middle"
               >
                 {xlabel}
               </text>
             )}
           </svg>
+        )}
+
+        {width > 0 && lookup.max > lookup.min && (
+          <ColorScaleLegend
+            min={lookup.min}
+            max={lookup.max}
+            hue={seriesHue}
+            tokens={tokens}
+          />
         )}
 
         {tooltip && (

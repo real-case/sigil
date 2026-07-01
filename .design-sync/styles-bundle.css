@@ -1,0 +1,380 @@
+/* Generated for /design-sync. Single cssEntry inlining BOTH:
+   1. the --sigil-* design tokens (renderThemeCss from src/widgets/shared/theme.ts),
+      which Storybook injects at runtime via installThemeStyles() — shipped
+      statically here so designs get them through the styles.css @import closure;
+   2. the component chrome styles (src/widgets/shared/styles.css verbatim).
+   Regenerate when theme.ts tokens or shared/styles.css change (see NOTES.md). */
+
+/* ===== design tokens ===== */
+:root {
+  --sigil-series-0: oklch(58% 0.16 250);
+  --sigil-series-1: oklch(60% 0.14 150);
+  --sigil-series-2: oklch(68% 0.16 65);
+  --sigil-series-3: oklch(58% 0.20 25);
+  --sigil-series-4: oklch(54% 0.19 295);
+  --sigil-series-5: oklch(62% 0.12 200);
+  --sigil-series-6: oklch(64% 0.18 40);
+  --sigil-series-7: oklch(58% 0.18 325);
+  --sigil-series-8: oklch(48% 0.13 240);
+  --sigil-series-9: oklch(56% 0.10 110);
+  --sigil-bg: #FAFAFB;
+  --sigil-surface: #FFFFFF;
+  --sigil-surface-elevated: #FFFFFF;
+  --sigil-surface-sunken: #F2F2F4;
+  --sigil-border-subtle: #ECECEE;
+  --sigil-border-default: #DDDDE0;
+  --sigil-border-strong: #B8B8BD;
+  --sigil-text: #1A1B1F;
+  --sigil-text-secondary: #4D4E55;
+  --sigil-text-muted: #888A92;
+  --sigil-grid: #EBEBED;
+  --sigil-axis: #C6C6CB;
+  --sigil-tooltip-bg: #FFFFFF;
+  --sigil-tooltip-border: #DDDDE0;
+  --sigil-tooltip-text: #1A1B1F;
+  --sigil-success-surface: #E8F4ED;
+  --sigil-success-border: #BDDDC8;
+  --sigil-success-text: #1F6E43;
+  --sigil-warning-surface: #FAF1DE;
+  --sigil-warning-border: #E6D3A2;
+  --sigil-warning-text: #7A5806;
+  --sigil-danger-surface: #FAE9E9;
+  --sigil-danger-border: #E5BFC0;
+  --sigil-danger-text: #9C2A2A;
+  --sigil-info-surface: #E9EFFA;
+  --sigil-info-border: #BFCDE5;
+  --sigil-info-text: #2D4D8F;
+  --sigil-focus-ring: oklch(58% 0.16 250 / 0.45);
+  --sigil-focus-ring-width: 2px;
+  --sigil-focus-ring-offset: 1px;
+  --sigil-space-0: 0px;
+  --sigil-space-xs: 4px;
+  --sigil-space-sm: 8px;
+  --sigil-space-md: 12px;
+  --sigil-space-lg: 16px;
+  --sigil-space-xl: 24px;
+  --sigil-space-2xl: 32px;
+  --sigil-radius-sm: 4px;
+  --sigil-radius-md: 8px;
+  --sigil-radius-lg: 12px;
+  --sigil-radius-full: 999px;
+  --sigil-radius: 8px;
+  --sigil-shadow-low: 0 0 0 0.5px rgba(0,0,0,0.04), 0 1px 2px rgba(15,17,21,0.04);
+  --sigil-shadow-mid: 0 0 0 0.5px rgba(0,0,0,0.04), 0 2px 4px rgba(15,17,21,0.06), 0 8px 16px rgba(15,17,21,0.06);
+  --sigil-shadow-high: 0 0 0 0.5px rgba(0,0,0,0.04), 0 4px 8px rgba(15,17,21,0.06), 0 20px 36px rgba(15,17,21,0.10);
+  --sigil-duration-fast: 120ms;
+  --sigil-duration-base: 200ms;
+  --sigil-duration-slow: 320ms;
+  --sigil-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --sigil-easing-emphasized: cubic-bezier(0.3, 1.4, 0.4, 1);
+  --sigil-easing-linear: linear;
+  --sigil-font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --sigil-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --sigil-font-feature-settings: "ss01", "cv11";
+  --sigil-font-family: "IBM Plex Sans", system-ui, sans-serif;
+  --sigil-font-title-family: var(--sigil-font-sans);
+  --sigil-font-title-size: 13px;
+  --sigil-font-title-line-height: 18px;
+  --sigil-font-title-letter-spacing: 0em;
+  --sigil-font-title-weight: 400;
+  --sigil-font-label-family: var(--sigil-font-sans);
+  --sigil-font-label-size: 11px;
+  --sigil-font-label-line-height: 16px;
+  --sigil-font-label-letter-spacing: 0em;
+  --sigil-font-label-weight: 400;
+  --sigil-font-tick-family: var(--sigil-font-mono);
+  --sigil-font-tick-size: 10px;
+  --sigil-font-tick-line-height: 14px;
+  --sigil-font-tick-letter-spacing: 0.04em;
+  --sigil-font-tick-weight: 400;
+  --sigil-font-tick-transform: uppercase;
+  --sigil-font-value-family: var(--sigil-font-mono);
+  --sigil-font-value-size: 28px;
+  --sigil-font-value-line-height: 28px;
+  --sigil-font-value-letter-spacing: -0.02em;
+  --sigil-font-value-weight: 500;
+  --sigil-font-value-variant-numeric: tabular-nums;
+  --sigil-font-value-sm-family: var(--sigil-font-mono);
+  --sigil-font-value-sm-size: 16px;
+  --sigil-font-value-sm-line-height: 18px;
+  --sigil-font-value-sm-letter-spacing: 0em;
+  --sigil-font-value-sm-weight: 500;
+  --sigil-font-value-sm-variant-numeric: tabular-nums;
+  --sigil-font-value-inline-family: var(--sigil-font-mono);
+  --sigil-font-value-inline-size: 13px;
+  --sigil-font-value-inline-line-height: 18px;
+  --sigil-font-value-inline-letter-spacing: 0em;
+  --sigil-font-value-inline-weight: 400;
+  --sigil-font-value-inline-variant-numeric: tabular-nums;
+  --sigil-font-tooltip-family: var(--sigil-font-sans);
+  --sigil-font-tooltip-size: 12px;
+  --sigil-font-tooltip-line-height: 17px;
+  --sigil-font-tooltip-letter-spacing: 0em;
+  --sigil-font-tooltip-weight: 400;
+  --sigil-font-label: 11px;
+  --sigil-font-title: 13px;
+  --sigil-font-tooltip: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sigil-series-0: oklch(72% 0.14 250);
+  --sigil-series-1: oklch(74% 0.13 150);
+  --sigil-series-2: oklch(80% 0.15 70);
+  --sigil-series-3: oklch(70% 0.17 25);
+  --sigil-series-4: oklch(68% 0.18 295);
+  --sigil-series-5: oklch(74% 0.11 200);
+  --sigil-series-6: oklch(74% 0.16 40);
+  --sigil-series-7: oklch(70% 0.16 325);
+  --sigil-series-8: oklch(62% 0.12 240);
+  --sigil-series-9: oklch(70% 0.10 110);
+  --sigil-bg: #131418;
+  --sigil-surface: #1B1C21;
+  --sigil-surface-elevated: #23252B;
+  --sigil-surface-sunken: #0E0F12;
+  --sigil-border-subtle: #26282E;
+  --sigil-border-default: #34363D;
+  --sigil-border-strong: #545761;
+  --sigil-text: #F2F3F5;
+  --sigil-text-secondary: #AEB0B8;
+  --sigil-text-muted: #7B7D86;
+  --sigil-grid: #25272D;
+  --sigil-axis: #3D3F47;
+  --sigil-tooltip-bg: #23252B;
+  --sigil-tooltip-border: #34363D;
+  --sigil-tooltip-text: #F2F3F5;
+  --sigil-success-surface: #0F2A1E;
+  --sigil-success-border: #1F4E36;
+  --sigil-success-text: #6AC58F;
+  --sigil-warning-surface: #2E2410;
+  --sigil-warning-border: #553F1A;
+  --sigil-warning-text: #E2B856;
+  --sigil-danger-surface: #2C1414;
+  --sigil-danger-border: #582828;
+  --sigil-danger-text: #F08A8A;
+  --sigil-info-surface: #15203A;
+  --sigil-info-border: #2C3F6E;
+  --sigil-info-text: #88A8E8;
+  --sigil-focus-ring: oklch(72% 0.14 250 / 0.55);
+  --sigil-focus-ring-width: 2px;
+  --sigil-focus-ring-offset: 1px;
+  --sigil-space-0: 0px;
+  --sigil-space-xs: 4px;
+  --sigil-space-sm: 8px;
+  --sigil-space-md: 12px;
+  --sigil-space-lg: 16px;
+  --sigil-space-xl: 24px;
+  --sigil-space-2xl: 32px;
+  --sigil-radius-sm: 4px;
+  --sigil-radius-md: 8px;
+  --sigil-radius-lg: 12px;
+  --sigil-radius-full: 999px;
+  --sigil-radius: 8px;
+  --sigil-shadow-low: 0 0 0 0.5px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5);
+  --sigil-shadow-mid: 0 0 0 0.5px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.5);
+  --sigil-shadow-high: 0 0 0 0.5px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.4), 0 20px 36px rgba(0,0,0,0.6);
+  --sigil-duration-fast: 120ms;
+  --sigil-duration-base: 200ms;
+  --sigil-duration-slow: 320ms;
+  --sigil-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --sigil-easing-emphasized: cubic-bezier(0.3, 1.4, 0.4, 1);
+  --sigil-easing-linear: linear;
+  --sigil-font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --sigil-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --sigil-font-feature-settings: "ss01", "cv11";
+  --sigil-font-family: "IBM Plex Sans", system-ui, sans-serif;
+  --sigil-font-title-family: var(--sigil-font-sans);
+  --sigil-font-title-size: 13px;
+  --sigil-font-title-line-height: 18px;
+  --sigil-font-title-letter-spacing: 0em;
+  --sigil-font-title-weight: 400;
+  --sigil-font-label-family: var(--sigil-font-sans);
+  --sigil-font-label-size: 11px;
+  --sigil-font-label-line-height: 16px;
+  --sigil-font-label-letter-spacing: 0em;
+  --sigil-font-label-weight: 400;
+  --sigil-font-tick-family: var(--sigil-font-mono);
+  --sigil-font-tick-size: 10px;
+  --sigil-font-tick-line-height: 14px;
+  --sigil-font-tick-letter-spacing: 0.04em;
+  --sigil-font-tick-weight: 400;
+  --sigil-font-tick-transform: uppercase;
+  --sigil-font-value-family: var(--sigil-font-mono);
+  --sigil-font-value-size: 28px;
+  --sigil-font-value-line-height: 28px;
+  --sigil-font-value-letter-spacing: -0.02em;
+  --sigil-font-value-weight: 500;
+  --sigil-font-value-variant-numeric: tabular-nums;
+  --sigil-font-value-sm-family: var(--sigil-font-mono);
+  --sigil-font-value-sm-size: 16px;
+  --sigil-font-value-sm-line-height: 18px;
+  --sigil-font-value-sm-letter-spacing: 0em;
+  --sigil-font-value-sm-weight: 500;
+  --sigil-font-value-sm-variant-numeric: tabular-nums;
+  --sigil-font-value-inline-family: var(--sigil-font-mono);
+  --sigil-font-value-inline-size: 13px;
+  --sigil-font-value-inline-line-height: 18px;
+  --sigil-font-value-inline-letter-spacing: 0em;
+  --sigil-font-value-inline-weight: 400;
+  --sigil-font-value-inline-variant-numeric: tabular-nums;
+  --sigil-font-tooltip-family: var(--sigil-font-sans);
+  --sigil-font-tooltip-size: 12px;
+  --sigil-font-tooltip-line-height: 17px;
+  --sigil-font-tooltip-letter-spacing: 0em;
+  --sigil-font-tooltip-weight: 400;
+  --sigil-font-label: 11px;
+  --sigil-font-title: 13px;
+  --sigil-font-tooltip: 12px;
+  }
+}
+
+/* ===== component styles (src/widgets/shared/styles.css) ===== */
+:root {
+  color-scheme: light dark;
+}
+
+/* Do NOT add `height: 100%` here. MCP Apps hosts size the iframe from the
+   guest's ResizeObserver on body; pinning body to 100% of the iframe makes
+   the observer report the host-allocated height (not content), so growth
+   from "Connecting…" to a rendered chart never propagates. */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  background: var(--sigil-bg);
+  color: var(--sigil-text);
+  font-family: var(--sigil-font-sans);
+  font-feature-settings: var(--sigil-font-feature-settings);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.sigil-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--sigil-space-lg);
+  box-sizing: border-box;
+}
+
+.sigil-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sigil-space-md);
+  margin-bottom: var(--sigil-space-md);
+  flex-wrap: wrap;
+}
+
+.sigil-title {
+  margin: 0 0 var(--sigil-space-md) 0;
+  font-family: var(--sigil-font-title-family);
+  font-size: var(--sigil-font-title-size);
+  line-height: var(--sigil-font-title-line-height);
+  font-weight: 600;
+  letter-spacing: var(--sigil-font-title-letter-spacing);
+  color: var(--sigil-text);
+}
+
+.sigil-header .sigil-title {
+  margin-bottom: 0;
+}
+
+.sigil-toolbar {
+  display: flex;
+  gap: var(--sigil-space-xs);
+  align-items: center;
+  padding: 3px;
+  border-radius: var(--sigil-radius-md);
+}
+
+.sigil-toolbar-btn {
+  background: transparent;
+  color: var(--sigil-text-secondary);
+  border: 1px solid var(--sigil-border-default);
+  border-radius: var(--sigil-radius-sm);
+  padding: 5px 9px;
+  font-family: var(--sigil-font-tick-family);
+  font-size: var(--sigil-font-tick-size);
+  letter-spacing: var(--sigil-font-tick-letter-spacing);
+  cursor: pointer;
+  transition: all var(--sigil-duration-fast) var(--sigil-easing-standard);
+}
+
+.sigil-toolbar-btn:hover:not(:disabled) {
+  background: var(--sigil-surface-sunken);
+  color: var(--sigil-text);
+  border-color: var(--sigil-border-strong);
+}
+
+.sigil-toolbar-btn:focus-visible {
+  outline: var(--sigil-focus-ring-width) solid var(--sigil-focus-ring);
+  outline-offset: var(--sigil-focus-ring-offset);
+}
+
+.sigil-toolbar-btn:disabled {
+  cursor: default;
+  color: var(--sigil-series-0);
+}
+
+.sigil-toolbar-btn.is-error {
+  color: var(--sigil-danger-text);
+  border-color: var(--sigil-danger-border);
+  background: var(--sigil-danger-surface);
+}
+
+.sigil-canvas {
+  flex: 1 1 auto;
+  min-height: 220px;
+}
+
+.sigil-empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--sigil-text-muted);
+}
+
+/* Suppress browser focus outline on chart segments clicked with mouse,
+   while preserving keyboard focus indicators for accessibility. */
+.recharts-wrapper :focus:not(:focus-visible) {
+  outline: none;
+}
+
+.recharts-wrapper :focus-visible {
+  outline: var(--sigil-focus-ring-width) solid var(--sigil-focus-ring);
+  outline-offset: var(--sigil-focus-ring-offset);
+}
+
+.sigil-empty p {
+  margin: 0;
+  font-size: var(--sigil-font-label-size);
+  line-height: var(--sigil-font-label-line-height);
+}
+
+/* Shared keyframes used by primitives. */
+@keyframes sigil-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes sigil-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
