@@ -90,6 +90,68 @@ export interface HeatmapPayload {
   ylabel?: string;
 }
 
+export type StatStatus = "success" | "warning" | "danger" | "info";
+
+export interface StatItem {
+  /** Metric name, e.g. "Monthly active users". */
+  label: string;
+  /** The headline figure. Numbers are grouped/formatted; strings shown as-is. */
+  value: string | number;
+  /** Unit shown after the value, e.g. "ms", "%", "GB". */
+  unit?: string;
+  /** Signed change vs the comparison period; drives the trend arrow + colour. */
+  delta?: number;
+  /** Unit for the delta. Defaults to "%". */
+  deltaUnit?: string;
+  /** Caption beside the delta, e.g. "vs last week". */
+  deltaCaption?: string;
+  /** Whether a rising value is good (colours the delta). Defaults to true. */
+  higherIsBetter?: boolean;
+  /** Small caption under the value. */
+  description?: string;
+  /** Optional semantic accent (left bar) drawn from the theme's semantic set. */
+  status?: StatStatus;
+  /** Recent values (oldest→newest) rendered as a compact sparkline. */
+  trend?: number[];
+  /** Goal for the metric; when set (with a numeric value) draws a progress bar. */
+  target?: number;
+  /** Short status pill shown by the label, coloured by `status`. */
+  badge?: string;
+}
+
+export interface StatPanelPayload {
+  title: string;
+  items: StatItem[];
+  /** Optional fixed column count (1–4). Defaults to an auto-fit grid. */
+  columns?: number;
+}
+
+export type DashboardTileType =
+  | "bar-chart"
+  | "line-chart"
+  | "pie-chart"
+  | "table"
+  | "scatter-chart"
+  | "treemap"
+  | "heatmap"
+  | "stat-panel";
+
+export interface DashboardTile {
+  /** Which widget to render in this tile. */
+  type: DashboardTileType;
+  /** The referenced widget's own payload (same shape its render_* tool takes). */
+  payload: unknown;
+  /** How many grid columns this tile spans (1..columns). Defaults to 1. */
+  colSpan?: number;
+}
+
+export interface DashboardPayload {
+  title: string;
+  /** Grid column count. Defaults to 2. */
+  columns?: number;
+  tiles: DashboardTile[];
+}
+
 export type ColumnAlign = "left" | "right" | "center";
 
 export interface TableColumn {
