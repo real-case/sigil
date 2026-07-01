@@ -19,7 +19,8 @@
     "Scatterchart": "ScatterChartView",
     "Treemap": "TreemapView",
     "Statpanel": "StatPanelView",
-    "Dashboard": "DashboardView"
+    "Dashboard": "DashboardView",
+    "Map": "MapView"
   },
   "overrides": {
     "TreemapView": { "cardMode": "column" }
@@ -33,6 +34,7 @@
     "HeatmapView": "/** The chart data and configuration. `cells` index into the `xLabels`/`yLabels` axes by position. */\n  payload: {\n    title: string;\n    xLabels: string[];\n    yLabels: string[];\n    cells: { x: number; y: number; value: number }[];\n    xlabel?: string;\n    ylabel?: string;\n  }",
     "TableView": "/** The table data and configuration. `rows` are keyed by each column's `key`. */\n  payload: {\n    title: string;\n    columns: { key: string; label: string; align?: \"left\" | \"right\" | \"center\" }[];\n    rows: Record<string, string | number>[];\n    sortable: boolean;\n    filterable: boolean;\n  }",
     "StatPanelView": "/** The panel data. Each item is a KPI card; `delta` drives a coloured trend arrow, `trend` a sparkline, `target` a progress bar. */\n  payload: {\n    title: string;\n    items: { label: string; value: string | number; unit?: string; delta?: number; deltaUnit?: string; deltaCaption?: string; higherIsBetter?: boolean; description?: string; status?: \"success\" | \"warning\" | \"danger\" | \"info\"; trend?: number[]; target?: number; badge?: string }[];\n    columns?: number;\n  }",
-    "DashboardView": "/** A grid of tiles; each tile renders another Sigil widget from its own payload. */\n  payload: {\n    title: string;\n    columns?: number;\n    tiles: { type: \"bar-chart\" | \"line-chart\" | \"pie-chart\" | \"table\" | \"scatter-chart\" | \"treemap\" | \"heatmap\" | \"stat-panel\"; payload: unknown; colSpan?: number }[];\n  }"
+    "DashboardView": "/** A grid of tiles; each tile renders another Sigil widget from its own payload. */\n  payload: {\n    title: string;\n    columns?: number;\n    tiles: { type: \"bar-chart\" | \"line-chart\" | \"pie-chart\" | \"table\" | \"scatter-chart\" | \"treemap\" | \"heatmap\" | \"stat-panel\"; payload: unknown; colSpan?: number }[];\n  }",
+    "MapView": "/** The choropleth data. Each datum shades one country, keyed by ISO 3166-1 alpha-3 (preferred), alpha-2, numeric, or common English name. */\n  payload: {\n    title: string;\n    scope: \"world\";\n    variant: \"choropleth\";\n    data: { id: string; value: number; label?: string }[];\n    valueLabel?: string;\n  }"
   }
 }

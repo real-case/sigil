@@ -11,6 +11,7 @@ import { registerTreemapTool, TREEMAP_UI_URI } from "./tools/treemap.js";
 import { registerHeatmapTool, HEATMAP_UI_URI } from "./tools/heatmap.js";
 import { registerStatPanelTool, STAT_PANEL_UI_URI } from "./tools/stat-panel.js";
 import { registerDashboardTool, DASHBOARD_UI_URI } from "./tools/dashboard.js";
+import { registerMapTool, MAP_UI_URI } from "./tools/map.js";
 
 export interface WidgetEntry {
   name: string;
@@ -28,4 +29,5 @@ export const WIDGETS: readonly WidgetEntry[] = [
   { name: "heatmap", uri: HEATMAP_UI_URI, register: registerHeatmapTool },
   { name: "stat-panel", uri: STAT_PANEL_UI_URI, register: registerStatPanelTool },
   { name: "dashboard", uri: DASHBOARD_UI_URI, register: registerDashboardTool },
+  { name: "map", uri: MAP_UI_URI, register: registerMapTool },
 ] as const;

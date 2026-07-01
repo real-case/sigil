@@ -39,3 +39,4 @@ export { ScatterChartView } from "../src/widgets/scatter-chart/ScatterChartView.
 export { TreemapView } from "../src/widgets/treemap/TreemapView.js";
 export { StatPanelView } from "../src/widgets/stat-panel/StatPanelView.js";
 export { DashboardView } from "../src/widgets/dashboard/DashboardView.js";
+export { MapView } from "../src/widgets/map/MapView.js";
