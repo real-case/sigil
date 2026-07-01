@@ -19,3 +19,5 @@ export const Medium: Story = { args: { payload: payloadById(mapDatasets, "map-me
 export const Large: Story = { args: { payload: payloadById(mapDatasets, "map-large") } };
 export const Negatives: Story = { args: { payload: payloadById(mapDatasets, "map-negatives") } };
 export const EdgeMixedIds: Story = { args: { payload: payloadById(mapDatasets, "map-edge-ids") } };
+export const UsStatesPopulation: Story = { args: { payload: payloadById(mapDatasets, "map-us-population") } };
+export const UsStatesFull: Story = { args: { payload: payloadById(mapDatasets, "map-us-index") } };
