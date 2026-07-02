@@ -8,6 +8,7 @@ import { ScatterChartView } from "../scatter-chart/ScatterChartView.js";
 import { TreemapView } from "../treemap/TreemapView.js";
 import { HeatmapView } from "../heatmap/HeatmapView.js";
 import { StatPanelView } from "../stat-panel/StatPanelView.js";
+import { MapView } from "../map/MapView.js";
 
 // Production map of widget type → presentational View, used by the dashboard
 // widget to render child tiles. Imports only `*View` modules (side-effect free)
@@ -24,4 +25,5 @@ export const WIDGET_VIEWS: Record<DashboardTileType, AnyView> = {
   treemap: TreemapView as unknown as AnyView,
   heatmap: HeatmapView as unknown as AnyView,
   "stat-panel": StatPanelView as unknown as AnyView,
+  map: MapView as unknown as AnyView,
 };

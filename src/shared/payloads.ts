@@ -178,7 +178,8 @@ export type DashboardTileType =
   | "scatter-chart"
   | "treemap"
   | "heatmap"
-  | "stat-panel";
+  | "stat-panel"
+  | "map";
 
 export interface DashboardTile {
   /** Which widget to render in this tile. */

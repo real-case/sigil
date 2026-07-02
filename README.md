@@ -224,7 +224,7 @@ Render a multi-widget dashboard: a grid of tiles where each tile is one of the o
 | `title` | `string` | yes | Dashboard title |
 | `columns` | `number` | no | Grid column count (1–4); defaults to `2` |
 | `tiles` | `Array<{ type, payload, colSpan? }>` | yes | Ordered tiles, laid out left-to-right, top-to-bottom |
-| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel"` | yes | Which widget to render |
+| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel" \| "map"` | yes | Which widget to render |
 | `tiles[].payload` | `object` | yes | That widget's own payload — the same object its `render_<type>` tool accepts |
 | `tiles[].colSpan` | `number` | no | How many columns the tile spans (1..`columns`); defaults to `1` |
 
