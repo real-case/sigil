@@ -16,5 +16,6 @@ type Story = StoryObj<typeof PieChartView>;
 export const MinimalTwo: Story = { args: { payload: payloadById(pieDatasets, "pie-minimal-two") } };
 export const SmallDonut: Story = { args: { payload: payloadById(pieDatasets, "pie-small-donut") } };
 export const Medium: Story = { args: { payload: payloadById(pieDatasets, "pie-medium") } };
+export const Many: Story = { args: { payload: payloadById(pieDatasets, "pie-many") } };
 export const EdgeLongLabels: Story = { args: { payload: payloadById(pieDatasets, "pie-edge-labels") } };
 export const LargeImbalanced: Story = { args: { payload: payloadById(pieDatasets, "pie-large-imbalanced") } };
