@@ -4,7 +4,7 @@ This file provides repository-level guidance for Claude Code when working in thi
 
 ## Project at a glance
 
-Sigil is an MCP Apps server that ships interactive chart widgets (bar / line / pie / table) which render inline inside AI hosts (Claude Desktop, Claude web, VS Code Copilot, etc.). The full technical specification lives in [`SPEC.md`](./SPEC.md); the user-facing overview is in [`README.md`](./README.md).
+Sigil is an MCP Apps server that ships interactive chart widgets (10 of them — bar / line / pie / table / scatter / treemap / heatmap / stat-panel / dashboard / map) which render inline inside AI hosts (Claude Desktop, Claude web, VS Code Copilot, etc.). The user-facing overview is in [`README.md`](./README.md); [`SPEC.md`](./SPEC.md) is the original build plan, kept as a design record.
 
 Key entry points:
 
@@ -27,7 +27,7 @@ Key entry points:
 
 ### Other conventions
 
-- Don't propose bundle-size optimisations unprompted — per-widget Recharts inlining is intentional for this package (see `memory/feedback_bundle_size.md`).
+- Don't propose bundle-size optimisations unprompted. Widgets ship as self-contained single-file HTML (the MCP Apps constraint), so inlining Recharts, TopoJSON atlases, and fonts into every widget is intentional — portability beats kilobytes here.
 - When adding a new widget, only create new files; the registry pattern means no enumeration list needs editing.
 
 ## Useful commands

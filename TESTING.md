@@ -1,6 +1,6 @@
 # Testing Sigil in Claude
 
-End-to-end test plan covering tasks #6, #18, #20 from [SPEC.md](./SPEC.md).
+End-to-end manual test plan for the MCP Apps pipeline (build → serve → render in a live host). It complements the automated vitest suites (`npm test`).
 Run **Path A** first (stdio, free, fast). Once green, run **Path B** (HTTP) to validate the Custom Connector flow.
 
 ---
@@ -25,6 +25,9 @@ dist/widgets/scatter-chart/index.html
 dist/widgets/table/index.html
 dist/widgets/treemap/index.html
 dist/widgets/heatmap/index.html
+dist/widgets/stat-panel/index.html
+dist/widgets/dashboard/index.html
+dist/widgets/map/index.html
 ```
 
 If anything is missing, stop and fix the build first.
@@ -48,7 +51,7 @@ Edit (macOS) `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-> Use the absolute path while you're iterating locally. Once published to npm, switch to `"command": "npx", "args": ["-y", "sigil"]`.
+> Use the absolute path while you're iterating locally. Once published to npm, switch to `"command": "npx", "args": ["-y", "@real-case/sigil"]`.
 
 Quit Claude Desktop completely (Cmd+Q) and reopen it.
 
@@ -58,7 +61,7 @@ In a new chat, ask:
 
 > What MCP tools do you have available?
 
-You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_scatter_chart`**, **`render_treemap`**, **`render_heatmap`**, and **`render_table`** in the list. If not — see [Debugging](#debugging) below.
+You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_scatter_chart`**, **`render_treemap`**, **`render_heatmap`**, **`render_table`**, **`render_stat_panel`**, **`render_dashboard`**, and **`render_map`** in the list. If not — see [Debugging](#debugging) below.
 
 ### A3. Smoke test each widget with explicit prompts
 
@@ -73,6 +76,18 @@ These force tool selection so you isolate **rendering** from **selection**.
    Organic 45, Direct 25, Paid 20, Social 10.
 4. Use render_table to show columns [region, revenue] with rows
    US/1200, EU/950, APAC/670.
+5. Use render_scatter_chart to show height vs weight:
+   (170, 65), (180, 80), (165, 58), (175, 72).
+6. Use render_treemap to show disk usage:
+   node_modules 4200, src 310, dist 780, assets 120.
+7. Use render_heatmap to show commits by weekday and hour
+   (any small weekday × hour grid).
+8. Use render_stat_panel to show KPIs:
+   MRR $42k up 8%, churn 2.1% down 0.3pp, NPS 54.
+9. Use render_dashboard with a bar tile of quarterly sales
+   and a stat-panel tile of the same totals.
+10. Use render_map to color a world map by population:
+    China, India, USA, Indonesia, Pakistan.
 ```
 
 **Pass criteria for each:**
@@ -109,7 +124,7 @@ Re-run `npm run build:server` and restart Claude Desktop after each change.
 
 After §A3 confirms widgets render at all, walk through this checklist to verify the v0.3.0 design system (tokens + primitives) is intact across every widget. Run it once in **light** and once in **dark** — switch your OS appearance preference between passes. Each widget gets ~30 seconds.
 
-**Per-widget checks (× 7):**
+**Per-widget checks (× 10):**
 
 | Widget | Look for |
 |---|---|
@@ -120,6 +135,9 @@ After §A3 confirms widgets render at all, walk through this checklist to verify
 | `treemap` | Leaves have rounded `radius.sm` corners and 3 px gaps. Two-line labels (name + tabular value) appear only when the leaf is ≥ 60 × 30 px. White text has a subtle drop shadow. |
 | `heatmap` | **Single-hue ramp** — cells go from barely-visible `series-0` tint to full intensity. No multi-colored cells. Cells have 2 px gaps and rounded corners. |
 | `table` | Header row in mono uppercase tick font. Numeric cells use mono with `tabular-nums`. Row hover gets `surface-sunken` background. Filter input gets a 2 px focus ring when tabbed into. |
+| `stat-panel` | KPI cards: mono `tabular-nums` values, trend deltas coloured from `semantic` tokens, sparkline / progress / badge variants render. Inside a dashboard tile, cards flatten to sunken wells (no elevation). |
+| `dashboard` | Tiles form a responsive grid honouring `colSpan`. Every tile keeps its own title/toolbar. Embedded widgets recede — no double surfaces or nested shadows. |
+| `map` | Choropleth uses the single-hue intensity ramp + legend; no-data land stays a neutral tint. Bubbles are area-proportional with a size legend. Unmatched region ids are listed in a footnote. |
 
 **Cross-cutting checks:**
 
@@ -132,7 +150,7 @@ After §A3 confirms widgets render at all, walk through this checklist to verify
 
 **If any check fails:**
 
-- Wrong font → check that the IBM Plex `<link>` made it into the compiled `dist/widgets/*/index.html` (`grep "IBM+Plex" dist/widgets/bar-chart/index.html`). The host iframe needs network access to `fonts.googleapis.com`.
+- Wrong font → IBM Plex is self-hosted via `@fontsource` and inlined into each bundle (see the `@import`s in `src/widgets/shared/styles.css`); check the compiled bundle embeds it (`grep -c "IBM Plex" dist/widgets/bar-chart/index.html` should be > 0). No network access is needed.
 - Wrong color/series → verify `oklch(…)` is parsing in your browser (Chrome ≥ 111, Safari ≥ 15.4, Firefox ≥ 113). If you see fallback grey, OKLCH support is missing.
 - No frosted tooltip → `backdrop-filter` may be sandboxed in this host. The `color-mix` fallback should still render a tinted surface; the blur just disappears.
 - Token vars look unset (`var(--sigil-foo)` showing literal text) → token-surface test should catch this; run `npm test` to find a missing emitter.
@@ -164,7 +182,7 @@ Cloudflared prints an HTTPS URL like `https://crisp-falcon-7821.trycloudflare.co
 4. URL: `<the-cloudflared-url>/mcp` (note the `/mcp` suffix)
 5. Save
 
-You should see `sigil` listed and Claude should detect 4 tools.
+You should see `sigil` listed and Claude should detect 10 tools.
 
 ### B3. Repeat A3 + A4 in a Web chat
 
@@ -185,7 +203,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
   | node dist/server/stdio.js
 ```
 
-You should see a JSON response with `serverInfo: { name: "sigil", version: "0.1.0" }`. If not, the issue is in the build output. Re-run `npm run build` and check the shebang on `dist/server/stdio.js`.
+You should see a JSON response whose `serverInfo` reports `name: "sigil"` and the version from `package.json` (the server derives it at runtime — a `0.0.0` here means the manifest wasn't found). If not, the issue is in the build output. Re-run `npm run build` and check the shebang on `dist/server/stdio.js`.
 
 Claude Desktop logs:
 - macOS: `~/Library/Logs/Claude/mcp*.log`
@@ -212,14 +230,14 @@ Iterate `src/tools/<tool>.ts` description — see [§A4 guidance](#a4-validate-t
 
 ## Sign-off checklist
 
-Before tagging v0.1.0:
+Before tagging a release (current target: v0.2.0):
 
-- [ ] All 4 tools render in Desktop (Path A3)
-- [ ] All 4 tools render in Web (Path B3)
+- [ ] All 10 tools render in Desktop (Path A3)
+- [ ] All 10 tools render in Web (Path B3)
 - [ ] Tool selection works on at least 5 of 6 natural prompts (Path A4)
 - [ ] Dark/light theme switching works in both hosts
 - [ ] Copy CSV → text in clipboard, parses cleanly when pasted into a spreadsheet
 - [ ] Copy PNG → image in clipboard or downloaded file
-- [ ] No console errors in DevTools across all 4 widgets
+- [ ] No console errors in DevTools across all 10 widgets
 - [ ] `npm run typecheck` clean
 - [ ] `npm run build` clean
