@@ -17,12 +17,29 @@ import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 const DIMMED_OPACITY = 0.5;
 const LABEL_PERCENT_THRESHOLD = 0.04;
 
+// Beyond the curated 10-colour palette, keep slices distinguishable: each
+// successive wrap of the palette shifts the base hue toward white/black in
+// alternating steps, so slice 11 no longer collides with slice 1. Cycle 0 is
+// the untouched palette colour, so charts with ≤10 slices are unaffected.
+const PALETTE_CYCLE_SHIFTS = [
+  null,
+  { mix: "white", pct: 30 },
+  { mix: "black", pct: 26 },
+  { mix: "white", pct: 55 },
+  { mix: "black", pct: 48 },
+] as const;
+
 function colorFor(
   datum: { color?: string },
   index: number,
   tokens: ChartDesignTokens,
 ): string {
-  return datum.color ?? tokens.series[index % tokens.series.length]!;
+  if (datum.color) return datum.color;
+  const palette = tokens.series;
+  const base = palette[index % palette.length]!;
+  const cycle = Math.floor(index / palette.length);
+  const shift = PALETTE_CYCLE_SHIFTS[cycle % PALETTE_CYCLE_SHIFTS.length];
+  return shift ? `color-mix(in oklab, ${base}, ${shift.mix} ${shift.pct}%)` : base;
 }
 
 function renderSliceLabel(entry: { percent?: number }): string {
