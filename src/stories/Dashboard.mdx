@@ -1,0 +1,63 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Dashboard" />
+
+# Dashboard
+
+`render_dashboard` composes the other Sigil widgets into **one tiled grid** — a
+KPI row above a couple of charts, a map beside a table, whatever the question
+needs. It is the only widget whose payload embeds other widgets' payloads.
+
+Live examples are under **Widgets → Dashboard**; this page explains the
+composition model behind them.
+
+## Composition model
+
+A dashboard is an ordered list of `tiles`. Each tile names a widget `type` and
+carries that widget's **own payload** verbatim — exactly the object its
+`render_<type>` tool would take:
+
+```ts
+render_dashboard({
+  title: "Regional overview",
+  columns: 2,
+  tiles: [
+    { type: "stat-panel", payload: { /* a render_stat_panel payload */ }, colSpan: 2 },
+    { type: "map",        payload: { /* a render_map payload        */ }, colSpan: 2 },
+    { type: "bar-chart",  payload: { /* a render_bar_chart payload  */ } },
+    { type: "pie-chart",  payload: { /* a render_pie_chart payload  */ } },
+  ],
+})
+```
+
+So there is no new data language to learn: if you can describe a widget on its
+own, you can drop it into a dashboard by pairing its `type` with its payload.
+
+## Tile types
+
+Any widget can be a tile **except the dashboard itself** (no dashboard-in-dashboard):
+`bar-chart`, `line-chart`, `pie-chart`, `table`, `scatter-chart`, `treemap`,
+`heatmap`, `stat-panel`, and `map`.
+
+Internally the tile `type` is looked up in a small type→View map
+(`src/widgets/shared/widget-views.ts`). That module imports only each widget's
+presentational `*View` — never its `App.tsx` entry, which would call
+`mountWidget` on import — so composing widgets stays free of MCP-mount side
+effects. Adding a widget to that map is all it takes to make it tileable.
+
+## Layout
+
+- **`columns`** — grid width, 1–4 (default `2`).
+- **`colSpan`** (per tile) — how many columns the tile spans, `1..columns`
+  (default `1`). A `colSpan` equal to `columns` gives a full-width band, which
+  is how a stat-panel header row or a wide map is placed.
+
+Tiles lay out left-to-right, top-to-bottom in payload order. Each tile keeps its
+own title and toolbar (Copy CSV / PNG), so it behaves exactly like the
+standalone widget — just inside a card.
+
+## When to use
+
+Reach for a dashboard when several related views belong together in one glance —
+a metrics overview, a report header, a geo + breakdown pairing. For a single
+view, call that widget's own `render_*` tool directly.
