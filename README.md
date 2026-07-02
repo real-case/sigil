@@ -93,6 +93,8 @@ npm run dev                                          # terminal 1 — starts on 
 npx cloudflared tunnel --url http://localhost:3001   # terminal 2 — gives HTTPS URL
 ```
 
+The HTTP server binds to `127.0.0.1` and rejects browser requests from non-localhost origins. To allow a hosted deployment's web origin, set `ALLOWED_ORIGINS` (comma-separated, exact match). Note that `HOST=0.0.0.0` disables the SDK's DNS-rebinding host check and the server has **no authentication of its own** — never expose it without a proxy/auth layer in front.
+
 ---
 
 ## Tool reference
@@ -259,7 +261,7 @@ npm run dev                 # HTTP server on :3001 (for Claude Web via cloudflar
 npm run dev:stdio           # stdio server (for Claude Desktop / VS Code)
 npm run dev:sandbox         # in-browser widget sandbox — pick any widget + preset, toggle theme / viewport / debug overlay
 npm run typecheck           # tsc --noEmit
-npm test                    # vitest: payload guards, registry, tool registration
+npm test                    # vitest: payloads, registry, registration, theme, e2e
 npm run build               # bundle 10 widgets + compile server
 npm start                   # run compiled HTTP server
 npm run start:stdio         # run compiled stdio server
@@ -279,11 +281,14 @@ src/
 │   ├── table.ts
 │   ├── scatter-chart.ts
 │   ├── treemap.ts
-│   └── heatmap.ts
+│   ├── heatmap.ts
+│   ├── stat-panel.ts
+│   ├── dashboard.ts
+│   └── map.ts
 ├── resources/            # ui:// resource serving for bundled widget HTMLs
 ├── registry.ts           # single source of truth — server tools, resources, build
 ├── shared/payloads.ts    # contract types between server and widgets
-├── __tests__/            # vitest suites: registry, payload guards, registration
+├── __tests__/            # vitest suites: registry, payloads, registration, theme, e2e
 └── widgets/              # React + Recharts widget entries
     ├── shared/           # theme tokens, export utils, Toolbar, mountWidget shell
     ├── bar-chart/
@@ -292,7 +297,10 @@ src/
     ├── table/
     ├── scatter-chart/
     ├── treemap/
-    └── heatmap/          # hand-rolled SVG (no Recharts)
+    ├── heatmap/          # hand-rolled SVG (no Recharts)
+    ├── stat-panel/       # KPI / scorecard cards
+    ├── dashboard/        # grid of tiles composing the other widgets
+    └── map/              # d3-geo + TopoJSON choropleth / bubbles (no Recharts)
 ```
 
 Each widget bundles to a standalone single-file HTML via Vite + `vite-plugin-singlefile`, then gets served as a `ui://sigil/<widget>` resource by the MCP server. The host renders it in a sandboxed iframe and communicates with it via `postMessage` per the MCP Apps spec.

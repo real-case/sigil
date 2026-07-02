@@ -1,3 +1,25 @@
+/* IBM Plex, self-hosted via @fontsource and inlined into the single-file
+   bundle by Vite (assetsInlineLimit turns the WOFF2 into data: URIs) — no
+   render-time request to Google Fonts, which strict host CSPs block and
+   which disclosed the viewer's IP to a third party.
+   Subsets: latin + latin-ext + cyrillic; weights match the design tokens
+   (sans 400/500/600, mono 400/500). */
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-500.css";
+@import "@fontsource/ibm-plex-sans/latin-600.css";
+@import "@fontsource/ibm-plex-sans/latin-ext-400.css";
+@import "@fontsource/ibm-plex-sans/latin-ext-500.css";
+@import "@fontsource/ibm-plex-sans/latin-ext-600.css";
+@import "@fontsource/ibm-plex-sans/cyrillic-400.css";
+@import "@fontsource/ibm-plex-sans/cyrillic-500.css";
+@import "@fontsource/ibm-plex-sans/cyrillic-600.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+@import "@fontsource/ibm-plex-mono/latin-ext-400.css";
+@import "@fontsource/ibm-plex-mono/latin-ext-500.css";
+@import "@fontsource/ibm-plex-mono/cyrillic-400.css";
+@import "@fontsource/ibm-plex-mono/cyrillic-500.css";
+
 :root {
   color-scheme: light dark;
 }

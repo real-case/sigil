@@ -1,14 +1,7 @@
 <!--
-  Storybook injects this into the preview iframe's <head>. It mirrors the font
-  loading done by every widget's own index.html (e.g. src/widgets/bar-chart/
-  index.html) so the catalog renders in IBM Plex — the family the design tokens
-  in src/widgets/shared/theme.ts reference (`--sigil-font-sans` / `-mono`).
-  Without this, the preview falls back to system-ui / ui-monospace and the
-  typography diverges from the live MCP render.
+  IBM Plex is self-hosted: preview.tsx imports src/widgets/shared/styles.css,
+  which pulls the @fontsource subsets — the same faces the widget bundles
+  inline. No external font requests, matching the production single-file
+  bundles. This file stays as the documented hook point for anything that
+  must land in the preview iframe's <head>.
 -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link
-  href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-  rel="stylesheet"
-/>

@@ -6,6 +6,12 @@ import { LoadingSkeleton, type LoadingVariant } from "./LoadingSkeleton.js";
 import { EmptyState } from "./EmptyState.js";
 import "./styles.css";
 
+// Injected by Vite `define` from package.json at build time; absent when the
+// module is evaluated outside a Vite build (e.g. vitest), hence the guard.
+declare const __SIGIL_VERSION__: string | undefined;
+const WIDGET_VERSION =
+  typeof __SIGIL_VERSION__ === "string" ? __SIGIL_VERSION__ : "0.0.0-dev";
+
 export interface MountWidgetOptions<P> {
   name: string;
   isPayload: (value: unknown) => value is P;
@@ -50,7 +56,7 @@ export function mountWidget<P>(opts: MountWidgetOptions<P>): void {
     const [parseError, setParseError] = useState<string | null>(null);
 
     const { isConnected, error } = useApp({
-      appInfo: { name, version: "0.1.0" },
+      appInfo: { name, version: WIDGET_VERSION },
       capabilities: {},
       onAppCreated: (app) => {
         app.ontoolresult = (params) => {

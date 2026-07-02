@@ -14,6 +14,9 @@ storybook-static/
 # Stray macOS path created by accidental tilde-expansion mishaps
 /Support/
 
+# Claude Code: per-machine settings stay local; the project settings.json IS committed
+.claude/settings.local.json
+
 # design-sync (claude.ai/design) — staged scripts, build output, transient state.
 # Durable inputs (config.json, NOTES.md, conventions.md, entry.tsx, previews/,
 # overrides/) are NOT ignored and get committed.

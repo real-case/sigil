@@ -6,7 +6,11 @@ export type CsvCell = string | number | null | undefined;
 
 function csvField(v: CsvCell): string {
   if (v === null || v === undefined) return "";
-  const s = String(v);
+  let s = String(v);
+  // Neutralize spreadsheet formula injection: a leading =, +, -, @, tab or CR
+  // in an untrusted string cell executes as a formula when the CSV is pasted
+  // into Excel / Google Sheets. Typed numbers (incl. negatives) stay untouched.
+  if (typeof v === "string" && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

@@ -10,7 +10,7 @@
 
 **Tagline.** *A sigil is a symbol that carries compressed meaning. Same idea, applied to data.*
 
-**Widget set (v0.2.0).** `bar-chart`, `line-chart`, `pie-chart`, `scatter-chart`, `treemap`, `heatmap`, `table`. All registered in [src/registry.ts](../src/registry.ts) and share the `mountWidget` HOC in [src/widgets/shared/widget-shell.tsx](../src/widgets/shared/widget-shell.tsx).
+**Widget set (v0.2.0).** `bar-chart`, `line-chart`, `pie-chart`, `scatter-chart`, `treemap`, `heatmap`, `table`, `stat-panel`, `dashboard`, `map`. All registered in [src/registry.ts](../src/registry.ts) and share the `mountWidget` HOC in [src/widgets/shared/widget-shell.tsx](../src/widgets/shared/widget-shell.tsx).
 
 ---
 
