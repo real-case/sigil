@@ -17,3 +17,4 @@ type Story = StoryObj<typeof DashboardView>;
 // Payloads are read by id — never redefined inline.
 export const Minimal: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-minimal") } };
 export const Overview: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-overview") } };
+export const Geo: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-geo") } };

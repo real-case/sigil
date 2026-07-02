@@ -6,6 +6,7 @@ import { lineDatasets } from "./line.js";
 import { pieDatasets } from "./pie.js";
 import { scatterDatasets } from "./scatter.js";
 import { statPanelDatasets } from "./stat-panel.js";
+import { mapDatasets } from "./map.js";
 
 // Dashboard presets reuse other widgets' catalog payloads verbatim, so a tile
 // renders exactly like that widget's own story.
@@ -45,6 +46,25 @@ export const dashboardDatasets: Dataset<DashboardPayload>[] = [
         { type: "bar-chart", payload: payloadById(barDatasets, "bar-medium-vertical") },
         { type: "pie-chart", payload: payloadById(pieDatasets, "pie-medium") },
         { type: "scatter-chart", payload: payloadById(scatterDatasets, "scatter-medium") },
+      ],
+    },
+  },
+  {
+    id: "dashboard-geo",
+    label: "Geo — KPIs + map + charts",
+    category: "nested",
+    payload: {
+      title: "Regional overview",
+      columns: 2,
+      tiles: [
+        {
+          type: "stat-panel",
+          payload: payloadById(statPanelDatasets, "stat-small"),
+          colSpan: 2,
+        },
+        { type: "map", payload: payloadById(mapDatasets, "map-medium"), colSpan: 2 },
+        { type: "bar-chart", payload: payloadById(barDatasets, "bar-small-vertical") },
+        { type: "pie-chart", payload: payloadById(pieDatasets, "pie-medium") },
       ],
     },
   },

@@ -8,7 +8,7 @@ export const DASHBOARD_UI_URI = "ui://sigil/dashboard";
 const description = [
   "Render a multi-widget dashboard: a grid of tiles where each tile is one of",
   "the other Sigil widgets (bar-chart, line-chart, pie-chart, table,",
-  "scatter-chart, treemap, heatmap, stat-panel).",
+  "scatter-chart, treemap, heatmap, stat-panel, map).",
   "Use to show several related views at once — e.g. a KPI row above a couple of",
   "charts. Each tile's `payload` is exactly what that widget's own render_* tool",
   "takes; `type` selects the widget. Put a stat-panel first for a KPI header.",
@@ -36,6 +36,7 @@ const inputSchema = {
             "treemap",
             "heatmap",
             "stat-panel",
+            "map",
           ])
           .describe("Which widget to render in this tile."),
         payload: z
