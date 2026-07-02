@@ -1,0 +1,65 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Docs/Stat Panel" />
+
+# Stat Panel
+
+`render_stat_panel` renders a grid of **KPI / scorecard cards** — the
+at-a-glance numbers that usually head a report: active users, revenue, error
+rate, p95 latency. Where a chart answers "how is this trending", a stat panel
+answers "what is it right now, and is that good?".
+
+Live examples are under **Widgets → Stat panel**; this page is the narrative
+companion to that section's autodocs API table.
+
+## Card anatomy
+
+Each entry in `items` is one card. Only `label` and `value` are required; every
+other field is additive and renders only when present, so a card scales from a
+bare number up to a rich tile.
+
+| Field | Effect |
+|---|---|
+| `label` | Metric name (small caps above the value). |
+| `value` | The headline figure. Numbers are grouped/formatted; strings render as-is. |
+| `unit` | Rendered after the value, e.g. `ms`, `%`, `GB`. |
+| `delta` | Signed change vs a prior period → a coloured up/down arrow. |
+| `deltaUnit` / `deltaCaption` | Unit for the delta (default `%`) and a caption like `vs last week`. |
+| `higherIsBetter` | Flips the delta's good/bad colour. Defaults to `true`; set `false` for metrics like latency or churn where down is good. |
+| `description` | A small caption under the value. |
+| `status` | Semantic accent (`success` / `warning` / `danger` / `info`) — a coloured left bar and badge tint. |
+| `trend` | Recent values, oldest→newest, drawn as a compact **sparkline**. |
+| `target` | A goal; with a numeric value it draws a **progress bar** (value / target). |
+| `badge` | A short status pill by the label, coloured by `status`. |
+
+The delta colour is intentionally decoupled from its direction: `higherIsBetter`
+decides whether a rise is green or red, so "latency ▼ 9ms" reads as good while
+"churn ▲ 0.4%" reads as bad — both without any per-card colour wiring.
+
+## Layout
+
+Cards flow in a responsive auto-fit grid by default. Pass `columns` (1–4) to pin
+an exact column count — useful when you want a tidy 4-across KPI row rather than
+letting the grid choose.
+
+## Payload
+
+```ts
+render_stat_panel({
+  title: "This week",
+  columns: 4,
+  items: [
+    { label: "Monthly active users", value: 128400, delta: 12.4, deltaCaption: "vs last month" },
+    { label: "Revenue", value: 84200, unit: "USD", delta: 6.1, deltaCaption: "MoM", status: "success" },
+    { label: "Churn", value: 3.2, unit: "%", delta: 0.4, higherIsBetter: false, status: "warning" },
+    { label: "p95 latency", value: 318, unit: "ms", delta: -9, deltaUnit: "ms",
+      higherIsBetter: false, trend: [402, 388, 371, 349, 332, 318] },
+  ],
+})
+```
+
+## In a dashboard
+
+A stat panel is the canonical **header row** of a [dashboard](?path=/docs/docs-dashboard--docs):
+add it as the first tile with `colSpan` equal to the dashboard's `columns` for a
+full-width KPI strip above the charts.

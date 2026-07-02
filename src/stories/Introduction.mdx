@@ -18,11 +18,13 @@ in-browser sandbox does — no MCP transport involved.
 ## How to read this catalog
 
 - **Widgets** — one section per widget (bar, line, pie, table, scatter,
-  heatmap, treemap). Each widget has an **autodocs** page (its payload API as
-  an args table) plus one named story per dataset state. The states come from a
-  deliberate taxonomy — `minimal`, `small`, `medium`, `large`, `edgeLabels`,
-  `negatives`, `multiSeries`, `nested` — that brackets the heuristic boundaries
-  in the render code (e.g. when a bar chart starts rotating tick labels).
+  heatmap, treemap, stat-panel, dashboard, map). Each widget has an **autodocs**
+  page (its payload API as an args table) plus one named story per dataset
+  state. The states come from a deliberate taxonomy — `minimal`, `small`,
+  `medium`, `large`, `edgeLabels`, `negatives`, `multiSeries`, `nested` — that
+  brackets the heuristic boundaries in the render code (e.g. when a bar chart
+  starts rotating tick labels). The two composite widgets — **stat-panel** and
+  **dashboard** — also have dedicated narrative pages under **Docs** (see below).
 - **Theme toggle** (toolbar) — flips every story between light and dark by
   setting `data-sigil-theme` on the document. See **Theming**.
 - **Viewport** (toolbar) — resizes the canvas to the 320 / 480 / 768 / 1024
@@ -41,3 +43,5 @@ inline.
 - **Design Tokens** — the palette and token system every widget draws from.
 - **Theming** — the light/dark model and the `data-sigil-theme` mechanism.
 - **MCP Integration** — how a static View becomes a live MCP widget in a host.
+- **Stat Panel** — the KPI-card widget: value, delta, sparkline, target, badge.
+- **Dashboard** — composing several widgets into one tiled grid.
