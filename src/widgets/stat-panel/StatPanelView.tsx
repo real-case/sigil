@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { StatItem, StatPanelPayload, StatStatus } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Card } from "../shared/Card.js";
+import { useEmbedded } from "../shared/embedded.js";
 import { ValueText } from "../shared/ValueText.js";
 import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
@@ -107,6 +108,9 @@ function StatCard({
   index: number;
 }) {
   const [hovered, setHovered] = useState(false);
+  // Inside a dashboard tile (itself a surface) recede the card to a sunken well
+  // so it doesn't read as surface-on-surface; standalone it stays raised.
+  const embedded = useEmbedded();
   const {
     label,
     value,
@@ -147,12 +151,13 @@ function StatCard({
   return (
     <Card
       padding="lg"
-      elevation={hovered ? "mid" : "low"}
+      surface={embedded ? "sunken" : "surface"}
+      elevation={embedded ? "none" : hovered ? "mid" : "low"}
       style={{
         position: "relative",
         overflow: "hidden",
         borderLeft: status ? `3px solid ${statusAccent(status)}` : undefined,
-        transform: hovered ? "translateY(-1px)" : "translateY(0)",
+        transform: !embedded && hovered ? "translateY(-1px)" : "translateY(0)",
         transition:
           "transform var(--sigil-duration-fast) var(--sigil-easing-standard), box-shadow var(--sigil-duration-fast) var(--sigil-easing-standard)",
       }}
@@ -245,7 +250,9 @@ function StatCard({
               style={{
                 height: 6,
                 borderRadius: "var(--sigil-radius-full)",
-                background: "var(--sigil-surface-sunken)",
+                // On a sunken (embedded) card the sunken track would vanish;
+                // use the surface token so it stays a visible groove.
+                background: embedded ? "var(--sigil-surface)" : "var(--sigil-surface-sunken)",
                 overflow: "hidden",
               }}
             >

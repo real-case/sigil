@@ -2,6 +2,7 @@ import type { CSSProperties, PropsWithChildren } from "react";
 
 export type CardPadding = "none" | "sm" | "md" | "lg";
 export type CardElevation = "none" | "low" | "mid" | "high";
+export type CardSurface = "surface" | "sunken" | "elevated";
 
 const PADDING: Record<CardPadding, string> = {
   none: "0",
@@ -17,9 +18,18 @@ const ELEVATION: Record<CardElevation, string> = {
   high: "var(--sigil-shadow-high)",
 };
 
+const SURFACE: Record<CardSurface, string> = {
+  surface: "var(--sigil-surface)",
+  sunken: "var(--sigil-surface-sunken)",
+  elevated: "var(--sigil-surface-elevated)",
+};
+
 interface CardProps {
   padding?: CardPadding;
   elevation?: CardElevation;
+  /** Which surface token the card paints. Defaults to `surface`; a nested card
+   *  can use `sunken` to recede against its parent surface. */
+  surface?: CardSurface;
   bordered?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -28,6 +38,7 @@ interface CardProps {
 export function Card({
   padding = "lg",
   elevation = "low",
+  surface = "surface",
   bordered = true,
   className,
   style,
@@ -37,7 +48,7 @@ export function Card({
     <div
       className={className}
       style={{
-        background: "var(--sigil-surface)",
+        background: SURFACE[surface],
         border: bordered ? "1px solid var(--sigil-border-subtle)" : "none",
         borderRadius: "var(--sigil-radius-lg)",
         padding: PADDING[padding],

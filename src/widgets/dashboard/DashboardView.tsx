@@ -2,6 +2,7 @@ import type { DashboardPayload } from "../../shared/payloads.js";
 import { useTheme } from "../shared/theme.js";
 import { Card } from "../shared/Card.js";
 import { EmptyState } from "../shared/EmptyState.js";
+import { EmbeddedContext } from "../shared/embedded.js";
 import { WIDGET_VIEWS } from "../shared/widget-views.js";
 
 export function DashboardView({ payload }: { payload: DashboardPayload }) {
@@ -44,7 +45,9 @@ export function DashboardView({ payload }: { payload: DashboardPayload }) {
               style={{ gridColumn: `span ${span}`, minWidth: 0, overflow: "hidden" }}
             >
               {View ? (
-                <View payload={tile.payload as never} />
+                <EmbeddedContext.Provider value={true}>
+                  <View payload={tile.payload as never} />
+                </EmbeddedContext.Provider>
               ) : (
                 <EmptyState
                   variant="error"
