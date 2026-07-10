@@ -11,7 +11,7 @@
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import worldCountries from "world-countries" assert { type: "json" };
+import worldCountries from "world-countries";
 
 interface RawCountry {
   ccn3: string;
