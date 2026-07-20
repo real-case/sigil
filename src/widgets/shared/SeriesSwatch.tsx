@@ -17,7 +17,7 @@ export function SeriesSwatch({
         width: size,
         height: size,
         background: color,
-        borderRadius: shape === "circle" ? "50%" : 2,
+        borderRadius: shape === "circle" ? "50%" : 3,
         flexShrink: 0,
       }}
     />

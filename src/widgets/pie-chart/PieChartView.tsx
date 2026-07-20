@@ -3,19 +3,27 @@ import {
   PieChart,
   Pie,
   Cell,
+  Sector,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import type { PieChartPayload } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
-import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { ChartHeader } from "../shared/ChartHeader.js";
+import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
+import { ValueLegend } from "../shared/ValueLegend.js";
 import { EmptyState } from "../shared/EmptyState.js";
+import { fmtNumber, fmtCompact, fmtShare } from "../shared/chart-text.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 
-const DIMMED_OPACITY = 0.5;
-const LABEL_PERCENT_THRESHOLD = 0.04;
+const MUTED_OPACITY = 0.18;
+const UNFOCUSED_OPACITY = 0.32;
+// Fat ring per the redesign: inner/outer ≈ 0.67 leaves room for the center KPI.
+const OUTER_RADIUS = "80%";
+const DONUT_INNER_RADIUS = "54%";
+const ACTIVE_GROW = 3;
+const CENTER_NAME_MAX = 18;
 
 // Beyond the curated 10-colour palette, keep slices distinguishable: each
 // successive wrap of the palette shifts the base hue toward white/black in
@@ -42,24 +50,20 @@ function colorFor(
   return shift ? `color-mix(in oklab, ${base}, ${shift.mix} ${shift.pct}%)` : base;
 }
 
-function renderSliceLabel(entry: { percent?: number }): string {
-  const p = entry.percent ?? 0;
-  if (p < LABEL_PERCENT_THRESHOLD) return "";
-  return `${Math.round(p * 100)}%`;
-}
+const truncate = (s: string, max: number): string =>
+  s.length <= max ? s : `${s.slice(0, max - 1)}…`;
 
 export function PieChartView({ payload }: { payload: PieChartPayload }) {
   const tokens = useTheme();
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [focused, setFocused] = useState<number | null>(null);
+  const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
   const canvasRef = useRef<HTMLDivElement>(null);
   const { title, data, variant } = payload;
 
   if (data.length === 0) {
     return (
       <div className="sigil-root">
-        <div className="sigil-header">
-          <h2 className="sigil-title">{title}</h2>
-        </div>
+        <ChartHeader title={title} />
         <EmptyState title="No data to display" description="The payload was empty." />
       </div>
     );
@@ -69,9 +73,7 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
   if (total <= 0) {
     return (
       <div className="sigil-root">
-        <div className="sigil-header">
-          <h2 className="sigil-title">{title}</h2>
-        </div>
+        <ChartHeader title={title} />
         <EmptyState title="Nothing to display" description="All slice values are zero." />
       </div>
     );
@@ -92,92 +94,172 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
   };
 
   const isDonut = variant === "donut";
-  const toggleSelection = (label: string) =>
-    setSelectedLabel((prev) => (prev === label ? null : label));
-  const opacityFor = (label: string) =>
-    selectedLabel === null || selectedLabel === label ? 1 : DIMMED_OPACITY;
+
+  const toggleMute = (i: number) =>
+    setMuted((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+
+  const opacityFor = (i: number) =>
+    muted.has(i)
+      ? MUTED_OPACITY
+      : focused !== null && focused !== i
+        ? UNFOCUSED_OPACITY
+        : 1;
+
+  const maxValue = data.reduce((m, d) => Math.max(m, d.value), 0);
+  const dominantIndex = data.reduce(
+    (best, d, i) => (d.value > data[best]!.value ? i : best),
+    0,
+  );
+  const dominant = data[dominantIndex]!;
+
+  const legendItems = data.map((d, i) => ({
+    name: d.label,
+    color: colorFor(d, i, tokens),
+    value: fmtNumber(d.value),
+    suffix: fmtShare(d.value / total),
+    meter: maxValue > 0 ? (Math.max(0, d.value) / maxValue) * 100 : 0,
+  }));
 
   return (
     <div className="sigil-root">
-      <div className="sigil-header">
-        <h2 className="sigil-title">{title}</h2>
+      <ChartHeader
+        title={title}
+        kpi={{ value: fmtCompact(total), caption: "total" }}
+      >
         <Toolbar>
-          <ToolbarButton label="Copy CSV" onAction={copyCsv} />
-          <ToolbarButton label="Copy PNG" onAction={copyPng} />
+          <ToolbarButton icon={<CsvIcon />} label="Copy CSV" onAction={copyCsv} />
+          <ToolbarButton icon={<PngIcon />} label="Copy PNG" onAction={copyPng} />
         </Toolbar>
-      </div>
-      <div className="sigil-canvas" ref={canvasRef}>
-        <ResponsiveContainer width="100%" height={360}>
-          <PieChart margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="label"
-              cx="50%"
-              cy="50%"
-              outerRadius="75%"
-              innerRadius={isDonut ? "60%" : 0}
-              paddingAngle={isDonut ? 2 : 0}
-              startAngle={90}
-              endAngle={-270}
-              isAnimationActive={false}
-              label={renderSliceLabel}
-              labelLine={false}
-              stroke={tokens.surfaces.bg}
-              strokeWidth={2}
-            >
-              {data.map((datum, i) => (
-                <Cell
-                  key={datum.label}
-                  fill={colorFor(datum, i, tokens)}
-                  fillOpacity={opacityFor(datum.label)}
-                  onClick={() => toggleSelection(datum.label)}
-                  style={{
-                    cursor: "pointer",
-                    transition:
-                      "fill-opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
+      </ChartHeader>
+      <div className="sigil-split">
+        <div className="sigil-plot">
+          <div className="sigil-canvas" ref={canvasRef}>
+            <ResponsiveContainer width="100%" height={340}>
+              <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="label"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={OUTER_RADIUS}
+                  innerRadius={isDonut ? DONUT_INNER_RADIUS : 0}
+                  paddingAngle={isDonut ? 1 : 0}
+                  startAngle={90}
+                  endAngle={-270}
+                  isAnimationActive={false}
+                  label={false}
+                  labelLine={false}
+                  stroke={isDonut ? "none" : tokens.surfaces.bg}
+                  strokeWidth={isDonut ? 0 : 2}
+                  activeIndex={focused ?? undefined}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  activeShape={(p: any) => (
+                    <Sector
+                      {...p}
+                      innerRadius={
+                        isDonut
+                          ? Math.max(0, (p.innerRadius ?? 0) - ACTIVE_GROW)
+                          : 0
+                      }
+                      outerRadius={(p.outerRadius ?? 0) + ACTIVE_GROW}
+                    />
+                  )}
+                  onMouseEnter={(_, i) => setFocused(i)}
+                  onMouseLeave={() => setFocused(null)}
+                >
+                  {data.map((datum, i) => (
+                    <Cell
+                      key={datum.label}
+                      fill={colorFor(datum, i, tokens)}
+                      fillOpacity={opacityFor(i)}
+                      onClick={() => toggleMute(i)}
+                      style={{
+                        cursor: "pointer",
+                        transition:
+                          "fill-opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
+                      }}
+                    />
+                  ))}
+                </Pie>
+                {isDonut && (
+                  <>
+                    <text
+                      x="50%"
+                      y="50%"
+                      dy={-2}
+                      textAnchor="middle"
+                      fill={tokens.texts.primary}
+                      style={{
+                        fontFamily: tokens.typography.family.mono,
+                        fontSize: 38,
+                        fontWeight: 500,
+                        letterSpacing: "-0.02em",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {fmtShare(dominant.value / total)}
+                    </text>
+                    <text
+                      x="50%"
+                      y="50%"
+                      dy={24}
+                      textAnchor="middle"
+                      fill={tokens.texts.muted}
+                      style={{
+                        fontFamily: tokens.typography.family.mono,
+                        fontSize: 11,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {truncate(dominant.label, CENTER_NAME_MAX)}
+                    </text>
+                  </>
+                )}
+                <Tooltip
+                  content={(props) => {
+                    const entry = props.payload?.[0];
+                    const name =
+                      typeof entry?.name === "string" ? entry.name : undefined;
+                    const index = data.findIndex((d) => d.label === name);
+                    if (!entry || index === -1) {
+                      return <SigilTooltip active={false} />;
+                    }
+                    const datum = data[index]!;
+                    const color = colorFor(datum, index, tokens);
+                    return (
+                      <SigilTooltip
+                        active={props.active}
+                        label={datum.label}
+                        payload={[
+                          { color, name: "value", value: fmtNumber(datum.value) },
+                          {
+                            color,
+                            name: "share",
+                            value: fmtShare(datum.value / total),
+                          },
+                        ]}
+                      />
+                    );
                   }}
                 />
-              ))}
-            </Pie>
-            <Tooltip
-              content={(props) => (
-                <SigilTooltip
-                  active={props.active}
-                  hideLabel
-                  payload={
-                    props.payload?.map((p) => ({
-                      color: typeof p.color === "string" ? p.color : undefined,
-                      name: typeof p.name === "string" ? p.name : undefined,
-                      dataKey: p.dataKey as string | number | undefined,
-                      value: p.value as number | string | undefined,
-                    }))
-                  }
-                  formatValue={(value) => {
-                    const n = typeof value === "number" ? value : Number(value);
-                    if (!Number.isFinite(n)) return String(value);
-                    const pct = ((n / total) * 100).toFixed(1);
-                    return `${n} (${pct}%)`;
-                  }}
-                />
-              )}
-            />
-            <Legend
-              wrapperStyle={{
-                fontFamily: tokens.typography.family.sans,
-                fontSize: tokens.typography.scale.label.fontSize,
-                color: tokens.texts.secondary,
-                paddingTop: 8,
-              }}
-              iconType="circle"
-              iconSize={9}
-              onClick={(entry) => {
-                const label = typeof entry.value === "string" ? entry.value : null;
-                if (label) toggleSelection(label);
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <ValueLegend
+          items={legendItems}
+          focused={focused}
+          muted={muted}
+          onFocus={setFocused}
+          onToggleMute={toggleMute}
+        />
       </div>
     </div>
   );

@@ -47,6 +47,9 @@ body,
   width: 100%;
   padding: var(--sigil-space-lg);
   box-sizing: border-box;
+  /* Container for the split plot/legend layout below — width queries must
+     resolve against the widget (or dashboard tile), never the viewport. */
+  container-type: inline-size;
 }
 
 .sigil-header {
@@ -63,13 +66,40 @@ body,
   font-family: var(--sigil-font-title-family);
   font-size: var(--sigil-font-title-size);
   line-height: var(--sigil-font-title-line-height);
-  font-weight: 600;
+  font-weight: var(--sigil-font-title-weight);
   letter-spacing: var(--sigil-font-title-letter-spacing);
   color: var(--sigil-text);
 }
 
 .sigil-header .sigil-title {
   margin-bottom: 0;
+}
+
+.sigil-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sigil-space-lg);
+  margin-left: auto;
+}
+
+.sigil-kpi {
+  text-align: right;
+}
+
+.sigil-kpi-value {
+  font-family: var(--sigil-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--sigil-text);
+}
+
+.sigil-kpi-caption {
+  font-size: 12px;
+  color: var(--sigil-text-muted);
+  margin-top: 2px;
 }
 
 .sigil-toolbar {
@@ -81,16 +111,26 @@ body,
 }
 
 .sigil-toolbar-btn {
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  background: var(--sigil-surface);
   color: var(--sigil-text-secondary);
   border: 1px solid var(--sigil-border-default);
-  border-radius: var(--sigil-radius-sm);
+  border-radius: 6px;
   padding: 5px 9px;
-  font-family: var(--sigil-font-tick-family);
-  font-size: var(--sigil-font-tick-size);
-  letter-spacing: var(--sigil-font-tick-letter-spacing);
+  font-family: var(--sigil-font-mono);
+  font-size: 10.5px;
+  line-height: 1;
   cursor: pointer;
   transition: all var(--sigil-duration-fast) var(--sigil-easing-standard);
+}
+
+.sigil-toolbar-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
 }
 
 .sigil-toolbar-btn:hover:not(:disabled) {
@@ -106,7 +146,11 @@ body,
 
 .sigil-toolbar-btn:disabled {
   cursor: default;
-  color: var(--sigil-series-0);
+}
+
+.sigil-toolbar-btn.is-ok {
+  color: var(--sigil-success-text);
+  border-color: var(--sigil-success-border);
 }
 
 .sigil-toolbar-btn.is-error {
@@ -118,6 +162,231 @@ body,
 .sigil-canvas {
   flex: 1 1 auto;
   min-height: 220px;
+}
+
+/* ---- split layout: plot + side legend --------------------------------- */
+
+.sigil-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 312px;
+  gap: clamp(20px, 3cqi, 40px);
+  align-items: center;
+}
+
+.sigil-split > .sigil-plot {
+  min-width: 0;
+}
+
+.sigil-split > .sigil-legend {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+@container (max-width: 760px) {
+  .sigil-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sigil-space-lg);
+  }
+  .sigil-split > .sigil-legend {
+    max-height: none;
+  }
+  .sigil-legend--row {
+    flex-direction: column;
+  }
+  .sigil-legend--row .sigil-leg {
+    min-width: 0;
+  }
+}
+
+/* ---- value-bearing legend ---------------------------------------------- */
+
+.sigil-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sigil-legend--row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: var(--sigil-space-lg);
+}
+
+.sigil-legend--row .sigil-leg {
+  min-width: 176px;
+}
+
+.sigil-leg {
+  --c: var(--sigil-series-0);
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "sw name val"
+    "meter meter meter";
+  column-gap: 11px;
+  row-gap: 8px;
+  align-items: center;
+  padding: 11px 13px;
+  margin: 0;
+  border-radius: var(--sigil-radius-lg);
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--sigil-duration-fast) var(--sigil-easing-standard),
+    border-color var(--sigil-duration-fast) var(--sigil-easing-standard),
+    opacity var(--sigil-duration-base) var(--sigil-easing-standard);
+}
+
+.sigil-leg:hover {
+  background: var(--sigil-surface-sunken);
+  border-color: var(--sigil-border-subtle);
+}
+
+.sigil-leg:focus-visible {
+  outline: var(--sigil-focus-ring-width) solid var(--sigil-focus-ring);
+  outline-offset: var(--sigil-focus-ring-offset);
+}
+
+.sigil-leg.is-muted {
+  opacity: 0.4;
+}
+
+.sigil-leg-sw {
+  grid-area: sw;
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  background: var(--c);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 0 0 3px color-mix(in oklab, var(--c) 14%, transparent);
+  transition:
+    box-shadow var(--sigil-duration-fast) var(--sigil-easing-standard),
+    transform var(--sigil-duration-fast) var(--sigil-easing-standard);
+}
+
+.sigil-leg:hover .sigil-leg-sw {
+  transform: scale(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 0 0 4px color-mix(in oklab, var(--c) 22%, transparent);
+}
+
+.sigil-leg-name {
+  grid-area: name;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--sigil-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--sigil-duration-fast) var(--sigil-easing-standard);
+}
+
+.sigil-leg:hover .sigil-leg-name {
+  color: var(--sigil-text);
+}
+
+.sigil-leg-val {
+  grid-area: val;
+  font-family: var(--sigil-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--sigil-text);
+  white-space: nowrap;
+}
+
+.sigil-leg-pct {
+  color: var(--sigil-text-muted);
+  font-size: 11.5px;
+  font-weight: 400;
+  margin-left: 7px;
+}
+
+/* proportion meter inside each legend row */
+.sigil-leg-meter {
+  grid-area: meter;
+  height: 5px;
+  border-radius: var(--sigil-radius-full);
+  background: var(--sigil-surface-sunken);
+  overflow: hidden;
+  position: relative;
+}
+
+.sigil-leg-meter > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--sigil-radius-full);
+  background: var(--c);
+  transition: width 600ms var(--sigil-easing-standard);
+}
+
+/* compact variant: min/avg/max range instead of a meter */
+.sigil-leg--lite {
+  grid-template-areas:
+    "sw name val"
+    ". range range";
+}
+
+.sigil-leg-range {
+  grid-area: range;
+  height: 6px;
+  position: relative;
+  display: block;
+}
+
+.sigil-leg-range > i {
+  display: block;
+}
+
+.sigil-leg-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--sigil-surface-sunken);
+  border-radius: var(--sigil-radius-full);
+}
+
+.sigil-leg-span {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: color-mix(in oklab, var(--c) 45%, transparent);
+  border-radius: var(--sigil-radius-full);
+}
+
+.sigil-leg-avg {
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  border-radius: var(--sigil-radius-full);
+  background: var(--c);
+  box-shadow: 0 0 0 2px var(--sigil-surface);
+}
+
+/* axis caption line under a plot (used when the value axis is hidden) */
+.sigil-caption {
+  font-family: var(--sigil-font-axis-cap-family);
+  font-size: var(--sigil-font-axis-cap-size);
+  letter-spacing: var(--sigil-font-axis-cap-letter-spacing);
+  text-transform: var(--sigil-font-axis-cap-transform);
+  color: var(--sigil-text-muted);
+  text-align: center;
+  margin-top: var(--sigil-space-xs);
 }
 
 .sigil-empty {

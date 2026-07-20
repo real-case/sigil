@@ -5,7 +5,7 @@ import type {
   TablePayload,
   TableRow,
 } from "../../shared/payloads.js";
-import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { Toolbar, ToolbarButton, CsvIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, type CsvCell } from "../shared/export-utils.js";
 
@@ -106,7 +106,7 @@ export function TableView({ payload }: { payload: TablePayload }) {
             />
           )}
           <Toolbar>
-            <ToolbarButton label="Copy CSV" onAction={copyCsv} />
+            <ToolbarButton icon={<CsvIcon />} label="Copy CSV" onAction={copyCsv} />
           </Toolbar>
         </div>
       </div>
@@ -230,11 +230,11 @@ function TableStyles() {
   background: var(--sigil-surface);
   border-bottom: 1px solid var(--sigil-border-subtle);
   color: var(--sigil-text-muted);
-  font-family: var(--sigil-font-tick-family);
-  font-size: var(--sigil-font-tick-size);
-  font-weight: var(--sigil-font-tick-weight);
-  letter-spacing: var(--sigil-font-tick-letter-spacing);
-  text-transform: var(--sigil-font-tick-transform);
+  font-family: var(--sigil-font-axis-cap-family);
+  font-size: var(--sigil-font-axis-cap-size);
+  font-weight: var(--sigil-font-axis-cap-weight);
+  letter-spacing: var(--sigil-font-axis-cap-letter-spacing);
+  text-transform: var(--sigil-font-axis-cap-transform);
   padding: 7px 10px;
   user-select: none;
 }

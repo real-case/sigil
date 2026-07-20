@@ -150,10 +150,10 @@
     "scale": {
       "title": {
         "family":         "sans",
-        "font-size":      { "value": 13, "unit": "px" },
-        "line-height":    { "value": 18, "unit": "px" },
-        "letter-spacing": { "value": 0,  "unit": "em" },
-        "font-weight":    400,
+        "font-size":      { "value": 17, "unit": "px" },
+        "line-height":    { "value": 22, "unit": "px" },
+        "letter-spacing": { "value": -0.01, "unit": "em" },
+        "font-weight":    600,
         "use": "Widget titles, card headers."
       },
       "label": {
@@ -166,12 +166,21 @@
       },
       "tick": {
         "family":         "mono",
-        "font-size":      { "value": 10, "unit": "px" },
+        "font-size":      { "value": 12, "unit": "px" },
+        "line-height":    { "value": 16, "unit": "px" },
+        "letter-spacing": { "value": 0, "unit": "em" },
+        "font-weight":    400,
+        "font-variant-numeric": "tabular-nums",
+        "use": "Numeric axis ticks, value runs inside plots."
+      },
+      "axis-cap": {
+        "family":         "mono",
+        "font-size":      { "value": 11, "unit": "px" },
         "line-height":    { "value": 14, "unit": "px" },
-        "letter-spacing": { "value": 0.04, "unit": "em" },
+        "letter-spacing": { "value": 0.08, "unit": "em" },
         "font-weight":    400,
         "transform":      "uppercase",
-        "use": "Axis labels, ticks, table column headers."
+        "use": "Axis captions (xlabel/ylabel), donut center label."
       },
       "value": {
         "family":         "mono",

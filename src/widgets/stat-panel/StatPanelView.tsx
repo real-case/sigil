@@ -4,7 +4,7 @@ import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Card } from "../shared/Card.js";
 import { useEmbedded } from "../shared/embedded.js";
 import { ValueText } from "../shared/ValueText.js";
-import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { Toolbar, ToolbarButton, CsvIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, type CsvCell } from "../shared/export-utils.js";
 
@@ -339,7 +339,7 @@ export function StatPanelView({ payload }: { payload: StatPanelPayload }) {
       <div className="sigil-header">
         <h2 className="sigil-title">{title}</h2>
         <Toolbar>
-          <ToolbarButton label="Copy CSV" onAction={copyCsv} />
+          <ToolbarButton icon={<CsvIcon />} label="Copy CSV" onAction={copyCsv} />
         </Toolbar>
       </div>
       <div style={{ display: "grid", gridTemplateColumns, gap: tokens.spacing.md }}>

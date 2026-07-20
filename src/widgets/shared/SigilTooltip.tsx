@@ -32,13 +32,13 @@ export function SigilTooltip({
     <div
       style={{
         background:
-          "color-mix(in oklab, var(--sigil-surface-elevated) 78%, transparent)",
-        backdropFilter: "blur(20px) saturate(140%)",
-        WebkitBackdropFilter: "blur(20px) saturate(140%)",
+          "color-mix(in oklab, var(--sigil-surface-elevated) 86%, transparent)",
+        backdropFilter: "blur(18px) saturate(140%)",
+        WebkitBackdropFilter: "blur(18px) saturate(140%)",
         border: "1px solid var(--sigil-border-default)",
         borderRadius: "var(--sigil-radius-md)",
-        padding: "10px 12px",
-        minWidth: 180,
+        padding: "9px 11px",
+        minWidth: 150,
         boxShadow: "var(--sigil-shadow-mid)",
         color: "var(--sigil-text)",
         fontFamily: "var(--sigil-font-tooltip-family)",
@@ -51,9 +51,14 @@ export function SigilTooltip({
       {!hideLabel && label !== undefined && (
         <div
           style={{
+            fontFamily: "var(--sigil-font-axis-cap-family)",
+            fontSize: 10,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: "var(--sigil-text-muted)",
             marginBottom: 6,
-            fontWeight: 500,
-            color: "var(--sigil-text)",
+            paddingBottom: 6,
+            borderBottom: "1px solid var(--sigil-border-subtle)",
           }}
         >
           {String(label)}
@@ -72,32 +77,29 @@ export function SigilTooltip({
             <div
               key={`${String(row.dataKey ?? row.name ?? i)}`}
               style={{
-                display: "flex",
+                display: "grid",
+                gridTemplateColumns: "9px minmax(0, 1fr) auto",
                 alignItems: "center",
-                gap: 8,
-                justifyContent: "space-between",
+                gap: 9,
+                padding: "2px 0",
+                fontSize: 12.5,
               }}
             >
-              <div
+              <SeriesSwatch
+                color={row.color ?? "var(--sigil-text-muted)"}
+                shape="square"
+                size={9}
+              />
+              <span
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  minWidth: 0,
+                  color: "var(--sigil-text-secondary)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
-                <SeriesSwatch color={row.color ?? "var(--sigil-text-muted)"} />
-                <span
-                  style={{
-                    color: "var(--sigil-text-secondary)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {row.name ?? String(row.dataKey ?? "")}
-                </span>
-              </div>
+                {row.name ?? String(row.dataKey ?? "")}
+              </span>
               <ValueText scale="value-inline">{display}</ValueText>
             </div>
           );

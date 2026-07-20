@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { HeatmapPayload, HeatmapCell } from "../../shared/payloads.js";
 import { useTheme } from "../shared/theme.js";
-import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { ColorScaleLegend, intensityAlpha } from "../shared/color-scale.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
@@ -173,8 +173,8 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
       <div className="sigil-header">
         <h2 className="sigil-title">{title}</h2>
         <Toolbar>
-          <ToolbarButton label="Copy CSV" onAction={copyCsv} />
-          <ToolbarButton label="Copy PNG" onAction={copyPng} />
+          <ToolbarButton icon={<CsvIcon />} label="Copy CSV" onAction={copyCsv} />
+          <ToolbarButton icon={<PngIcon />} label="Copy PNG" onAction={copyPng} />
         </Toolbar>
       </div>
       <div className="sigil-canvas" ref={canvasRef} style={{ position: "relative" }}>

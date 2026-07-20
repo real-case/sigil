@@ -90,6 +90,7 @@ export interface TypographyTokens {
     title: TypeScaleStep;
     label: TypeScaleStep;
     tick: TypeScaleStep;
+    axisCap: TypeScaleStep;
     value: TypeScaleStep;
     valueSm: TypeScaleStep;
     valueInline: TypeScaleStep;
@@ -162,10 +163,10 @@ const typography: TypographyTokens = {
   scale: {
     title: {
       family: "sans",
-      fontSize: 13,
-      lineHeight: 18,
-      letterSpacing: 0,
-      fontWeight: 400,
+      fontSize: 17,
+      lineHeight: 22,
+      letterSpacing: -0.01,
+      fontWeight: 600,
     },
     label: {
       family: "sans",
@@ -176,9 +177,17 @@ const typography: TypographyTokens = {
     },
     tick: {
       family: "mono",
-      fontSize: 10,
+      fontSize: 12,
+      lineHeight: 16,
+      letterSpacing: 0,
+      fontWeight: 400,
+      fontVariantNumeric: "tabular-nums",
+    },
+    axisCap: {
+      family: "mono",
+      fontSize: 11,
       lineHeight: 14,
-      letterSpacing: 0.04,
+      letterSpacing: 0.08,
       fontWeight: 400,
       textTransform: "uppercase",
     },
@@ -271,7 +280,7 @@ export const light: ChartDesignTokens = {
   tooltipText: "#1A1B1F",
   borderRadius: radius.md,
   fontFamily: FONT_SANS,
-  fontSize: { label: 11, title: 13, tooltip: 12 },
+  fontSize: { label: 11, title: 17, tooltip: 12 },
 
   // Structured
   surfaces: {
@@ -314,7 +323,7 @@ export const dark: ChartDesignTokens = {
   tooltipText: "#F2F3F5",
   borderRadius: radius.md,
   fontFamily: FONT_SANS,
-  fontSize: { label: 11, title: 13, tooltip: 12 },
+  fontSize: { label: 11, title: 17, tooltip: 12 },
 
   // Structured
   surfaces: {

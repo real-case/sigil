@@ -8,25 +8,50 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  LabelList,
   Cell,
 } from "recharts";
-import type { BarChartPayload } from "../../shared/payloads.js";
+import type { BarChartPayload, BarDatum } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
-import { Toolbar, ToolbarButton } from "../shared/Toolbar.js";
+import { ChartHeader } from "../shared/ChartHeader.js";
+import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
+import { ValueLegend } from "../shared/ValueLegend.js";
 import { EmptyState } from "../shared/EmptyState.js";
+import {
+  tickTextStyle,
+  categoryTextStyle,
+  fmtNumber,
+  fmtCompact,
+  fmtShare,
+} from "../shared/chart-text.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 
-const DIMMED_OPACITY = 0.28;
+const MUTED_OPACITY = 0.18;
+const UNFOCUSED_OPACITY = 0.32;
+const BAR_RADIUS = 7;
+const BAR_SIZE = 26;
+const ROW_HEIGHT = 62;
 const ROTATE_AFTER_ITEMS = 6;
-const ROTATE_AFTER_LABEL_LEN = 8;
+const ROTATE_AFTER_LABEL_LEN = 7;
 const HORIZONTAL_LABEL_MAX = 16;
-const HORIZONTAL_LABEL_WIDTH_BASE = 80;
-const HORIZONTAL_LABEL_WIDTH_PER_CHAR = 6.5;
 // Vertical (category-on-X) ticks: truncate so rotated labels stay readable and
 // don't overrun the plot. Wider cap when straight, tighter when rotated.
 const VERTICAL_LABEL_MAX_STRAIGHT = 12;
 const VERTICAL_LABEL_MAX_ROTATED = 16;
+// Compact end labels on vertical bars once columns get narrow or numbers long,
+// so neighbouring labels don't collide.
+const VERTICAL_COMPACT_AFTER_ITEMS = 8;
+const VERTICAL_COMPACT_AFTER_MAX = 100_000;
+// Readability tiers for dense vertical charts. Past DENSE the bands get
+// narrower than a compact value label, so labels stagger across two rows and
+// category ticks tighten (smaller, steeper, shorter). Past VALUE_LABELS_MAX
+// even staggered labels collide — the legend and tooltip carry the values.
+const DENSE_AFTER_ITEMS = 12;
+const VALUE_LABELS_MAX_ITEMS = 24;
+const MAX_VISIBLE_CATEGORY_TICKS = 20;
+const VERTICAL_LABEL_MAX_DENSE = 10;
+const STAGGER_LIFT = 13;
 
 const truncateLabel = (s: string, max: number): string =>
   s.length <= max ? s : `${s.slice(0, max - 1)}…`;
@@ -41,21 +66,11 @@ function colorFor(
 
 export function BarChartView({ payload }: { payload: BarChartPayload }) {
   const tokens = useTheme();
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [focused, setFocused] = useState<number | null>(null);
+  const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
   const canvasRef = useRef<HTMLDivElement>(null);
   const { title, data, orientation, xlabel, ylabel } = payload;
   const isHorizontal = orientation === "horizontal";
-
-  if (data.length === 0) {
-    return (
-      <div className="sigil-root">
-        <div className="sigil-header">
-          <h2 className="sigil-title">{title}</h2>
-        </div>
-        <EmptyState title="No data to display" description="The payload was empty." />
-      </div>
-    );
-  }
 
   const copyCsv = () =>
     copyText(
@@ -71,200 +86,334 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
     await copySvgAsPng(svg as SVGSVGElement, "bar-chart", tokens.surfaces.bg);
   };
 
-  const toggleSelection = (label: string) =>
-    setSelectedLabel((prev) => (prev === label ? null : label));
-  const opacityFor = (label: string) =>
-    selectedLabel === null || selectedLabel === label ? 1 : DIMMED_OPACITY;
+  const toggleMute = (i: number) =>
+    setMuted((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
 
-  const { needsRotation, hasMixedSign, horizontalYAxisWidth } = useMemo(() => {
-    const longestLabel = data.reduce((m, d) => Math.max(m, d.label.length), 0);
+  const opacityFor = (i: number) =>
+    muted.has(i)
+      ? MUTED_OPACITY
+      : focused !== null && focused !== i
+        ? UNFOCUSED_OPACITY
+        : 1;
+
+  const {
+    total,
+    maxValue,
+    pillMode,
+    hasMixedSign,
+    needsRotation,
+    horizontalYAxisWidth,
+    endLabelMargin,
+  } = useMemo(() => {
+    const max = data.reduce((m, d) => Math.max(m, d.value), 0);
     const anyNegative = data.some((d) => d.value < 0);
     const anyPositive = data.some((d) => d.value > 0);
+    const longestLabel = data.reduce((m, d) => Math.max(m, d.label.length), 0);
+    const longestValue = data.reduce(
+      (m, d) => Math.max(m, fmtNumber(d.value).length),
+      0,
+    );
     return {
+      total: data.reduce((sum, d) => sum + d.value, 0),
+      maxValue: max,
+      // Pill mode is the redesign's default look: lane tracks, fully rounded
+      // bars, values at bar ends, no numeric axis. Mixed/negative data falls
+      // back to a numeric axis + zero line, where lanes would mislead.
+      pillMode: !anyNegative && max > 0,
+      hasMixedSign: anyNegative && anyPositive,
       needsRotation:
         !isHorizontal &&
         (data.length > ROTATE_AFTER_ITEMS || longestLabel > ROTATE_AFTER_LABEL_LEN),
-      hasMixedSign: anyNegative && anyPositive,
-      horizontalYAxisWidth: Math.min(
-        HORIZONTAL_LABEL_WIDTH_BASE +
-          Math.min(longestLabel, HORIZONTAL_LABEL_MAX) * HORIZONTAL_LABEL_WIDTH_PER_CHAR,
-        180,
+      horizontalYAxisWidth: Math.max(
+        56,
+        Math.min(28 + Math.min(longestLabel, HORIZONTAL_LABEL_MAX) * 7.5, 176),
       ),
+      endLabelMargin: Math.max(40, Math.min(longestValue * 7.8 + 12, 96)),
     };
   }, [data, isHorizontal]);
 
-  const tickStyle = {
+  if (data.length === 0) {
+    return (
+      <div className="sigil-root">
+        <ChartHeader title={title} />
+        <EmptyState title="No data to display" description="The payload was empty." />
+      </div>
+    );
+  }
+
+  const shareable = pillMode && total > 0;
+
+  const chartHeight = isHorizontal
+    ? Math.max(220, Math.min(data.length * ROW_HEIGHT + 16, 560))
+    : 360;
+
+  const compactEndLabels =
+    !isHorizontal &&
+    (data.length > VERTICAL_COMPACT_AFTER_ITEMS ||
+      maxValue >= VERTICAL_COMPACT_AFTER_MAX);
+  const endLabelText = (v: number) =>
+    compactEndLabels ? fmtCompact(v) : fmtNumber(v);
+
+  const dense = !isHorizontal && data.length > DENSE_AFTER_ITEMS;
+  const showValueLabels =
+    pillMode && (isHorizontal || data.length <= VALUE_LABELS_MAX_ITEMS);
+  const staggerValueLabels = dense && showValueLabels;
+  // Cap visible category ticks; hidden bars stay reachable via tooltip/legend.
+  const categoryInterval =
+    !isHorizontal && data.length > MAX_VISIBLE_CATEGORY_TICKS
+      ? Math.ceil(data.length / MAX_VISIBLE_CATEGORY_TICKS) - 1
+      : 0;
+
+  const tickStyle = tickTextStyle(tokens);
+  const categoryStyle = categoryTextStyle(tokens);
+  const valueAxisLabel = (isHorizontal ? xlabel : ylabel) ?? "value";
+  const caption = [xlabel, ylabel].filter(Boolean).join(" · ");
+
+  const endLabelStyle = {
     fontFamily: tokens.typography.family.mono,
-    fontSize: tokens.typography.scale.tick.fontSize,
-    letterSpacing: `${tokens.typography.scale.tick.letterSpacing}em`,
-    textTransform: "uppercase" as const,
-    fill: tokens.texts.muted,
+    fontSize: isHorizontal ? 13 : 12,
+    fontWeight: 500,
+    fontVariantNumeric: "tabular-nums" as const,
+    fill: tokens.texts.primary,
   };
 
-  const axisLabelStyle = {
-    fill: tokens.texts.secondary,
-    fontSize: tokens.typography.scale.label.fontSize,
-    fontFamily: tokens.typography.family.sans,
-    textAnchor: "middle" as const,
+  // Dense vertical charts: alternate labels between two rows so neighbours
+  // with similar heights don't run together ("2.7K2.6K").
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderStaggeredLabel = (props: any) => {
+    const { x, y, width, index, value } = props as {
+      x?: number | string;
+      y?: number | string;
+      width?: number | string;
+      index?: number;
+      value?: number | string;
+    };
+    if (value == null || x == null || y == null) return null;
+    const cx = Number(x) + Number(width ?? 0) / 2;
+    const lift = (index ?? 0) % 2 === 1 ? STAGGER_LIFT : 0;
+    return (
+      <text
+        x={cx}
+        y={Number(y) - 8 - lift}
+        textAnchor="middle"
+        style={endLabelStyle}
+      >
+        {endLabelText(Number(value))}
+      </text>
+    );
   };
 
-  const cursorFill = "color-mix(in oklab, var(--sigil-series-0) 8%, transparent)";
+  const legendItems = data.map((d, i) => ({
+    name: d.label,
+    color: colorFor(d, i, tokens),
+    value: fmtNumber(d.value),
+    suffix: shareable ? fmtShare(d.value / total) : undefined,
+    meter: maxValue > 0 ? (Math.max(0, d.value) / maxValue) * 100 : 0,
+  }));
+
+  // Lane tracks are a horizontal-bars device (per the design comp); as
+  // full-height columns behind vertical bars they overwhelm the plot.
+  const lane =
+    pillMode && isHorizontal
+      ? { fill: tokens.surfaces.surfaceSunken, radius: BAR_RADIUS }
+      : undefined;
 
   return (
     <div className="sigil-root">
-      <div className="sigil-header">
-        <h2 className="sigil-title">{title}</h2>
+      <ChartHeader
+        title={title}
+        kpi={{ value: fmtCompact(total), caption: "total" }}
+      >
         <Toolbar>
-          <ToolbarButton label="Copy CSV" onAction={copyCsv} />
-          <ToolbarButton label="Copy PNG" onAction={copyPng} />
+          <ToolbarButton icon={<CsvIcon />} label="Copy CSV" onAction={copyCsv} />
+          <ToolbarButton icon={<PngIcon />} label="Copy PNG" onAction={copyPng} />
         </Toolbar>
-      </div>
-      <div className="sigil-canvas" ref={canvasRef}>
-        <ResponsiveContainer width="100%" height={360}>
-          <BarChart
-            data={data}
-            layout={isHorizontal ? "vertical" : "horizontal"}
-            margin={{
-              top: 16,
-              right: 16,
-              bottom: xlabel ? 32 : 8,
-              left: ylabel && !isHorizontal ? 24 : 8,
-            }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke={tokens.chartLines.grid} />
-            {isHorizontal ? (
-              <>
-                <XAxis
-                  type="number"
-                  tick={tickStyle}
-                  stroke={tokens.chartLines.axis}
-                  height={xlabel ? 48 : 30}
-                  label={
-                    xlabel
-                      ? {
-                          value: xlabel,
-                          position: "insideBottom",
-                          offset: 0,
-                          textAnchor: "middle",
-                          style: axisLabelStyle,
-                        }
-                      : undefined
-                  }
+      </ChartHeader>
+      <div className="sigil-split">
+        <div className="sigil-plot">
+          <div className="sigil-canvas" ref={canvasRef}>
+            <ResponsiveContainer width="100%" height={chartHeight}>
+              <BarChart
+                data={data}
+                layout={isHorizontal ? "vertical" : "horizontal"}
+                margin={{
+                  // Vertical pill mode needs headroom for on-top value labels
+                  // (two rows of it when they stagger), and (with the numeric
+                  // axis hidden) left room for rotated category labels that
+                  // would otherwise clip at the edge.
+                  top: !isHorizontal && pillMode ? (staggerValueLabels ? 38 : 24) : 8,
+                  right: isHorizontal && pillMode ? endLabelMargin : 16,
+                  bottom: 8,
+                  left: !isHorizontal && pillMode && needsRotation ? 28 : 8,
+                }}
+                barCategoryGap="24%"
+                onMouseMove={(state) =>
+                  setFocused(
+                    typeof state?.activeTooltipIndex === "number"
+                      ? state.activeTooltipIndex
+                      : null,
+                  )
+                }
+                onMouseLeave={() => setFocused(null)}
+              >
+                <CartesianGrid
+                  strokeDasharray="2 5"
+                  stroke={tokens.chartLines.grid}
+                  horizontal={!isHorizontal}
+                  vertical={isHorizontal}
                 />
-                <YAxis
-                  type="category"
-                  dataKey="label"
-                  width={horizontalYAxisWidth + (ylabel ? 20 : 0)}
-                  tick={tickStyle}
-                  stroke={tokens.chartLines.axis}
-                  tickFormatter={(v: string) => truncateLabel(v, HORIZONTAL_LABEL_MAX)}
-                  interval={0}
-                  label={
-                    ylabel
-                      ? {
-                          value: ylabel,
-                          angle: -90,
-                          position: "insideLeft",
-                          textAnchor: "middle",
-                          style: axisLabelStyle,
-                        }
-                      : undefined
-                  }
-                />
-              </>
-            ) : (
-              <>
-                <XAxis
-                  type="category"
-                  dataKey="label"
-                  tick={tickStyle}
-                  stroke={tokens.chartLines.axis}
-                  interval={0}
-                  tickFormatter={(v: string) =>
-                    truncateLabel(
-                      v,
-                      needsRotation
-                        ? VERTICAL_LABEL_MAX_ROTATED
-                        : VERTICAL_LABEL_MAX_STRAIGHT,
-                    )
-                  }
-                  height={needsRotation ? (xlabel ? 96 : 68) : xlabel ? 48 : 30}
-                  angle={needsRotation ? -35 : 0}
-                  textAnchor={needsRotation ? "end" : "middle"}
-                  label={
-                    xlabel
-                      ? {
-                          value: xlabel,
-                          position: "insideBottom",
-                          offset: 0,
-                          textAnchor: "middle",
-                          style: axisLabelStyle,
-                        }
-                      : undefined
-                  }
-                />
-                <YAxis
-                  type="number"
-                  tick={tickStyle}
-                  stroke={tokens.chartLines.axis}
-                  width={ylabel ? 64 : 48}
-                  label={
-                    ylabel
-                      ? {
-                          value: ylabel,
-                          angle: -90,
-                          position: "insideLeft",
-                          textAnchor: "middle",
-                          style: axisLabelStyle,
-                        }
-                      : undefined
-                  }
-                />
-              </>
-            )}
-            {hasMixedSign && (
-              <ReferenceLine
-                {...(isHorizontal ? { x: 0 } : { y: 0 })}
-                stroke={tokens.chartLines.axis}
-                strokeWidth={1.5}
-              />
-            )}
-            <Tooltip
-              cursor={{ fill: cursorFill }}
-              content={(props) => (
-                <SigilTooltip
-                  active={props.active}
-                  label={props.label as string | number | undefined}
-                  payload={
-                    props.payload?.map((p) => ({
-                      color: typeof p.color === "string" ? p.color : undefined,
-                      name: typeof p.name === "string" ? p.name : undefined,
-                      dataKey: p.dataKey as string | number | undefined,
-                      value: p.value as number | string | undefined,
-                    }))
-                  }
-                  hideLabel={false}
-                />
-              )}
-            />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive={false}>
-              {data.map((datum, i) => (
-                <Cell
-                  key={datum.label}
-                  fill={colorFor(datum, i, tokens)}
-                  fillOpacity={opacityFor(datum.label)}
-                  onClick={() => toggleSelection(datum.label)}
-                  style={{
-                    cursor: "pointer",
-                    transition: `fill-opacity var(--sigil-duration-fast) var(--sigil-easing-standard)`,
+                {isHorizontal ? (
+                  <>
+                    <XAxis
+                      type="number"
+                      hide={pillMode}
+                      domain={pillMode ? [0, "dataMax"] : undefined}
+                      tick={tickStyle}
+                      axisLine={false}
+                      tickLine={false}
+                      height={30}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="label"
+                      width={horizontalYAxisWidth}
+                      tick={categoryStyle}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v: string) =>
+                        truncateLabel(v, HORIZONTAL_LABEL_MAX)
+                      }
+                      interval={0}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <XAxis
+                      type="category"
+                      dataKey="label"
+                      tick={dense ? { ...categoryStyle, fontSize: 12 } : categoryStyle}
+                      axisLine={false}
+                      tickLine={false}
+                      interval={categoryInterval}
+                      tickFormatter={(v: string) =>
+                        truncateLabel(
+                          v,
+                          dense
+                            ? VERTICAL_LABEL_MAX_DENSE
+                            : needsRotation
+                              ? VERTICAL_LABEL_MAX_ROTATED
+                              : VERTICAL_LABEL_MAX_STRAIGHT,
+                        )
+                      }
+                      height={needsRotation ? (dense ? 74 : 88) : 34}
+                      angle={needsRotation ? (dense ? -45 : -35) : 0}
+                      textAnchor={needsRotation ? "end" : "middle"}
+                    />
+                    <YAxis
+                      type="number"
+                      hide={pillMode}
+                      domain={pillMode ? [0, "dataMax"] : undefined}
+                      tick={tickStyle}
+                      axisLine={false}
+                      tickLine={false}
+                      width={48}
+                    />
+                  </>
+                )}
+                {hasMixedSign && (
+                  <ReferenceLine
+                    {...(isHorizontal ? { x: 0 } : { y: 0 })}
+                    stroke={tokens.chartLines.axis}
+                    strokeWidth={1.5}
+                  />
+                )}
+                <Tooltip
+                  cursor={false}
+                  content={(props) => {
+                    const datum = props.payload?.[0]?.payload as
+                      | BarDatum
+                      | undefined;
+                    if (!datum) {
+                      return <SigilTooltip active={false} />;
+                    }
+                    const index = data.findIndex((d) => d === datum);
+                    const color = colorFor(datum, Math.max(0, index), tokens);
+                    const rows = [
+                      {
+                        color,
+                        name: valueAxisLabel,
+                        value: fmtNumber(datum.value),
+                      },
+                      ...(shareable
+                        ? [
+                            {
+                              color,
+                              name: "share",
+                              value: fmtShare(datum.value / total),
+                            },
+                          ]
+                        : []),
+                    ];
+                    return (
+                      <SigilTooltip
+                        active={props.active}
+                        label={datum.label}
+                        payload={rows}
+                      />
+                    );
                   }}
                 />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+                <Bar
+                  dataKey="value"
+                  radius={BAR_RADIUS}
+                  maxBarSize={BAR_SIZE}
+                  minPointSize={3}
+                  background={lane}
+                  isAnimationActive={false}
+                >
+                  {showValueLabels &&
+                    (staggerValueLabels ? (
+                      <LabelList dataKey="value" content={renderStaggeredLabel} />
+                    ) : (
+                      <LabelList
+                        dataKey="value"
+                        position={isHorizontal ? "right" : "top"}
+                        offset={isHorizontal ? 10 : 8}
+                        formatter={(v: number) => endLabelText(v)}
+                        style={endLabelStyle}
+                      />
+                    ))}
+                  {data.map((datum, i) => (
+                    <Cell
+                      key={datum.label}
+                      fill={colorFor(datum, i, tokens)}
+                      fillOpacity={opacityFor(i)}
+                      onClick={() => toggleMute(i)}
+                      style={{
+                        cursor: "pointer",
+                        transition: `fill-opacity var(--sigil-duration-base) var(--sigil-easing-standard)`,
+                      }}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {caption && <div className="sigil-caption">{caption}</div>}
+        </div>
+        <ValueLegend
+          items={legendItems}
+          focused={focused}
+          muted={muted}
+          onFocus={setFocused}
+          onToggleMute={toggleMute}
+        />
       </div>
     </div>
   );
 }
-
