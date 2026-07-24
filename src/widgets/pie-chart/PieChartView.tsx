@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import {
   PieChart,
   Pie,
-  Cell,
   Sector,
   Tooltip,
   ResponsiveContainer,
@@ -125,6 +124,14 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
     meter: maxValue > 0 ? (Math.max(0, d.value) / maxValue) * 100 : 0,
   }));
 
+  // Recharts 3 deprecates <Cell>: per-slice fill/opacity ride along on the
+  // data entries instead (sectors inherit presentational props from them).
+  const pieData = data.map((d, i) => ({
+    ...d,
+    fill: colorFor(d, i, tokens),
+    fillOpacity: opacityFor(i),
+  }));
+
   return (
     <div className="sigil-root">
       <ChartHeader
@@ -142,7 +149,7 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
             <ResponsiveContainer width="100%" height={340}>
               <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                 <Pie
-                  data={data}
+                  data={pieData}
                   dataKey="value"
                   nameKey="label"
                   cx="50%"
@@ -157,36 +164,30 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
                   labelLine={false}
                   stroke={isDonut ? "none" : tokens.surfaces.bg}
                   strokeWidth={isDonut ? 0 : 2}
-                  activeIndex={focused ?? undefined}
+                  // Recharts 3.9: one shape renderer for every sector; the
+                  // hovered one arrives with isActive and grows a little.
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  activeShape={(p: any) => (
-                    <Sector
-                      {...p}
-                      innerRadius={
-                        isDonut
-                          ? Math.max(0, (p.innerRadius ?? 0) - ACTIVE_GROW)
-                          : 0
-                      }
-                      outerRadius={(p.outerRadius ?? 0) + ACTIVE_GROW}
-                    />
-                  )}
+                  shape={(p: any) => {
+                    return (
+                      <Sector
+                        {...p}
+                        innerRadius={
+                          p.isActive && isDonut
+                            ? Math.max(0, (p.innerRadius ?? 0) - ACTIVE_GROW)
+                            : p.innerRadius
+                        }
+                        outerRadius={
+                          p.isActive
+                            ? (p.outerRadius ?? 0) + ACTIVE_GROW
+                            : p.outerRadius
+                        }
+                      />
+                    );
+                  }}
                   onMouseEnter={(_, i) => setFocused(i)}
                   onMouseLeave={() => setFocused(null)}
-                >
-                  {data.map((datum, i) => (
-                    <Cell
-                      key={datum.label}
-                      fill={colorFor(datum, i, tokens)}
-                      fillOpacity={opacityFor(i)}
-                      onClick={() => toggleMute(i)}
-                      style={{
-                        cursor: "pointer",
-                        transition:
-                          "fill-opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
-                      }}
-                    />
-                  ))}
-                </Pie>
+                  onClick={(_, i) => toggleMute(i)}
+                />
                 {isDonut && (
                   <>
                     <text

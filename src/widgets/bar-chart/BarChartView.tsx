@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -9,7 +9,8 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   LabelList,
-  Cell,
+  Rectangle,
+  useActiveTooltipDataPoints,
 } from "recharts";
 import type { BarChartPayload, BarDatum } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
@@ -62,6 +63,34 @@ function colorFor(
   tokens: ChartDesignTokens,
 ): string {
   return datum.color ?? tokens.series[index % tokens.series.length]!;
+}
+
+/**
+ * Recharts 3 no longer passes chart state to mouse handlers; the active
+ * (tooltip-hovered) band is read via a hook instead. Rendered as a chart
+ * child so the hook sees the chart's context; draws nothing.
+ */
+function ActiveBandBridge({
+  data,
+  onFocus,
+}: {
+  data: readonly BarDatum[];
+  onFocus: (index: number | null) => void;
+}) {
+  const points = useActiveTooltipDataPoints();
+  const active = points?.[0] as BarDatum | undefined;
+  const index = active
+    ? (() => {
+        const byIdentity = data.indexOf(active);
+        return byIdentity >= 0
+          ? byIdentity
+          : data.findIndex((d) => d.label === active.label);
+      })()
+    : -1;
+  useEffect(() => {
+    onFocus(index >= 0 ? index : null);
+  }, [index, onFocus]);
+  return null;
 }
 
 export function BarChartView({ payload }: { payload: BarChartPayload }) {
@@ -252,15 +281,8 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   left: !isHorizontal && pillMode && needsRotation ? 28 : 8,
                 }}
                 barCategoryGap="24%"
-                onMouseMove={(state) =>
-                  setFocused(
-                    typeof state?.activeTooltipIndex === "number"
-                      ? state.activeTooltipIndex
-                      : null,
-                  )
-                }
-                onMouseLeave={() => setFocused(null)}
               >
+                <ActiveBandBridge data={data} onFocus={setFocused} />
                 <CartesianGrid
                   strokeDasharray="2 5"
                   stroke={tokens.chartLines.grid}
@@ -375,6 +397,24 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   minPointSize={3}
                   background={lane}
                   isAnimationActive={false}
+                  onClick={(_, i) => toggleMute(i)}
+                  // Recharts 3 deprecates <Cell>; per-bar fill/opacity render
+                  // through a custom shape instead.
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  shape={(props: any) => {
+                    const i: number =
+                      typeof props.index === "number"
+                        ? props.index
+                        : data.findIndex((d) => d === props.payload);
+                    const datum = data[i] ?? (props.payload as BarDatum);
+                    return (
+                      <Rectangle
+                        {...props}
+                        fill={colorFor(datum, Math.max(0, i), tokens)}
+                        fillOpacity={opacityFor(Math.max(0, i))}
+                      />
+                    );
+                  }}
                 >
                   {showValueLabels &&
                     (staggerValueLabels ? (
@@ -384,22 +424,10 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                         dataKey="value"
                         position={isHorizontal ? "right" : "top"}
                         offset={isHorizontal ? 10 : 8}
-                        formatter={(v: number) => endLabelText(v)}
+                        formatter={(v: unknown) => endLabelText(Number(v))}
                         style={endLabelStyle}
                       />
                     ))}
-                  {data.map((datum, i) => (
-                    <Cell
-                      key={datum.label}
-                      fill={colorFor(datum, i, tokens)}
-                      fillOpacity={opacityFor(i)}
-                      onClick={() => toggleMute(i)}
-                      style={{
-                        cursor: "pointer",
-                        transition: `fill-opacity var(--sigil-duration-base) var(--sigil-easing-standard)`,
-                      }}
-                    />
-                  ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

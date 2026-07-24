@@ -395,6 +395,14 @@ body,
   color: var(--sigil-text-muted);
 }
 
+/* Clickable chart elements (mute-toggle): pointer + smooth dim. Rendered via
+   Bar shape / Pie data entries since Recharts 3 deprecates <Cell>. */
+.recharts-bar-rectangle path,
+.recharts-pie-sector path {
+  cursor: pointer;
+  transition: fill-opacity var(--sigil-duration-base) var(--sigil-easing-standard);
+}
+
 /* Suppress browser focus outline on chart segments clicked with mouse,
    while preserving keyboard focus indicators for accessibility. */
 .recharts-wrapper :focus:not(:focus-visible) {

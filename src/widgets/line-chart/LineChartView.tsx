@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState, type Key } from "react";
 import {
   AreaChart,
   Area,
@@ -318,7 +318,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
                   fill={showFill ? `url(#${gradientUid}-${i})` : "transparent"}
                   fillOpacity={showFill ? opacity : 0}
                   dot={(dotProps: {
-                    key?: string;
+                    key?: Key | null;
                     index?: number;
                     cx?: number;
                     cy?: number;

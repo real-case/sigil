@@ -18,6 +18,8 @@ interface RechartsTreemapNode {
   value: number;
   fill?: string;
   children?: RechartsTreemapNode[];
+  // Recharts 3's TreemapDataType requires an index signature.
+  [key: string]: unknown;
 }
 
 function toRechartsTree(
