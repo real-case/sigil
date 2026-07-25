@@ -18,7 +18,7 @@ const MAX_HEIGHT = 520;
 const BUBBLE_R_MIN = 3;
 const BUBBLE_R_MAX = 28;
 
-function useContainerWidth(ref: React.RefObject<HTMLElement>): number {
+function useContainerWidth(ref: React.RefObject<HTMLElement | null>): number {
   const [width, setWidth] = useState(0);
   useEffect(() => {
     const el = ref.current;

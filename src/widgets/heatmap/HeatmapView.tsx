@@ -48,7 +48,7 @@ function truncate(s: string, max: number): string {
   return s.length <= max ? s : `${s.slice(0, max - 1)}…`;
 }
 
-function useContainerWidth(ref: React.RefObject<HTMLElement>): number {
+function useContainerWidth(ref: React.RefObject<HTMLElement | null>): number {
   const [width, setWidth] = useState(0);
   useEffect(() => {
     const el = ref.current;
