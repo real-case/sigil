@@ -267,6 +267,20 @@ npm start                   # run compiled HTTP server
 npm run start:stdio         # run compiled stdio server
 ```
 
+### Branch & release workflow
+
+- **`dev`** is the default branch — feature branches and all PRs (including dependabot) target it.
+- **`main`** is release-only. It moves exclusively via a `dev` → `main` pull request with the `verify` check green, merged with a **merge commit** (enforced by a branch ruleset; direct pushes, force-pushes, and deletion are blocked).
+- **Release:** bump `version` in `package.json` on `dev`, merge the `dev` → `main` PR, then tag the merge commit:
+
+  ```bash
+  git tag vX.Y.Z && git push origin vX.Y.Z
+  ```
+
+  The tag triggers [`release.yml`](./.github/workflows/release.yml): it verifies the tag matches `package.json` and points at a commit reachable from `main`, re-runs the checks, publishes `@real-case/sigil` to npm via [trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC — no long-lived token), and creates a GitHub Release.
+- **Hotfix:** branch off `main` → PR to `main` → tag → back-merge via a `main` → `dev` PR.
+- Existing clones after the default-branch switch: `git fetch origin && git remote set-head origin -a`.
+
 ### Architecture overview
 
 ```
