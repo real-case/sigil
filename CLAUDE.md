@@ -30,6 +30,13 @@ Key entry points:
 - Don't propose bundle-size optimisations unprompted. Widgets ship as self-contained single-file HTML (the MCP Apps constraint), so inlining Recharts, TopoJSON atlases, and fonts into every widget is intentional — portability beats kilobytes here.
 - When adding a new widget, only create new files; the registry pattern means no enumeration list needs editing.
 
+### Branch & release workflow
+
+- `dev` is the default branch — branch from it and target it with every PR (features, fixes, dependabot).
+- `main` is release-only: never commit or push to it directly. It moves via `dev` → `main` release PRs merged with a **merge commit** (a ruleset enforces PR-only, a green `verify` check, and merge-commit-only).
+- A release is a manually pushed `vX.Y.Z` tag on `main` matching `package.json` — `.github/workflows/release.yml` then publishes `@real-case/sigil` to npm (OIDC trusted publishing, no token) and creates the GitHub Release. Do not bump versions or push tags unless explicitly asked.
+- Hotfixes: branch off `main`, PR back to `main`, tag, then back-merge `main` → `dev` with a PR.
+
 ## Useful commands
 
 ```bash
