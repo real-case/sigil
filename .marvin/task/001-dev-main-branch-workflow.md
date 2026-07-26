@@ -1,7 +1,7 @@
 ---
 slug: dev-main-branch-workflow
 type: feature
-status: in-progress
+status: shipped
 created: 2026-07-25
 tracker: none
 supersedes: none
@@ -239,3 +239,9 @@ PASS WITH WARNINGS (round 2; round 1 was BLOCK). Round-1 blockers — guard-wiri
 - **Site**: when the sigil.live source lands (monorepo dir or Vercel Git integration), set Vercel's production branch to `main` (previews from `dev`), or append a deploy job to release.yml.
 - **First pipeline release**: confirm 0.2.0 in package.json on dev, PR to main, tag `v0.2.0` — this also heals the npm registry staleness (still at 0.1.0) and is the true end-to-end test of release.yml.
 - Optional later: release-please/changesets if cadence or contributor count grows; a Node version matrix (20/22/24) if runtime-support guarantees matter; CI + npm badges in README.
+
+## Delivery
+
+- PR: https://github.com/real-case/sigil/pull/36 (base: dev)
+- Date: 2026-07-26
+- Bootstrap applied to live repo during implementation: dev created at c5448c4, default branch → dev, ruleset "main release gate" active (idempotency re-verified twice).
