@@ -26,7 +26,7 @@ updates:
           - "minor"
           - "patch"
 
-  # GitHub Actions (no workflows yet — block is a no-op until any are added).
+  # GitHub Actions (keeps the ci.yml / release.yml action pins fresh).
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
