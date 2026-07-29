@@ -138,8 +138,9 @@ Render an interactive pie or donut chart for part-of-whole proportions.
 | `title` | `string` | yes | Chart title |
 | `data` | `Array<{ label, value, color? }>` | yes | Slices; values must be ≥ 0 |
 | `variant` | `"pie" \| "donut"` | no | Default `"donut"` |
+| `maxSegments` | `number` | no | Max rendered slices (integer ≥ 2, default `5`). Extra slices collapse into a click-to-expand "Other" |
 
-Slices under 4% hide their inline percentage label (still visible in the tooltip).
+When `data` has more than `maxSegments` entries, the smallest slices collapse into a single muted "Other" slice — click it (or its legend row) to expand the full set; a "Show top N" button collapses back. The cap is visual only: Copy CSV always exports every original row.
 
 ### `render_table`
 

@@ -75,6 +75,7 @@ const cases: GuardCase[] = [
       title: "T",
       data: [{ label: "a", value: 1 }],
       variant: "donut",
+      maxSegments: 7,
     },
     rejects: {
       "missing title": omit("title"),
@@ -82,7 +83,22 @@ const cases: GuardCase[] = [
       "missing variant": omit("variant"),
       "invalid variant": set("variant", "ring"),
       "datum missing value": set("data", [{ label: "a" }]),
+      "maxSegments below 2": set("maxSegments", 1),
+      "maxSegments non-integer": set("maxSegments", 4.5),
+      "maxSegments non-number": set("maxSegments", "5"),
     },
+  },
+  {
+    // Guards the undefined branch: a guard written without it would reject
+    // every existing pie payload while the table above stays green.
+    name: "pie-chart (no maxSegments)",
+    guard: isPieChartPayload,
+    valid: {
+      title: "T",
+      data: [{ label: "a", value: 1 }],
+      variant: "donut",
+    },
+    rejects: {},
   },
   {
     name: "table",
