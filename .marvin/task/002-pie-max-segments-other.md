@@ -1,7 +1,7 @@
 ---
 slug: pie-max-segments-other
 type: feature
-status: in-progress
+status: shipped
 created: 2026-07-29
 tracker: none
 supersedes: none
@@ -264,3 +264,9 @@ PASS WITH WARNINGS (round 2; round 1 was BLOCK). Round-1 blockers — palette-pr
 - Item 3 (line end-caps) and the ValueLegend revision against followups item 5 are the next candidates from `specs/design-system-followups.md`; item 4 (table sparklines) needs its own payload-contract spec. A dedicated expand-affordance aria treatment could ride the item-5 ValueLegend work.
 - If a DOM test harness ever lands, AC4's checklist converts naturally into component tests.
 - `specs/design-system-followups.md` itself is stale (item 2 shipped, fonts footnote outdated) — worth a refresh pass as a separate docs task.
+
+## Delivery
+
+- PR: https://github.com/real-case/sigil/pull/42 (base: dev)
+- Date: 2026-07-30
+- Diff-critic warnings 1-4, 9-11 fixed pre-delivery and re-verified live (stale focus on expand, unconditional Set allocation, clamp/label divergence, negative-tail oracle, e2e rejection blame, fixture coupling, spacing token); warnings 5-8, 12-13 accepted with rationale in the PR body.
