@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { LineChartPayload, LineSeries } from "../../shared/payloads.js";
+import { seriesEndIndices, dotRole } from "./end-indices.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { ChartHeader } from "../shared/ChartHeader.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
@@ -86,15 +87,10 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
   const rows = useMemo(() => mergeSeries(series), [series]);
   const numericX = useMemo(() => isAllNumeric(series), [series]);
 
-  // Last merged-row index at which each series has a value → end-dot anchors.
-  const lastIndexBySeries = useMemo(
-    () =>
-      series.map((s) => {
-        for (let i = rows.length - 1; i >= 0; i--) {
-          if (rows[i]![s.name] != null) return i;
-        }
-        return -1;
-      }),
+  // First/last merged-row index at which each series has a value → the
+  // start-cap / end-cap anchors.
+  const endIndices = useMemo(
+    () => seriesEndIndices(rows, series.map((s) => s.name)),
     [rows, series],
   );
 
@@ -302,7 +298,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
               const color = seriesColor(i, tokens);
               const isMuted = muted.has(i);
               const sparse = s.data.length <= SPARSE_DOT_THRESHOLD;
-              const endIndex = lastIndexBySeries[i]!;
+              const { first, last } = endIndices[i]!;
               const opacity = opacityFor(i);
               const showFill = series.length <= AREA_FILL_MAX_SERIES;
               return (
@@ -322,12 +318,13 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
                     index?: number;
                     cx?: number;
                     cy?: number;
-                    value?: number;
                   }) => {
-                    const { key, index, cx, cy, value } = dotProps;
+                    // Recharts passes `value` as a [baseValue, rawValue]
+                    // tuple for a non-stacked Area — never nullish, so gap
+                    // rows are caught by the cy check alone.
+                    const { key, index, cx, cy } = dotProps;
                     const dotKey = key ?? `${s.name}-dot-${index}`;
                     if (
-                      value == null ||
                       cx == null ||
                       cy == null ||
                       Number.isNaN(cx) ||
@@ -335,8 +332,9 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
                     ) {
                       return <g key={dotKey} />;
                     }
-                    const isEnd = index === endIndex;
-                    if (!isEnd && !sparse) return <g key={dotKey} />;
+                    const role = dotRole({ index: index ?? -1, first, last, sparse });
+                    if (role === "none") return <g key={dotKey} />;
+                    const isEnd = role === "end";
                     return (
                       <circle
                         key={dotKey}
