@@ -1,7 +1,7 @@
 ---
 slug: line-end-caps
 type: feature
-status: in-progress
+status: shipped
 created: 2026-07-30
 tracker: none
 supersedes: none
@@ -187,3 +187,10 @@ PASS WITH WARNINGS (single round — no blockers; the critic verified every load
 ## Future Considerations
 - Item 4 (table sparkline columns) is the last unstarted followup; the ValueLegend revision (item 5 vs the shipped `ValueLegend`) remains open.
 - Refresh `specs/design-system-followups.md` and the token json (items 2+3 shipped, fonts footnote stale) as a small docs task.
+
+## Delivery
+
+- PR: https://github.com/real-case/sigil/pull/43 (base: dev)
+- Date: 2026-07-31
+- AC2 QA outcomes (a)-(j): all PASS, light + dark — medium-numeric 3x(start r3 + end r4); multi-series 6x both caps, left-edge column clean; small-categorical 8xr3+2xr4 unchanged; minimal-single one r4 only; mute dims caps to 0.18; activeDot/tooltip working and untouched by the diff; PNG copy clean console; dashboard tile 6xr3+6xr4 no overflow; edge-labels 4+1 and negatives 7+1 no visible diff.
+- Diff-critic PASS WITH WARNINGS, 0 blockers: W1 (dead value guard) fixed, W3 (-1 index assertion) fixed, N1/N3 folded; W2 satisfied by this section + the PR body; N2 accepted (same code path as walked presets).
