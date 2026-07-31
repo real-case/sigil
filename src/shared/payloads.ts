@@ -43,6 +43,12 @@ export interface PieChartPayload {
   title: string;
   data: PieDatum[];
   variant: PieVariant;
+  /**
+   * Maximum number of rendered slices (integer >= 2; default 5). When `data`
+   * has more entries, the smallest remainder collapses into a single
+   * click-to-expand "Other" slice. Visual only — CSV export keeps every row.
+   */
+  maxSegments?: number;
 }
 
 export interface ScatterDatum {

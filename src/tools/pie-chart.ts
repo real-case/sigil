@@ -9,6 +9,7 @@ const description = [
   "Render an interactive pie or donut chart.",
   "Use for part-of-whole proportions: market share, budget breakdown, distribution by category, survey results.",
   "Hover a slice to see its exact percentage and value; click to highlight a single slice.",
+  "Slices beyond maxSegments (default 5) collapse into a single muted 'Other' slice the viewer can click to expand — set maxSegments higher when the user asks to see more or all categories (CSV export always keeps every row).",
   "Defaults to donut (inner hole) — use variant='pie' for a solid pie when exact center emphasis matters.",
   "For ranking or comparing independent categories, use render_bar_chart instead.",
 ].join(" ");
@@ -37,6 +38,14 @@ const inputSchema = {
     .enum(["pie", "donut"])
     .optional()
     .describe("Chart variant. Defaults to 'donut'."),
+  maxSegments: z
+    .number()
+    .int()
+    .min(2)
+    .optional()
+    .describe(
+      "Maximum rendered slices (integer >= 2; default 5). Extra slices collapse into a click-to-expand 'Other' slice; CSV export keeps all rows.",
+    ),
 };
 
 export function registerPieChartTool(server: McpServer) {
@@ -54,6 +63,7 @@ export function registerPieChartTool(server: McpServer) {
         title: args.title,
         data: args.data,
         variant: args.variant ?? "donut",
+        maxSegments: args.maxSegments,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],

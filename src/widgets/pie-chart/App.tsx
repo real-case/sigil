@@ -19,7 +19,11 @@ export function isPieChartPayload(value: unknown): value is PieChartPayload {
     typeof v["title"] === "string" &&
     Array.isArray(v["data"]) &&
     v["data"].every(isPieDatum) &&
-    (v["variant"] === "pie" || v["variant"] === "donut")
+    (v["variant"] === "pie" || v["variant"] === "donut") &&
+    (v["maxSegments"] === undefined ||
+      (typeof v["maxSegments"] === "number" &&
+        Number.isInteger(v["maxSegments"]) &&
+        v["maxSegments"] >= 2))
   );
 }
 

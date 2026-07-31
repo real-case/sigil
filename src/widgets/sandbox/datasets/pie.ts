@@ -33,7 +33,7 @@ export const pieDatasets: Dataset<PieChartPayload>[] = [
   },
   {
     id: "pie-medium",
-    label: "Medium — 12 slices",
+    label: "Medium — 12 slices (collapses to Other)",
     category: "medium",
     payload: {
       title: "Cost by service",
@@ -55,8 +55,32 @@ export const pieDatasets: Dataset<PieChartPayload>[] = [
     },
   },
   {
+    id: "pie-max-segments-raised",
+    label: "Medium — 12 slices, maxSegments 12 (no collapse)",
+    category: "medium",
+    payload: {
+      title: "Cost by service (all categories)",
+      variant: "donut",
+      maxSegments: 12,
+      data: [
+        { label: "Compute", value: 18200 },
+        { label: "Storage", value: 9100 },
+        { label: "Egress", value: 7400 },
+        { label: "Database", value: 6900 },
+        { label: "Cache", value: 3200 },
+        { label: "Observability", value: 2800 },
+        { label: "Queues", value: 2100 },
+        { label: "CDN", value: 1850 },
+        { label: "Search", value: 1400 },
+        { label: "ML inference", value: 1200 },
+        { label: "Backups", value: 900 },
+        { label: "Misc", value: 650 },
+      ],
+    },
+  },
+  {
     id: "pie-many",
-    label: "Many — 16 slices (palette wrap)",
+    label: "Many — 16 slices (collapse → expand, palette wrap)",
     category: "large",
     payload: {
       title: "Requests by endpoint",
@@ -99,7 +123,7 @@ export const pieDatasets: Dataset<PieChartPayload>[] = [
   },
   {
     id: "pie-large-imbalanced",
-    label: "Large — 1 dominant slice",
+    label: "Large — 1 dominant slice (collapses)",
     category: "large",
     payload: {
       title: "Outbound traffic by host",

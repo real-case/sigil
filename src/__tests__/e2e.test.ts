@@ -22,13 +22,14 @@ const distBuilt = existsSync(join(REPO_ROOT, "dist", "widgets", "bar-chart", "in
 
 const toolName = (widget: string) => `render_${widget.replaceAll("-", "_")}`;
 
-// A minimal valid payload per tool. Also serves as the coverage list: the suite
-// asserts this exactly matches the registered tool set, so a new widget without
-// an E2E call fails the test.
+// A minimal valid payload per tool (pie also carries maxSegments to exercise
+// the passthrough — see the dedicated test below). Also serves as the coverage
+// list: the suite asserts this exactly matches the registered tool set, so a
+// new widget without an E2E call fails the test.
 const TOOL_ARGS: Record<string, Record<string, unknown>> = {
   render_bar_chart: { title: "E2E bar", data: [{ label: "A", value: 1 }] },
   render_line_chart: { title: "E2E line", series: [{ name: "S", data: [{ x: "Jan", y: 1 }] }] },
-  render_pie_chart: { title: "E2E pie", data: [{ label: "A", value: 1 }] },
+  render_pie_chart: { title: "E2E pie", data: [{ label: "A", value: 1 }], maxSegments: 7 },
   render_table: { title: "E2E table", columns: [{ key: "a", label: "A" }], rows: [{ a: 1 }] },
   render_scatter_chart: { title: "E2E scatter", series: [{ name: "S", data: [{ x: 1, y: 2 }] }] },
   render_treemap: { title: "E2E treemap", data: [{ label: "A", value: 1 }] },
@@ -94,6 +95,32 @@ describe("MCP Apps pipeline (in-process client↔server)", () => {
       expect(JSON.parse(text).title).toBe(args["title"]);
     });
   }
+
+  it("render_pie_chart: forwards maxSegments and rejects an out-of-range value", async () => {
+    const args = TOOL_ARGS["render_pie_chart"]!;
+    const res = await client.callTool({ name: "render_pie_chart", arguments: args });
+    expect(res.isError).toBeFalsy();
+    const structured = res.structuredContent as { maxSegments?: number };
+    expect(structured.maxSegments).toBe(args["maxSegments"]);
+
+    // Below the zod bound (min 2): the schema must reject it, either as a
+    // protocol-level error (rejected promise) or an isError tool result — and
+    // the failure must actually blame the field, not some unrelated fault.
+    const failure = await client
+      .callTool({
+        name: "render_pie_chart",
+        arguments: { title: "E2E pie bad", data: [{ label: "A", value: 1 }], maxSegments: 1 },
+      })
+      .then(
+        (r) =>
+          (r as { isError?: boolean }).isError
+            ? JSON.stringify((r as { content?: unknown }).content)
+            : "unexpected success",
+        (e: unknown) => String(e),
+      );
+    expect(failure).not.toBe("unexpected success");
+    expect(failure).toMatch(/maxSegments/i);
+  });
 
   it("exposes one ui:// resource per widget", async () => {
     const { resources } = await client.listResources();

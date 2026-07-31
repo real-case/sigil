@@ -54,6 +54,9 @@ function Swatches() {
 const piePayload: PieChartPayload = {
   title: "Pie — 10 equal slices (neighbour contrast test)",
   variant: "pie",
+  // Opt out of the default 5-slice cap: this preview exists to show all 10
+  // palette colours side by side.
+  maxSegments: 10,
   data: SLICE_LABELS.map((label) => ({ label, value: 1 })),
 };
 
