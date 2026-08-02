@@ -9,6 +9,7 @@ const description = [
   "Render an interactive data table with sortable columns and text-search filtering.",
   "Use when the user needs to explore, compare, or drill into structured tabular data — especially when specific values and cross-row comparison matter more than visual pattern recognition.",
   "Columns support left/right/center alignment; numeric values are detected and sorted numerically.",
+  "Declare a column with kind 'sparkline' to show an inline trend per row (e.g. recent history like the last 12 weeks): its cells are then arrays of numbers ordered oldest to newest, rendered as a small line with the latest value beside it.",
   "Prefer a chart (bar/line/pie) when the goal is visual insight at a glance.",
 ].join(" ");
 
@@ -28,13 +29,23 @@ const inputSchema = {
           .describe(
             "Cell alignment. Defaults to 'right' for numeric columns, 'left' otherwise.",
           ),
+        kind: z
+          .enum(["text", "sparkline"])
+          .optional()
+          .describe(
+            "Cell rendering mode, default 'text'. 'sparkline' renders each cell's number array (oldest → newest) as a 56×16 inline trend line plus the latest value.",
+          ),
       }),
     )
     .min(1)
     .describe("Column definitions in display order."),
   rows: z
-    .array(z.record(z.string(), z.union([z.string(), z.number()])))
-    .describe("Rows as objects keyed by column.key. Empty is allowed."),
+    .array(
+      z.record(z.string(), z.union([z.string(), z.number(), z.array(z.number())])),
+    )
+    .describe(
+      "Rows as objects keyed by column.key. Number arrays are only valid under kind 'sparkline' columns. Empty is allowed.",
+    ),
   sortable: z
     .boolean()
     .optional()

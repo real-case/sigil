@@ -52,6 +52,50 @@ export const tableDatasets: Dataset<TablePayload>[] = [
     },
   },
   {
+    // Sparkline showcase. Deliberate edge rows: 777 appears only inside the
+    // web spark (proves the filter excludes spark digits); cron has a
+    // single-value series (dot); billing a scalar under the sparkline column
+    // (plain text); legacy-ftp no trend at all (em dash); worker a
+    // negative-leading, negative-dipping series (padding + CSV formula guard).
+    id: "table-sparklines",
+    label: "Sparklines — inline trends",
+    category: "small",
+    payload: {
+      title: "Service traffic — 12-week trend",
+      sortable: true,
+      filterable: true,
+      columns: [
+        { key: "name", label: "Service" },
+        { key: "region", label: "Region" },
+        { key: "requests", label: "Req/wk", align: "right" },
+        { key: "trend", label: "Trend (12w)", kind: "sparkline" },
+      ],
+      rows: [
+        {
+          name: "api",
+          region: "eu-west",
+          requests: 1720,
+          trend: [820, 932, 901, 934, 1290, 1330, 1320, 1450, 1520, 1610, 1590, 1720],
+        },
+        {
+          name: "web",
+          region: "us-east",
+          requests: 1103,
+          trend: [640, 712, 690, 777, 810, 794, 850, 902, 940, 991, 1024, 1103],
+        },
+        {
+          name: "worker",
+          region: "us-east",
+          requests: 24,
+          trend: [-14, -8, -20, -5, 3, 9, -2, 6, 14, 11, 18, 24],
+        },
+        { name: "cron", region: "ap-south", requests: 96, trend: [96] },
+        { name: "billing", region: "eu-west", requests: 412, trend: 412 },
+        { name: "legacy-ftp", region: "on-prem", requests: 3 },
+      ],
+    },
+  },
+  {
     id: "table-medium",
     label: "Medium — 25 rows",
     category: "medium",

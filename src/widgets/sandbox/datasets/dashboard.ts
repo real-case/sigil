@@ -6,6 +6,7 @@ import { lineDatasets } from "./line.js";
 import { pieDatasets } from "./pie.js";
 import { scatterDatasets } from "./scatter.js";
 import { statPanelDatasets } from "./stat-panel.js";
+import { tableDatasets } from "./table.js";
 import { mapDatasets } from "./map.js";
 
 // Dashboard presets reuse other widgets' catalog payloads verbatim, so a tile
@@ -46,6 +47,11 @@ export const dashboardDatasets: Dataset<DashboardPayload>[] = [
         { type: "bar-chart", payload: payloadById(barDatasets, "bar-medium-vertical") },
         { type: "pie-chart", payload: payloadById(pieDatasets, "pie-medium") },
         { type: "scatter-chart", payload: payloadById(scatterDatasets, "scatter-medium") },
+        {
+          type: "table",
+          payload: payloadById(tableDatasets, "table-sparklines"),
+          colSpan: 2,
+        },
       ],
     },
   },

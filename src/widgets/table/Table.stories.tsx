@@ -15,6 +15,7 @@ type Story = StoryObj<typeof TableView>;
 
 export const Minimal: Story = { args: { payload: payloadById(tableDatasets, "table-minimal") } };
 export const Small: Story = { args: { payload: payloadById(tableDatasets, "table-small") } };
+export const Sparklines: Story = { args: { payload: payloadById(tableDatasets, "table-sparklines") } };
 export const Medium: Story = { args: { payload: payloadById(tableDatasets, "table-medium") } };
 export const Large: Story = { args: { payload: payloadById(tableDatasets, "table-large") } };
 export const EdgeWideContent: Story = { args: { payload: payloadById(tableDatasets, "table-edge-wide-content") } };

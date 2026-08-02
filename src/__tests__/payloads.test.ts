@@ -125,6 +125,35 @@ const cases: GuardCase[] = [
     },
   },
   {
+    // Sparkline coverage lands as a second case so the kind-less case above
+    // keeps its column-mutating rejects failing through the columns branch
+    // (see spec 002 blocker B4: a shared valid payload would let the rows
+    // branch shadow column rejects).
+    name: "table (sparkline)",
+    guard: isTablePayload,
+    valid: {
+      title: "T",
+      columns: [
+        { key: "name", label: "Name" },
+        { key: "trend", label: "Trend", kind: "sparkline" },
+      ],
+      rows: [
+        { name: "api", trend: [1, 2, 3] },
+        { name: "web", trend: 7 },
+      ],
+      sortable: true,
+      filterable: true,
+    },
+    rejects: {
+      "array under a text column": set("rows", [{ name: [1, 2], trend: [1, 2] }]),
+      "array with a non-number": set("rows", [{ name: "a", trend: [1, "2"] }]),
+      "array with Infinity": set("rows", [{ name: "a", trend: [1, Infinity] }]),
+      "invalid kind literal": set("columns", [
+        { key: "trend", label: "Trend", kind: "line" },
+      ]),
+    },
+  },
+  {
     name: "scatter-chart",
     guard: isScatterChartPayload,
     valid: {

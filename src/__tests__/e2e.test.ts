@@ -30,7 +30,14 @@ const TOOL_ARGS: Record<string, Record<string, unknown>> = {
   render_bar_chart: { title: "E2E bar", data: [{ label: "A", value: 1 }] },
   render_line_chart: { title: "E2E line", series: [{ name: "S", data: [{ x: "Jan", y: 1 }] }] },
   render_pie_chart: { title: "E2E pie", data: [{ label: "A", value: 1 }], maxSegments: 7 },
-  render_table: { title: "E2E table", columns: [{ key: "a", label: "A" }], rows: [{ a: 1 }] },
+  render_table: {
+    title: "E2E table",
+    columns: [
+      { key: "a", label: "A" },
+      { key: "trend", label: "Trend", kind: "sparkline" },
+    ],
+    rows: [{ a: 1, trend: [1, 2, 3] }],
+  },
   render_scatter_chart: { title: "E2E scatter", series: [{ name: "S", data: [{ x: 1, y: 2 }] }] },
   render_treemap: { title: "E2E treemap", data: [{ label: "A", value: 1 }] },
   render_heatmap: {
@@ -120,6 +127,39 @@ describe("MCP Apps pipeline (in-process client↔server)", () => {
       );
     expect(failure).not.toBe("unexpected success");
     expect(failure).toMatch(/maxSegments/i);
+  });
+
+  it("render_table: round-trips sparkline arrays and rejects a non-numeric entry", async () => {
+    const args = TOOL_ARGS["render_table"]!;
+    const res = await client.callTool({ name: "render_table", arguments: args });
+    expect(res.isError).toBeFalsy();
+
+    // The number array must cross the protocol intact — not stringified.
+    const structured = res.structuredContent as {
+      rows?: Array<Record<string, unknown>>;
+    };
+    expect(structured.rows?.[0]?.["trend"]).toEqual([1, 2, 3]);
+
+    // An array containing a string violates the rows cell union: the schema
+    // must reject it, and the failure must actually blame rows.
+    const failure = await client
+      .callTool({
+        name: "render_table",
+        arguments: {
+          title: "E2E table bad",
+          columns: [{ key: "trend", label: "Trend", kind: "sparkline" }],
+          rows: [{ trend: [1, "2"] }],
+        },
+      })
+      .then(
+        (r) =>
+          (r as { isError?: boolean }).isError
+            ? JSON.stringify((r as { content?: unknown }).content)
+            : "unexpected success",
+        (e: unknown) => String(e),
+      );
+    expect(failure).not.toBe("unexpected success");
+    expect(failure).toMatch(/rows/i);
   });
 
   it("exposes one ui:// resource per widget", async () => {
