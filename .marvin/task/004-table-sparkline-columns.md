@@ -1,7 +1,7 @@
 ---
 slug: table-sparkline-columns
 type: feature
-status: in-progress
+status: shipped
 created: 2026-07-31
 tracker: none
 supersedes: none
@@ -280,3 +280,11 @@ PASS WITH WARNINGS (round 2; round 1 was BLOCK). Round-1 blockers — unoracled 
 - Followup item 5 revision (`ValueLegend` vs the shipped value-bearing legend) is the last open design-system item.
 - A shared `Sparkline` consolidation (stat-panel + table) once both are stable — the F2 geometry helper is the natural seed.
 - If tables ever gain per-row drill-down (`app.callServerTool`), sparkline cells are the obvious click target — deferred with the rest of drill-down pending a live GUI host.
+
+## Delivery
+- **PR:** https://github.com/real-case/sigil/pull/44 (2026-08-02, target `dev`)
+- **Gates:** test 279/279, typecheck, build — PASS (explicit spec gates; the repo has no ESLint config, so the auto-detected lint gate is N/A). AC5/AC7 command oracles PASS. Contract seal verified before execution; scope gate 12/12.
+- **AC6 walk (sandbox + Storybook, light + dark):** (a) 56×16 series-0 sparks + mono readout ✓ (b) center default alignment ✓ (c) asc/desc/none by last value, empties last ✓ (d) `777` matches nothing while text terms still match ✓ (e) CSV one quoted joined cell per series, the negative-leading series carrying the formula-guard apostrophe by design ✓ (f) dot+readout / plain-text scalar / em dash ✓ (g) negative series inside the padded box ([2..54]×[1..15]) ✓ (h) hover recolors the row, not the spark ✓ (i) dark theme ✓ (j) dashboard-overview table tile colSpan 2, no layout breakage ✓
+- **SPEC GAP (recorded in the PR):** `matchesFilter`'s haystack separator is U+0001 — present as a raw control byte since the redesign commit accidentally de-escaped the original unicode-escape literal. The separator semantics are preserved and the literal restored to its explicit escaped form with a comment.
+- **Erratum:** Chosen Approach §2 above says "inset by `PAD = 2` on every side"; F2's intent and AC1 (the oracle-backed half) mandate the shipped asymmetric inset — 2px horizontal, 1px vertical. The code follows F2/AC1.
+- Critic verdict on the final diff: PASS WITH WARNINGS, no blockers. Residual notes (non-finite sort/CSV deferred to the renderer's defense per Assumptions; sans scalar vs mono readout spec-pinned; `SPARK_*` constant exports judged justified) live in the PR body.
