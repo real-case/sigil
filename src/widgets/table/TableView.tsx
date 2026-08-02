@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import type {
   ColumnAlign,
+  ColumnKind,
+  TableCell,
   TableColumn,
   TablePayload,
   TableRow,
@@ -8,6 +10,15 @@ import type {
 import { Toolbar, ToolbarButton, CsvIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, type CsvCell } from "../shared/export-utils.js";
+import {
+  sparkPoints,
+  cellSortValue,
+  cellFilterText,
+  cellCsvValue,
+  SPARK_WIDTH,
+  SPARK_HEIGHT,
+  SPARK_PAD_X,
+} from "./cells.js";
 
 type SortState = { key: string; direction: "asc" | "desc" } | null;
 
@@ -23,7 +34,9 @@ function detectNumericColumn(rows: TableRow[], key: string): boolean {
 }
 
 function alignFor(col: TableColumn, isNumeric: boolean): ColumnAlign {
-  return col.align ?? (isNumeric ? "right" : "left");
+  if (col.align) return col.align;
+  if (col.kind === "sparkline") return "center";
+  return isNumeric ? "right" : "left";
 }
 
 function compareValues(a: unknown, b: unknown, direction: "asc" | "desc"): number {
@@ -37,10 +50,70 @@ function compareValues(a: unknown, b: unknown, direction: "asc" | "desc"): numbe
   return String(a).localeCompare(String(b)) * mult;
 }
 
-function matchesFilter(row: TableRow, terms: string[]): boolean {
+// Row keys not present in `columns` still contribute to the haystack — the
+// kind lookup defaults them to "text" so their scalars keep stringifying.
+// Cells join on U+0001 so a term can never match across a cell boundary.
+function matchesFilter(
+  row: TableRow,
+  terms: string[],
+  kindByKey: Record<string, ColumnKind>,
+): boolean {
   if (terms.length === 0) return true;
-  const haystack = Object.values(row).map((v) => String(v).toLowerCase()).join("");
+  const haystack = Object.entries(row)
+    .map(([key, v]) => cellFilterText(v, kindByKey[key] ?? "text").toLowerCase())
+    .join("\u0001");
   return terms.every((t) => haystack.includes(t));
+}
+
+// Inline 56×16 trend: a polyline for ≥2 points, a lone dot at the padded
+// right edge for a single point. The SVG is aria-hidden; the mono readout
+// beside it is the accessible cell text (stat-panel precedent). No hover
+// styles by design — the design-system followups forbid row hover from
+// re-emphasizing sparks.
+function SparkCell({ values }: { values: number[] }) {
+  const last = values[values.length - 1]!;
+  return (
+    <span className="sigil-spark-cell">
+      <svg
+        width={SPARK_WIDTH}
+        height={SPARK_HEIGHT}
+        viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`}
+        aria-hidden="true"
+      >
+        {values.length === 1 ? (
+          <circle
+            cx={SPARK_WIDTH - SPARK_PAD_X}
+            cy={SPARK_HEIGHT / 2}
+            r={1.5}
+            fill="var(--sigil-series-0)"
+          />
+        ) : (
+          <polyline
+            points={sparkPoints(values)}
+            fill="none"
+            stroke="var(--sigil-series-0)"
+            strokeWidth={1}
+          />
+        )}
+      </svg>
+      <span className="sigil-spark-last">{String(last)}</span>
+    </span>
+  );
+}
+
+function renderCell(v: TableCell | undefined, kind: ColumnKind) {
+  if (kind === "sparkline") {
+    // Scalars are legal under sparkline columns and render as plain text —
+    // a one-point trend emitted as a single number is the likely producer.
+    if (typeof v === "string" || typeof v === "number") return String(v);
+    if (Array.isArray(v) && v.length > 0 && v.every(Number.isFinite)) {
+      return <SparkCell values={v} />;
+    }
+    // Missing cell, empty array, or non-finite entries (raw dashboard tile
+    // payloads bypass the widget guard): em dash.
+    return "—";
+  }
+  return v === undefined || v === null ? "" : String(v);
 }
 
 export function TableView({ payload }: { payload: TablePayload }) {
@@ -49,10 +122,23 @@ export function TableView({ payload }: { payload: TablePayload }) {
 
   const { title, columns, rows, sortable, filterable } = payload;
 
+  // Sparkline columns skip numeric detection: their cells are series (or
+  // occasional scalars) and the column centers rather than right-aligns.
   const numericByKey = useMemo(
     () =>
-      Object.fromEntries(columns.map((c) => [c.key, detectNumericColumn(rows, c.key)])),
+      Object.fromEntries(
+        columns.map((c) => [
+          c.key,
+          c.kind === "sparkline" ? false : detectNumericColumn(rows, c.key),
+        ]),
+      ),
     [columns, rows],
+  );
+
+  const kindByKey = useMemo(
+    () =>
+      Object.fromEntries(columns.map((c) => [c.key, (c.kind ?? "text") as ColumnKind])),
+    [columns],
   );
 
   const filtered = useMemo(() => {
@@ -62,16 +148,23 @@ export function TableView({ payload }: { payload: TablePayload }) {
       .map((s) => s.trim())
       .filter(Boolean);
     return filterable && terms.length > 0
-      ? rows.filter((r) => matchesFilter(r, terms))
+      ? rows.filter((r) => matchesFilter(r, terms, kindByKey))
       : rows;
-  }, [rows, filter, filterable]);
+  }, [rows, filter, filterable, kindByKey]);
 
   const sorted = useMemo(() => {
     if (!sort || !sortable) return filtered;
+    const kind = kindByKey[sort.key] ?? "text";
     const copy = [...filtered];
-    copy.sort((a, b) => compareValues(a[sort.key], b[sort.key], sort.direction));
+    copy.sort((a, b) =>
+      compareValues(
+        cellSortValue(a[sort.key], kind),
+        cellSortValue(b[sort.key], kind),
+        sort.direction,
+      ),
+    );
     return copy;
-  }, [filtered, sort, sortable]);
+  }, [filtered, sort, sortable, kindByKey]);
 
   const onHeaderClick = (key: string) => {
     if (!sortable) return;
@@ -85,7 +178,7 @@ export function TableView({ payload }: { payload: TablePayload }) {
   const copyCsv = () => {
     const header = columns.map((c) => c.label);
     const body: CsvCell[][] = sorted.map((row) =>
-      columns.map((c) => (row[c.key] ?? "") as CsvCell),
+      columns.map((c) => cellCsvValue(row[c.key], c.kind ?? "text")),
     );
     return copyText(toCsv(header, body));
   };
@@ -172,7 +265,7 @@ export function TableView({ payload }: { payload: TablePayload }) {
                           fontVariantNumeric: isNumeric ? "tabular-nums" : "normal",
                         }}
                       >
-                        {v === undefined || v === null ? "" : String(v)}
+                        {renderCell(v, col.kind ?? "text")}
                       </td>
                     );
                   })}
@@ -248,6 +341,11 @@ function TableStyles() {
   transition: background var(--sigil-duration-fast) var(--sigil-easing-standard);
 }
 .sigil-table tbody tr:hover td { background: var(--sigil-surface-sunken); }
+.sigil-spark-cell { display: inline-flex; align-items: center; gap: 6px; }
+.sigil-spark-last {
+  font-family: var(--sigil-font-mono);
+  font-variant-numeric: tabular-nums;
+}
 `;
   return <style>{css}</style>;
 }

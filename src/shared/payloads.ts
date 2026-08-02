@@ -205,13 +205,23 @@ export interface DashboardPayload {
 
 export type ColumnAlign = "left" | "right" | "center";
 
+export type ColumnKind = "text" | "sparkline";
+
 export interface TableColumn {
   key: string;
   label: string;
   align?: ColumnAlign;
+  /** Cell rendering mode. Defaults to "text". */
+  kind?: ColumnKind;
 }
 
-export type TableCell = string | number;
+/**
+ * Number arrays are legal only in cells under a `kind: "sparkline"` column,
+ * ordered oldest → newest (same convention as stat-panel `trend`). Scalars
+ * stay legal everywhere — including under sparkline columns, where they
+ * render as plain text.
+ */
+export type TableCell = string | number | number[];
 export type TableRow = Record<string, TableCell>;
 
 export interface TablePayload {

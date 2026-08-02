@@ -149,13 +149,16 @@ Render an interactive data table with sortable columns and text-search filtering
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | `string` | yes | Table title |
-| `columns` | `Array<{ key, label, align? }>` | yes | Column definitions in display order |
+| `columns` | `Array<{ key, label, align?, kind? }>` | yes | Column definitions in display order |
 | `columns[].key` | `string` | yes | Row property name |
 | `columns[].label` | `string` | yes | Header text |
-| `columns[].align` | `"left" \| "right" \| "center"` | no | Default: right for numeric, left otherwise |
-| `rows` | `Array<Record<string, string \| number>>` | yes | Rows keyed by column.key |
+| `columns[].align` | `"left" \| "right" \| "center"` | no | Default: right for numeric, left otherwise (center for sparkline) |
+| `columns[].kind` | `"text" \| "sparkline"` | no | Default `"text"`. `"sparkline"` renders each cell's number array (oldest → newest) as a 56×16 inline trend line with the latest value beside it |
+| `rows` | `Array<Record<string, string \| number \| number[]>>` | yes | Rows keyed by column.key; number arrays only under sparkline columns |
 | `sortable` | `boolean` | no | Default `true` |
 | `filterable` | `boolean` | no | Default `true` |
+
+Sorting a sparkline column orders rows by each series' last value; the text filter ignores digits inside sparklines; Copy CSV exports each series as one joined `"1,2,3"` cell.
 
 ### `render_scatter_chart`
 
