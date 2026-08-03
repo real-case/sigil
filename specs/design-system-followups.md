@@ -20,6 +20,8 @@ Each item below should ship as its own PR.
 
 ## 1. Pie chart — max-segments cap with "Other" grouping
 
+> **✅ Shipped** — spec [`002-pie-max-segments-other`](../.marvin/task/002-pie-max-segments-other.md), [PR #42](https://github.com/real-case/sigil/pull/42). As-shipped deltas vs the sketch below: the `maxSegments` payload knob landed (integer ≥ 2, default 5); the collapsed slice is click-to-expand with a "Show top N" collapse back; the cap stays visual-only — Copy CSV exports every original row.
+
 **Spec:** [`components.chart.pie.max-segments: 5`](./design-system-tokens.json) (and implicitly: anything over the cap collapses to an "Other" slice).
 
 **Current behavior:** [PieChartView.tsx](../src/widgets/pie-chart/PieChartView.tsx) renders all slices verbatim from `payload.data`. A 12-category pie becomes an unreadable compote.
@@ -44,6 +46,8 @@ Each item below should ship as its own PR.
 
 ## 2. Line chart — area fill under the primary series
 
+> **✅ Shipped** — v0.3.0 chart redesign, commit b11de90 (no task spec). As-shipped deltas vs the sketch below: the gradient fill renders under **every** series while the chart has ≤ 3 series, not primary-only; the top stop is a uniform 18 % in both themes — the token's "18 % (light) / 22 % (dark)" split did not ship and those token values are superseded.
+
 **Spec:** [`components.chart.line.area-fill: "series-0 linear-gradient 18% (light) / 22% (dark) → 0%"`](./design-system-tokens.json).
 
 **Current behavior:** [LineChartView.tsx](../src/widgets/line-chart/LineChartView.tsx) renders all series as `<Line>`. No area fill.
@@ -66,6 +70,8 @@ Each item below should ship as its own PR.
 
 ## 3. Line chart — explicit end-cap radii
 
+> **✅ Shipped** — end dots with the v0.3.0 redesign (commit b11de90); start caps via spec [`003-line-end-caps`](../.marvin/task/003-line-end-caps.md), [PR #43](https://github.com/real-case/sigil/pull/43). As-shipped deltas vs the sketch below: radii are per **position**, not per series — end r 4 / ring 2, start r 3 / ring 1.5, identical across series; the token's per-series 3 / 2.5 split was rejected (003 Non-goals) and those token values are superseded.
+
 **Spec:** [`components.chart.line.end-cap-radius: { primary: 3, secondary: 2.5 }`](./design-system-tokens.json).
 
 **Current behavior:** [LineChartView.tsx](../src/widgets/line-chart/LineChartView.tsx) sets `strokeLinecap="round"`, which rounds the *stroke* itself — visually equivalent to a half-circle of radius `strokeWidth / 2` at each end. With stroke-width 1.75 / 1.5 px, that's a ~0.9 / 0.75 px effective cap radius.
@@ -84,6 +90,8 @@ Each item below should ship as its own PR.
 ---
 
 ## 4. Table — sparkline columns
+
+> **✅ Shipped** — spec [`004-table-sparkline-columns`](../.marvin/task/004-table-sparkline-columns.md), [PR #44](https://github.com/real-case/sigil/pull/44). As-shipped deltas vs the sketch below: a mono last-value readout renders beside each spark; scalar cells stay legal under sparkline columns (plain text); missing cells, empty arrays, and non-finite entries render an em dash — narrowing the "with-null gaps" test idea; CSV ships the joined-cell option (one quoted `"1,2,3"` cell per series); sorting uses the last value; the filter excludes spark digits.
 
 **Spec:** [`components.chart.table.spark-width: 56`, `spark-height: 16`](./design-system-tokens.json).
 
@@ -112,6 +120,8 @@ Each item below should ship as its own PR.
 
 ## 5. Shared `Legend.tsx` primitive
 
+> **⏳ Open — needs revision.** The v0.3.0 redesign (commit b11de90) shipped a value-bearing legend (`ValueLegend` — hover-focus, click-mute) that this sketch predates. Reconcile the sketch against `ValueLegend` before implementing; this is the last open design-system item.
+
 **Spec:** [`components.legend.*`](./design-system-tokens.json) — `gap: spacing.md`, `item-padding: 3px 4px`, `item-radius: radius.sm`, `swatch-size: 10px`, `muted-opacity: 0.4`, transition on `motion.duration.fast`.
 
 **Current behavior:** [line-chart](../src/widgets/line-chart/LineChartView.tsx), [scatter-chart](../src/widgets/scatter-chart/ScatterChartView.tsx), and [pie-chart](../src/widgets/pie-chart/PieChartView.tsx) all use Recharts `<Legend>` with `wrapperStyle`. This gets us the right typography and spacing tokens but **not** the hover-emphasize, click-to-toggle, or `motion.duration.fast` background transition the spec asks for.
@@ -134,12 +144,7 @@ Each item below should ship as its own PR.
 
 ## Suggested order
 
-If you tackle these in sequence:
-
-1. **#1 (pie max-segments)** — smallest, no cross-file coupling, biggest UX win.
-2. **#5 (Legend)** — refines a styling concern already in the design system. Highest premium impact relative to effort.
-3. **#2 + #3 (line area + caps)** — visual upgrades to the same widget, do them together as one PR.
-4. **#4 (table sparklines)** — most invasive (payload + server + renderer). Worth its own PR.
+Retired — items 1–4 have shipped (see the status banners above); only item 5 remains, pending its revision.
 
 ---
 
@@ -149,8 +154,8 @@ These were considered but deemed not worth the cost:
 
 - **`cozy` density preset.** Claude Design's handoff omitted it. Chat-window only target makes a second density redundant. If multi-host (dashboard mode) ever lands, revisit.
 - **JSX-in-CSS or styled-components abstraction.** Inline styles + CSS variables work fine and keep the single-file constraint pure. Don't introduce a runtime CSS-in-JS layer.
-- **Custom font subsetting / self-host of IBM Plex.** Google Fonts CDN works in all 3 target hosts. ~80KB woff2 per face × 5 faces would be a meaningful bundle hit.
+- **Custom font subsetting.** IBM Plex is self-hosted via `@fontsource` and inlined into each single-file widget bundle (see `src/widgets/shared/styles.css`) — the original Google-Fonts-CDN plan was replaced during the v0.3.0 redesign. Further subsetting stays out of scope.
 
 ---
 
-*Last updated: 2026-05-14. After Phase A + B token migration.*
+*Last updated: 2026-08-03. Items 1–4 shipped; item 5 open, pending revision.*
