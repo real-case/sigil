@@ -1,7 +1,7 @@
 ---
 slug: design-system-docs-refresh
 type: feature
-status: in-progress
+status: shipped
 created: 2026-08-03
 tracker: none
 supersedes: none
@@ -189,3 +189,9 @@ Round 2: PASS WITH WARNINGS — blockers cleared, disposition re-verified empiri
 - Full §A5 re-audit of the remaining seven widget rows if live QA reports drift.
 - If config drift recurs despite the schema-derived pin, escalate to V2 (compiled dts verification).
 - The stat-panel/table shared-sparkline consolidation noted in spec 004 remains parked.
+
+## Delivery
+- **PR:** https://github.com/real-case/sigil/pull/45 (2026-08-03, target `dev`)
+- **Gates:** test 282/282, typecheck, build — PASS (explicit spec gates; no ESLint config in this repo, lint N/A). AC1/AC2 command oracles PASS on the final tree; AC3 red→green proven (pre-F3 run reported exactly `PieChartView: maxSegments` + `TableView: columns[].kind`, zero false failures across all ten Views; diff critic replayed independently against `git show HEAD:` with identical results). AC4 walked: 8 removed lines all within the three named changes, sketches byte-identical, tokens JSON untouched, all edits English.
+- **Diff critic:** PASS WITH WARNINGS, no blockers. Two suggested one-liners applied post-review (sparse-marker half-clause in the line row; named assertion on the pin's tool lookup) with all oracles and gates re-run after; preamble framing, regex-escape nit, and the bar-chart row's "tick font" conflation accepted as-is — the last is the first concrete candidate for the seven-row §A5 re-audit follow-up.
+- Contract seal verified at implement start; scope gate 4/4.
