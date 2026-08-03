@@ -74,8 +74,9 @@ These force tool selection so you isolate **rendering** from **selection**.
    EU: Jan 90, Feb 110, Mar 125.
 3. Use render_pie_chart to show traffic sources:
    Organic 45, Direct 25, Paid 20, Social 10.
-4. Use render_table to show columns [region, revenue] with rows
-   US/1200, EU/950, APAC/670.
+4. Use render_table to show columns [region, revenue, trend] with rows
+   US/1200, EU/950, APAC/670, where trend is a sparkline column
+   holding ~6 weekly values per row.
 5. Use render_scatter_chart to show height vs weight:
    (170, 65), (180, 80), (165, 58), (175, 72).
 6. Use render_treemap to show disk usage:
@@ -93,7 +94,7 @@ These force tool selection so you isolate **rendering** from **selection**.
 **Pass criteria for each:**
 - iframe renders inline, no white box / error text
 - Hover over a bar/line/slice/cell shows a themed tooltip
-- Click a bar/slice dims the others (highlight); legend click highlights series in line chart
+- Click a bar/slice dims the others (highlight); legend hover focuses a series in the line chart, legend click mutes it
 - Dark mode follows your OS setting (try toggling Appearance in System Settings — chart should re-theme)
 - **Copy CSV** and **Copy PNG** buttons exist; click → button shows "Copied ✓" briefly
 - Paste in a notes app: CSV appears as text, PNG appears as an image
@@ -129,12 +130,12 @@ After §A3 confirms widgets render at all, walk through this checklist to verify
 | Widget | Look for |
 |---|---|
 | `bar-chart` | IBM Plex Mono ticks, uppercase, letter-spaced. Soft cursor highlight on hover (8 % series-0 tint). Frosted-glass tooltip with `surface-elevated` bg + mid shadow. |
-| `line-chart` | Primary line 1.75 px, secondaries 1.5 px, round joins. Active dot has a `surface`-colored ring (looks "punched out" against the line). Hover tooltip lists all series with `tabular-nums` values. |
+| `line-chart` | Lines 2.4 px uniform, round joins. Every series carries a gradient area fill fading to the baseline while the chart has ≤ 3 series (18 % top stop, both themes); 4+ series drop the fills. Start/end cap dots on each series — end r 4 / ring 2, start r 3 / ring 1.5, rings `surface`-colored; series under ~12 points also mark every mid point at the start-cap size. Active dot has a `surface`-colored ring (looks "punched out" against the line). Hover tooltip lists all series with `tabular-nums` values. |
 | `scatter-chart` | Dots at 70 % opacity. Tooltip hides the label (only series rows visible). Legend dots are circles. |
-| `pie-chart` | Slice labels show percent only when ≥ 4 %. Stroke between slices = `surfaces.bg` (looks like a thin gap, not a border). Donut variant has 60 % inner radius. Tooltip formats as `<value> (<pct>%)`. |
+| `pie-chart` | Slice labels show percent only when ≥ 4 %. Stroke between slices = `surfaces.bg` (looks like a thin gap, not a border). Donut variant has 54 % inner radius. Tooltip formats as `<value> (<pct>%)`. Over-cap slices (beyond `maxSegments`, default 5) collapse into a muted "Other" — click it (or its legend row) to expand, "Show top N" collapses back; Copy CSV still exports every original row. |
 | `treemap` | Leaves have rounded `radius.sm` corners and 3 px gaps. Two-line labels (name + tabular value) appear only when the leaf is ≥ 60 × 30 px. White text has a subtle drop shadow. |
 | `heatmap` | **Single-hue ramp** — cells go from barely-visible `series-0` tint to full intensity. No multi-colored cells. Cells have 2 px gaps and rounded corners. |
-| `table` | Header row in mono uppercase tick font. Numeric cells use mono with `tabular-nums`. Row hover gets `surface-sunken` background. Filter input gets a 2 px focus ring when tabbed into. |
+| `table` | Header row in mono uppercase axis-cap font. Numeric cells use mono with `tabular-nums`. Row hover gets `surface-sunken` background. Filter input gets a 2 px focus ring when tabbed into. Sparkline columns render a 56 × 16 `series-0` spark plus a mono last-value readout, centered by default; header click sorts by last value; filter terms never match digits inside sparks; row hover must NOT re-emphasize the spark; Copy CSV exports one joined quoted cell per series. |
 | `stat-panel` | KPI cards: mono `tabular-nums` values, trend deltas coloured from `semantic` tokens, sparkline / progress / badge variants render. Inside a dashboard tile, cards flatten to sunken wells (no elevation). |
 | `dashboard` | Tiles form a responsive grid honouring `colSpan`. Every tile keeps its own title/toolbar. Embedded widgets recede — no double surfaces or nested shadows. |
 | `map` | Choropleth uses the single-hue intensity ramp + legend; no-data land stays a neutral tint. Bubbles are area-proportional with a size legend. Unmatched region ids are listed in a footnote. |
