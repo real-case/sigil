@@ -3,6 +3,8 @@
 > Features described in [`specs/design-system-tokens.json`](./design-system-tokens.json) v0.3.0 that were **intentionally deferred** from the Phase A + B migration. Each entry is a self-contained, PR-sized chunk of work.
 >
 > All purely-styling concerns (tokens, primitives, per-widget look) are *already shipped*. The items below are **feature additions** that the token spec anticipates but does not enforce. They live here so they don't drift out of sight.
+>
+> **Program closed on the repo side (2026-08-04).** All five items are resolved — items 1–4 shipped via specs 002–004 and the v0.3.0 redesign, and item 5 was satisfied by the redesign's `ValueLegend`; each item's status banner records its delivery and deltas. Six superseded token values await the DesignSync reconciliation — see "Superseded token values" below.
 
 ---
 
@@ -14,7 +16,7 @@ Phase A + B scope was "apply the design system to existing widgets without chang
 2. Required payload-schema changes for some items, which means coordinated server-side updates in [src/shared/payloads.ts](../src/shared/payloads.ts) and [src/tools/*.ts](../src/tools/).
 3. Made a clean "before vs. after" visual diff impossible — styling regressions would hide behind new features.
 
-Each item below should ship as its own PR.
+Each item shipped as its own PR (or with the v0.3.0 redesign).
 
 ---
 
@@ -120,7 +122,7 @@ Each item below should ship as its own PR.
 
 ## 5. Shared `Legend.tsx` primitive
 
-> **⏳ Open — needs revision.** The v0.3.0 redesign (commit b11de90) shipped a value-bearing legend (`ValueLegend` — hover-focus, click-mute) that this sketch predates. Reconcile the sketch against `ValueLegend` before implementing; this is the last open design-system item.
+> **✅ Shipped** — by the v0.3.0 redesign (commit b11de90), as [`ValueLegend`](../src/widgets/shared/ValueLegend.tsx). As-shipped deltas vs the sketch below: it ships in **four** widgets (pie, bar, line, scatter — the sketch named three); rows are value-bearing (formatted value, share suffix, proportion meter or min/avg/max range) rather than name+swatch; the legend row restyles on hover while focus dims the non-focused series in the **plot** (0.2 line/scatter, 0.32 bar/pie) instead of dimming legend siblings at 0.4; click-mute keeps series at 18 % in the plot; and it renders outside the Recharts tree, so the `<Legend content>` adapter idea was dropped. Tokens: `muted-opacity` 0.4 (applied to the click-muted legend row) and the fast background transition match; `legend.gap`, `legend.item-padding`, `legend.item-radius`, and `legend.swatch-size` are superseded by the richer July chrome (see "Superseded token values" below). Residual: the focused/muted interaction state machine is duplicated per consumer widget — chrome is shared, state is not; a shared-state consolidation remains future work.
 
 **Spec:** [`components.legend.*`](./design-system-tokens.json) — `gap: spacing.md`, `item-padding: 3px 4px`, `item-radius: radius.sm`, `swatch-size: 10px`, `muted-opacity: 0.4`, transition on `motion.duration.fast`.
 
@@ -144,7 +146,22 @@ Each item below should ship as its own PR.
 
 ## Suggested order
 
-Retired — items 1–4 have shipped (see the status banners above); only item 5 remains, pending its revision.
+Retired — all five items are resolved (see the status banners above).
+
+---
+
+## Superseded token values
+
+The shipped design overtook these token-spec values. The token record itself is owned by the claude.ai/design project and is reconciled through the DesignSync flow — not by repo-side edits; this table is the hand-off list for that reconciliation.
+
+| Token | Spec value | Shipped |
+|---|---|---|
+| `chart.line.area-fill` | 18 % (light) / 22 % (dark) top stop | uniform 18 % top stop in both themes |
+| `chart.line.end-cap-radius` | per series — primary 3 / secondary 2.5 | per position — end r 4 / ring 2, start r 3 / ring 1.5 |
+| `components.legend.gap` | `spacing.md` (12px) | 4px (column layout) / 10px (row layout) |
+| `components.legend.item-padding` | 3px 4px | 11px 13px |
+| `components.legend.item-radius` | `radius.sm` (4px) | `radius.lg` (12px) |
+| `components.legend.swatch-size` | 10px | 14px |
 
 ---
 
@@ -158,4 +175,4 @@ These were considered but deemed not worth the cost:
 
 ---
 
-*Last updated: 2026-08-03. Items 1–4 shipped; item 5 open, pending revision.*
+*Last updated: 2026-08-04. The followups program is closed on the repo side; superseded token values await DesignSync reconciliation.*
