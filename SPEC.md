@@ -239,7 +239,7 @@ structured data. Supports column sorting and text search.
 > - [`specs/design-system-tokens.json`](./specs/design-system-tokens.json) — the W3C-style token bundle (handoff from Claude Design).
 > - [`src/widgets/shared/theme.ts`](./src/widgets/shared/theme.ts) — TypeScript implementation: types, light/dark objects, CSS-variable emission.
 > - [`specs/design-system-brief.md`](./specs/design-system-brief.md) — the ingestion brief that drove the token surface (references, constraints, premium tells).
-> - [`specs/design-system-followups.md`](./specs/design-system-followups.md) — deferred feature work that the token spec anticipates but doesn't enforce yet.
+> - [`specs/design-system-followups.md`](./specs/design-system-followups.md) — the (now closed) followup program ledger; per-item status banners record each delivery.
 >
 > The summary below is descriptive — when in doubt, read the canonical sources.
 
@@ -281,7 +281,7 @@ Lives in [`src/widgets/shared/`](./src/widgets/shared/):
 |---|---|
 | [`Card`](./src/widgets/shared/Card.tsx) | Token-consuming container: bg, border, radius, padding, elevation. Used opt-in by widgets. |
 | [`SigilTooltip`](./src/widgets/shared/SigilTooltip.tsx) | Recharts `content`-compatible tooltip with frosted-glass + `mid` elevation. |
-| `Legend` *(deferred)* | See [followups §5](./specs/design-system-followups.md). Widgets currently use Recharts `<Legend>` with `wrapperStyle`. |
+| [`ValueLegend`](./src/widgets/shared/ValueLegend.tsx) | Value-bearing interactive legend — hover-focus, click-mute, meter/range variants. Shipped by the v0.3.0 redesign; closes [followups §5](./specs/design-system-followups.md). |
 | [`EmptyState`](./src/widgets/shared/EmptyState.tsx) | Glyph + headline + sub; `empty` and `error` variants. |
 | [`LoadingSkeleton`](./src/widgets/shared/LoadingSkeleton.tsx) | Shimmer rectangles, per-widget layouts (`bar`, `pie`, `table`, …). |
 | [`SeriesSwatch`](./src/widgets/shared/SeriesSwatch.tsx) | Colored swatch dot or square. |
