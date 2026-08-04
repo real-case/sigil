@@ -1,7 +1,7 @@
 ---
 slug: design-system-closure
 type: feature
-status: in-progress
+status: shipped
 created: 2026-08-04
 tracker: none
 supersedes: none
@@ -190,3 +190,9 @@ Round 2: PASS WITH WARNINGS — both blockers re-verified closed with the fixes 
 - DesignSync token-record reconciliation — now six values, listed in the new section; supersedes the two-value listing in spec 005's Future Considerations.
 - The §A5 seven-row re-audit follow-up — now with two named findings: the bar-chart row's "tick font" conflation and the scatter row's "Legend dots are circles" (`TESTING.md:134`).
 - With the design-system followups closed, the roadmap's polish phase is complete — dashboards/maps are next per the project roadmap.
+
+## Delivery
+- **PR:** https://github.com/real-case/sigil/pull/47 (2026-08-04, target `dev`)
+- **Gates:** test 282/282 (regression only), typecheck, build — PASS (explicit spec gates; lint N/A, no ESLint config). AC1/AC2/AC4 command oracles PASS on the final tree, independently re-run by the diff critic; AC3 walked via hunk analysis — F1 exactly five sanctioned regions, sketches and items 1–4 banners byte-identical, SPEC.md exactly two single-line hunks with the old Legend row replaced (single `Legend` hit remaining: the new ValueLegend row), tokens JSON untouched, all edits English.
+- **Diff critic:** PASS WITH WARNINGS, no blockers — every banner/table number spot-checked against code. Three record-precision one-liners applied pre-commit (full `components.legend.*` paths in the hand-off table, layout-mode disambiguation in the gap cell, the muted-row clarifier on the 0.4 match), oracles and fast gates re-run green after.
+- Contract seal verified at implement start; scope gate 2/2. The followups program is closed repo-side; the six-value DesignSync hand-off and the §A5 re-audit (two named findings) remain the queued follow-ups.
