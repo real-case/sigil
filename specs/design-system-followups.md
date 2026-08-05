@@ -4,7 +4,7 @@
 >
 > All purely-styling concerns (tokens, primitives, per-widget look) are *already shipped*. The items below are **feature additions** that the token spec anticipates but does not enforce. They live here so they don't drift out of sight.
 >
-> **Program closed on the repo side (2026-08-04).** All five items are resolved — items 1–4 shipped via specs 002–004 and the v0.3.0 redesign, and item 5 was satisfied by the redesign's `ValueLegend`; each item's status banner records its delivery and deltas. Six superseded token values await the DesignSync reconciliation — see "Superseded token values" below.
+> **Program closed on the repo side (2026-08-04).** All five items are resolved — items 1–4 shipped via specs 002–004 and the v0.3.0 redesign, and item 5 was satisfied by the redesign's `ValueLegend`; each item's status banner records its delivery and deltas. The six superseded token values were reconciled into the design project's token record via DesignSync on 2026-08-05 — see "Superseded token values" below.
 
 ---
 
@@ -154,6 +154,8 @@ Retired — all five items are resolved (see the status banners above).
 
 The shipped design overtook these token-spec values. The token record itself is owned by the claude.ai/design project and is reconciled through the DesignSync flow — not by repo-side edits; this table is the hand-off list for that reconciliation.
 
+> **✅ Reconciled (2026-08-05).** All six shipped values below were written into the design project's `tokens.json` via DesignSync, alongside the typography-scale corrections (`title`, and the `tick` / `axis-cap` split) that the v0.3.0 redesign had already recorded in [`design-system-tokens.json`](./design-system-tokens.json) — the repo copy and the project record are identical again. The table stays as the historical hand-off record; its "Spec value" column shows what the token record said before this reconciliation.
+
 | Token | Spec value | Shipped |
 |---|---|---|
 | `chart.line.area-fill` | 18 % (light) / 22 % (dark) top stop | uniform 18 % top stop in both themes |
@@ -175,4 +177,4 @@ These were considered but deemed not worth the cost:
 
 ---
 
-*Last updated: 2026-08-04. The followups program is closed on the repo side; superseded token values await DesignSync reconciliation.*
+*Last updated: 2026-08-05. The followups program is closed on the repo side; the superseded token values were reconciled into the design project via DesignSync on 2026-08-05.*
