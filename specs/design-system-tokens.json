@@ -4,7 +4,7 @@
     "name": "Sigil",
     "version": "0.3.0",
     "description": "Token surface, primitives, and motion language for Sigil's interactive chart widgets. Themed entirely through --sigil-* CSS variables.",
-    "updated": "2026-05-14",
+    "updated": "2026-08-05",
     "prefix": "sigil",
     "themes": ["light", "dark"]
   },
@@ -239,8 +239,8 @@
       "stroke-primary":    { "value": 1.75, "unit": "px" },
       "stroke-secondary":  { "value": 1.5,  "unit": "px" },
       "linecap":           "round",
-      "area-fill":         "series-0 linear-gradient 18% (light) / 22% (dark) → 0%",
-      "end-cap-radius":    { "primary": 3, "secondary": 2.5, "unit": "px" }
+      "area-fill":         "series-0 linear-gradient 18% → 0% (both themes)",
+      "end-cap-radius":    { "end": 4, "end-ring": 2, "start": 3, "start-ring": 1.5, "unit": "px" }
     },
     "pie": {
       "outer-radius":      { "value": 64, "unit": "px" },
@@ -314,10 +314,10 @@
       "transition":      "all motion.duration.fast motion.easing.standard"
     },
     "legend": {
-      "gap":             "spacing.md",
-      "item-padding":    "3px 4px",
-      "item-radius":     "radius.sm",
-      "swatch-size":     { "value": 10, "unit": "px" },
+      "gap":             "4px (column) / 10px (row)",
+      "item-padding":    "11px 13px",
+      "item-radius":     "radius.lg",
+      "swatch-size":     { "value": 14, "unit": "px" },
       "muted-opacity":   0.4,
       "transition":      "background motion.duration.fast motion.easing.standard"
     },
