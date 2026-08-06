@@ -18,6 +18,7 @@ describe("widget registry", () => {
       "line-chart",
       "map",
       "pie-chart",
+      "sankey",
       "scatter-chart",
       "stat-panel",
       "table",

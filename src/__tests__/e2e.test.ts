@@ -51,6 +51,10 @@ const TOOL_ARGS: Record<string, Record<string, unknown>> = {
     title: "E2E dash",
     tiles: [{ type: "bar-chart", payload: { title: "t", data: [{ label: "A", value: 1 }] } }],
   },
+  render_sankey: {
+    title: "E2E sankey",
+    links: [{ source: "A", target: "B", value: 1 }],
+  },
   render_map: { title: "E2E map", data: [{ id: "USA", value: 1 }] },
 };
 

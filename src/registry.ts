@@ -10,6 +10,7 @@ import {
 import { registerTreemapTool, TREEMAP_UI_URI } from "./tools/treemap.js";
 import { registerHeatmapTool, HEATMAP_UI_URI } from "./tools/heatmap.js";
 import { registerStatPanelTool, STAT_PANEL_UI_URI } from "./tools/stat-panel.js";
+import { registerSankeyTool, SANKEY_UI_URI } from "./tools/sankey.js";
 import { registerDashboardTool, DASHBOARD_UI_URI } from "./tools/dashboard.js";
 import { registerMapTool, MAP_UI_URI } from "./tools/map.js";
 
@@ -28,6 +29,7 @@ export const WIDGETS: readonly WidgetEntry[] = [
   { name: "treemap", uri: TREEMAP_UI_URI, register: registerTreemapTool },
   { name: "heatmap", uri: HEATMAP_UI_URI, register: registerHeatmapTool },
   { name: "stat-panel", uri: STAT_PANEL_UI_URI, register: registerStatPanelTool },
+  { name: "sankey", uri: SANKEY_UI_URI, register: registerSankeyTool },
   { name: "dashboard", uri: DASHBOARD_UI_URI, register: registerDashboardTool },
   { name: "map", uri: MAP_UI_URI, register: registerMapTool },
 ] as const;

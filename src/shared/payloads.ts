@@ -140,6 +140,35 @@ export interface MapPayload {
   valueLabel?: string;
 }
 
+export interface SankeyNode {
+  /** Unique node name; links reference nodes by this name. */
+  name: string;
+  /** Optional CSS color override for this node (and its outgoing links). */
+  color?: string;
+}
+
+export interface SankeyLink {
+  /** Name of the node this flow leaves. */
+  source: string;
+  /** Name of the node this flow enters. */
+  target: string;
+  /** Non-negative flow magnitude; controls the ribbon width. */
+  value: number;
+}
+
+export interface SankeyPayload {
+  title: string;
+  /**
+   * Optional explicit node list controlling order and per-node colors. When
+   * omitted, nodes are derived from the links in first-appearance order.
+   */
+  nodes?: SankeyNode[];
+  /** Directed flows between nodes. The graph must be acyclic. */
+  links: SankeyLink[];
+  /** Optional label for the flow value in the tooltip, e.g. "users". */
+  valueLabel?: string;
+}
+
 export type StatStatus = "success" | "warning" | "danger" | "info";
 
 export interface StatItem {
@@ -185,6 +214,7 @@ export type DashboardTileType =
   | "treemap"
   | "heatmap"
   | "stat-panel"
+  | "sankey"
   | "map";
 
 export interface DashboardTile {
