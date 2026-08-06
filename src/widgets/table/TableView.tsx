@@ -9,6 +9,7 @@ import type {
 } from "../../shared/payloads.js";
 import { Toolbar, ToolbarButton, CsvIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
+import { useEmbedded } from "../shared/embedded.js";
 import { toCsv, copyText, type CsvCell } from "../shared/export-utils.js";
 import {
   sparkPoints,
@@ -119,6 +120,10 @@ function renderCell(v: TableCell | undefined, kind: ColumnKind) {
 export function TableView({ payload }: { payload: TablePayload }) {
   const [sort, setSort] = useState<SortState>(null);
   const [filter, setFilter] = useState<string>("");
+  // Inside a dashboard tile (itself a surface) recede the scroll container to a
+  // sunken well so it doesn't read as surface-on-surface; standalone it stays
+  // raised.
+  const embedded = useEmbedded();
 
   const { title, columns, rows, sortable, filterable } = payload;
 
@@ -203,7 +208,9 @@ export function TableView({ payload }: { payload: TablePayload }) {
           </Toolbar>
         </div>
       </div>
-      <div className="sigil-table-scroll">
+      <div
+        className={`sigil-table-scroll${embedded ? " sigil-table-scroll--embedded" : ""}`}
+      >
         {sorted.length === 0 ? (
           <EmptyState
             title={rows.length === 0 ? "No data to display" : "No matching rows"}
@@ -341,6 +348,15 @@ function TableStyles() {
   transition: background var(--sigil-duration-fast) var(--sigil-easing-standard);
 }
 .sigil-table tbody tr:hover td { background: var(--sigil-surface-sunken); }
+/* Embedded well: the sticky header must repaint to the well's color to keep
+   covering scrolled rows, and row hover inverts to the surface token, which
+   would otherwise vanish on the sunken background. */
+.sigil-table-scroll--embedded {
+  background: var(--sigil-surface-sunken);
+  box-shadow: none;
+}
+.sigil-table-scroll--embedded .sigil-table thead th { background: var(--sigil-surface-sunken); }
+.sigil-table-scroll--embedded .sigil-table tbody tr:hover td { background: var(--sigil-surface); }
 .sigil-spark-cell { display: inline-flex; align-items: center; gap: 6px; }
 .sigil-spark-last {
   font-family: var(--sigil-font-mono);
