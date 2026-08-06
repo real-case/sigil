@@ -39,6 +39,7 @@ export type LoadingVariant =
   | "scatter"
   | "treemap"
   | "heatmap"
+  | "sankey"
   | "generic";
 
 interface LoadingSkeletonProps {

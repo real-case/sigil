@@ -8,7 +8,7 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 
 🌐 [sigil.live](https://sigil.live) · [TESTING.md](./TESTING.md) · [INCANTATIONS.md](./INCANTATIONS.md) · [SPEC.md](./SPEC.md)
 
-> **Status:** v0.2.0 — 10 widgets + payload-guard / registry / registration test harness.
+> **Status:** v0.2.0 — 11 widgets + payload-guard / registry / registration test harness.
 
 ## Demo
 
@@ -26,6 +26,7 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 | [`render_treemap`](#render_treemap) | hierarchical part-of-whole, many leaves | nested rectangles sized by value, palette-tinted by branch |
 | [`render_heatmap`](#render_heatmap) | 2D categorical × numeric intensity | matrix with palette gradient, hover tooltip per cell |
 | [`render_stat_panel`](#render_stat_panel) | KPIs / scorecards, at-a-glance metrics | grid of metric cards with coloured trend deltas and status accents |
+| [`render_sankey`](#render_sankey) | source-to-destination flows: budgets, user journeys, traffic | flow ribbons between stages, width ∝ value, hover-highlighting of connected flows |
 | [`render_dashboard`](#render_dashboard) | several related views at once | grid of tiles, each tile any other widget rendered from its own payload |
 | [`render_map`](#render_map) | country- or state-level metrics, geographic intensity | world / US-state choropleth — regions shaded by value, hover tooltip, click-to-focus |
 
@@ -221,6 +222,24 @@ Render an interactive panel of key metrics (KPI / scorecard cards). Each card sh
 | `items[].badge` | `string` | no | Short status pill next to the label, coloured by `status` |
 | `columns` | `number` | no | Fixed column count (1–4); defaults to an auto-fit grid |
 
+### `render_sankey`
+
+Render an interactive sankey (flow) diagram: ribbons between stages whose width is proportional to the flow value. Use for source-to-destination data — where a budget goes, how users move through a product, traffic sources to outcomes. Hovering a node or ribbon highlights its connected flows.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Chart title |
+| `links` | `Array<{ source, target, value }>` | yes | Directed flows between nodes, referenced by name. The graph must be acyclic |
+| `links[].source` | `string` | yes | Name of the node the flow leaves |
+| `links[].target` | `string` | yes | Name of the node the flow enters |
+| `links[].value` | `number` | yes | Non-negative flow magnitude; controls the ribbon width |
+| `nodes` | `Array<{ name, color? }>` | no | Explicit node list controlling order and colors; nodes missing from it are derived from the links |
+| `nodes[].name` | `string` | yes | Unique node name |
+| `nodes[].color` | `string` | no | Color override for the node and its outgoing ribbons |
+| `valueLabel` | `string` | no | Label for the flow value in the tooltip and header KPI, e.g. `"users"` |
+
+The header shows the total inflow (the sum of flows leaving root nodes). Self-loops and cyclic link chains are rejected with an inline error rather than rendered.
+
 ### `render_dashboard`
 
 Render a multi-widget dashboard: a grid of tiles where each tile is one of the other Sigil widgets, rendered from its own payload. Use to show several related views at once — e.g. a KPI row above a couple of charts.
@@ -230,7 +249,7 @@ Render a multi-widget dashboard: a grid of tiles where each tile is one of the o
 | `title` | `string` | yes | Dashboard title |
 | `columns` | `number` | no | Grid column count (1–4); defaults to `2` |
 | `tiles` | `Array<{ type, payload, colSpan? }>` | yes | Ordered tiles, laid out left-to-right, top-to-bottom |
-| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel" \| "map"` | yes | Which widget to render |
+| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel" \| "sankey" \| "map"` | yes | Which widget to render |
 | `tiles[].payload` | `object` | yes | That widget's own payload — the same object its `render_<type>` tool accepts |
 | `tiles[].colSpan` | `number` | no | How many columns the tile spans (1..`columns`); defaults to `1` |
 
@@ -266,7 +285,7 @@ npm run dev:stdio           # stdio server (for Claude Desktop / VS Code)
 npm run dev:sandbox         # in-browser widget sandbox — pick any widget + preset, toggle theme / viewport / debug overlay
 npm run typecheck           # tsc --noEmit
 npm test                    # vitest: payloads, registry, registration, theme, e2e
-npm run build               # bundle 10 widgets + compile server
+npm run build               # bundle 11 widgets + compile server
 npm start                   # run compiled HTTP server
 npm run start:stdio         # run compiled stdio server
 ```
@@ -301,6 +320,7 @@ src/
 │   ├── treemap.ts
 │   ├── heatmap.ts
 │   ├── stat-panel.ts
+│   ├── sankey.ts
 │   ├── dashboard.ts
 │   └── map.ts
 ├── resources/            # ui:// resource serving for bundled widget HTMLs
@@ -317,6 +337,7 @@ src/
     ├── treemap/
     ├── heatmap/          # hand-rolled SVG (no Recharts)
     ├── stat-panel/       # KPI / scorecard cards
+    ├── sankey/           # flow ribbons between stages (Recharts Sankey)
     ├── dashboard/        # grid of tiles composing the other widgets
     └── map/              # d3-geo + TopoJSON choropleth / bubbles (no Recharts)
 ```

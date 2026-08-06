@@ -26,6 +26,7 @@ dist/widgets/table/index.html
 dist/widgets/treemap/index.html
 dist/widgets/heatmap/index.html
 dist/widgets/stat-panel/index.html
+dist/widgets/sankey/index.html
 dist/widgets/dashboard/index.html
 dist/widgets/map/index.html
 ```
@@ -61,7 +62,7 @@ In a new chat, ask:
 
 > What MCP tools do you have available?
 
-You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_scatter_chart`**, **`render_treemap`**, **`render_heatmap`**, **`render_table`**, **`render_stat_panel`**, **`render_dashboard`**, and **`render_map`** in the list. If not — see [Debugging](#debugging) below.
+You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_scatter_chart`**, **`render_treemap`**, **`render_heatmap`**, **`render_table`**, **`render_stat_panel`**, **`render_sankey`**, **`render_dashboard`**, and **`render_map`** in the list. If not — see [Debugging](#debugging) below.
 
 ### A3. Smoke test each widget with explicit prompts
 
@@ -85,9 +86,13 @@ These force tool selection so you isolate **rendering** from **selection**.
    (any small weekday × hour grid).
 8. Use render_stat_panel to show KPIs:
    MRR $42k up 8%, churn 2.1% down 0.3pp, NPS 54.
-9. Use render_dashboard with a bar tile of quarterly sales
-   and a stat-panel tile of the same totals.
-10. Use render_map to color a world map by population:
+9. Use render_sankey to show a checkout funnel:
+   Product page → Cart 4200, Product page → Left 9800,
+   Cart → Checkout 2600, Cart → Abandoned 1600,
+   Checkout → Purchase 1900, Checkout → Failed 700.
+10. Use render_dashboard with a bar tile of quarterly sales
+    and a stat-panel tile of the same totals.
+11. Use render_map to color a world map by population:
     China, India, USA, Indonesia, Pakistan.
 ```
 
@@ -125,7 +130,7 @@ Re-run `npm run build:server` and restart Claude Desktop after each change.
 
 After §A3 confirms widgets render at all, walk through this checklist to verify the v0.3.0 design system (tokens + primitives) is intact across every widget. Run it once in **light** and once in **dark** — switch your OS appearance preference between passes. Each widget gets ~30 seconds.
 
-**Per-widget checks (× 10):**
+**Per-widget checks (× 11):**
 
 | Widget | Look for |
 |---|---|
@@ -137,6 +142,7 @@ After §A3 confirms widgets render at all, walk through this checklist to verify
 | `heatmap` | **Single-hue ramp** — cells go from barely-visible `series-0` tint to full intensity. No multi-colored cells. Cells have 2 px gaps and rounded corners. |
 | `table` | Header row in mono uppercase axis-cap font. Numeric cells use mono with `tabular-nums`. Row hover gets `surface-sunken` background. Filter input gets a 2 px focus ring when tabbed into. Sparkline columns render a 56 × 16 `series-0` spark plus a mono last-value readout, centered by default; header click sorts by last value; filter terms never match digits inside sparks; row hover must NOT re-emphasize the spark; Copy CSV exports one joined quoted cell per series. |
 | `stat-panel` | KPI cards: mono `tabular-nums` values, trend deltas coloured from `semantic` tokens, sparkline / progress / badge variants render. Inside a dashboard tile, cards flatten to sunken wells (no elevation). |
+| `sankey` | Node rects colored from the series palette (payload `color` overrides win); ribbons inherit their source node's color at 30 % opacity. Node labels sit right of the rect — sink nodes label to the left; a mono `tabular-nums` value line appears when the node is ≥ 26 px tall. Hovering a node or ribbon raises connected ribbons to 55 % and dims the rest; the header KPI shows total inflow. A cyclic payload shows the error EmptyState, not a crash. |
 | `dashboard` | Tiles form a fixed-column grid (payload `columns`, clamped 1–4, default 2; column widths are fluid) honouring `colSpan`. Every tile keeps its own title/toolbar. Embedded widgets recede — no double surfaces or nested shadows. |
 | `map` | Choropleth uses the single-hue intensity ramp + legend; no-data land stays a neutral tint. Bubbles scale by √value (area-proportional above a 3 px floor) with a size legend. The footnote reports the *count* of unmatched regions / off-map points (ids are not listed). |
 
@@ -239,6 +245,6 @@ Before tagging a release (current target: v0.2.0):
 - [ ] Dark/light theme switching works in both hosts
 - [ ] Copy CSV → text in clipboard, parses cleanly when pasted into a spreadsheet
 - [ ] Copy PNG → image in clipboard or downloaded file
-- [ ] No console errors in DevTools across all 10 widgets
+- [ ] No console errors in DevTools across all 11 widgets
 - [ ] `npm run typecheck` clean
 - [ ] `npm run build` clean

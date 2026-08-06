@@ -7,6 +7,7 @@ import { ScatterChartView } from "../../scatter-chart/ScatterChartView.js";
 import { HeatmapView } from "../../heatmap/HeatmapView.js";
 import { TreemapView } from "../../treemap/TreemapView.js";
 import { StatPanelView } from "../../stat-panel/StatPanelView.js";
+import { SankeyView } from "../../sankey/SankeyView.js";
 import { DashboardView } from "../../dashboard/DashboardView.js";
 import { MapView } from "../../map/MapView.js";
 import type { Dataset } from "./types.js";
@@ -18,6 +19,7 @@ import { scatterDatasets } from "./scatter.js";
 import { heatmapDatasets } from "./heatmap.js";
 import { treemapDatasets } from "./treemap.js";
 import { statPanelDatasets } from "./stat-panel.js";
+import { sankeyDatasets } from "./sankey.js";
 import { dashboardDatasets } from "./dashboard.js";
 import { mapDatasets } from "./map.js";
 
@@ -30,6 +32,7 @@ export type WidgetKey =
   | "heatmap"
   | "treemap"
   | "stat-panel"
+  | "sankey"
   | "dashboard"
   | "map";
 
@@ -61,6 +64,7 @@ export const WIDGET_ENTRIES: WidgetEntry[] = [
   defineEntry({ key: "heatmap", label: "Heatmap", View: HeatmapView, datasets: heatmapDatasets }),
   defineEntry({ key: "treemap", label: "Treemap", View: TreemapView, datasets: treemapDatasets }),
   defineEntry({ key: "stat-panel", label: "Stat panel", View: StatPanelView, datasets: statPanelDatasets }),
+  defineEntry({ key: "sankey", label: "Sankey", View: SankeyView, datasets: sankeyDatasets }),
   defineEntry({ key: "dashboard", label: "Dashboard", View: DashboardView, datasets: dashboardDatasets }),
   defineEntry({ key: "map", label: "Map", View: MapView, datasets: mapDatasets }),
 ];

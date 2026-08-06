@@ -6,6 +6,7 @@ import { isTablePayload } from "../widgets/table/App.js";
 import { isScatterChartPayload } from "../widgets/scatter-chart/App.js";
 import { isTreemapPayload } from "../widgets/treemap/App.js";
 import { isHeatmapPayload } from "../widgets/heatmap/App.js";
+import { isSankeyPayload } from "../widgets/sankey/App.js";
 
 type Mutator = (v: Record<string, unknown>) => unknown;
 
@@ -212,6 +213,27 @@ const cases: GuardCase[] = [
       "cell with float x index": set("cells", [{ x: 0.5, y: 0, value: 5 }]),
       "cell with negative y index": set("cells", [{ x: 0, y: -1, value: 5 }]),
       "cell with non-numeric value": set("cells", [{ x: 0, y: 0, value: "high" }]),
+    },
+  },
+  {
+    name: "sankey",
+    guard: isSankeyPayload,
+    valid: {
+      title: "T",
+      nodes: [{ name: "a" }, { name: "b" }],
+      links: [{ source: "a", target: "b", value: 5 }],
+    },
+    rejects: {
+      "missing title": omit("title"),
+      "missing links": omit("links"),
+      "non-array links": set("links", "x"),
+      "link missing source": set("links", [{ target: "b", value: 1 }]),
+      "link non-string target": set("links", [{ source: "a", target: 2, value: 1 }]),
+      "link negative value": set("links", [{ source: "a", target: "b", value: -1 }]),
+      "non-array nodes": set("nodes", "x"),
+      "node missing name": set("nodes", [{ color: "red" }]),
+      "node non-string color": set("nodes", [{ name: "a", color: 7 }]),
+      "non-string valueLabel": set("valueLabel", 3),
     },
   },
 ];
