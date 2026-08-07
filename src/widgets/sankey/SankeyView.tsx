@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ResponsiveContainer,
   Sankey,
@@ -18,8 +18,19 @@ import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-ut
 const CANVAS_HEIGHT = 360;
 const NODE_WIDTH = 12;
 const NODE_PADDING = 20;
+const MARGIN_X = 12;
 const LABEL_GAP = 8;
 const MAX_LABEL_CHARS = 24;
+const MIN_LABEL_CHARS = 8;
+// Conservative average advance of IBM Plex Sans 500 at the label size — used to
+// turn the pixel room between columns into a character budget. Overestimating
+// is the safe direction: it truncates a little early rather than colliding.
+const LABEL_CHAR_PX = 7.4;
+// Every node hangs its label to the right, so the final column needs room
+// outside the plot. Reserving it as chart margin keeps each column gap
+// single-use: no two labels ever reach into the same space.
+const LABEL_BAND_MAX = MAX_LABEL_CHARS * LABEL_CHAR_PX;
+const LABEL_BAND_RATIO = 0.28;
 const MIN_VALUE_HEIGHT = 26;
 const LINK_OPACITY_BASE = 0.3;
 const LINK_OPACITY_ACTIVE = 0.55;
@@ -38,6 +49,12 @@ interface FlowGraph {
   };
   /** Sum of flow leaving root nodes (nodes with no incoming links). */
   totalInflow: number;
+  /**
+   * Longest-path depth of the deepest node — i.e. the number of column gaps.
+   * Mirrors how Recharts lays columns out (`x = depth * (width - nodeWidth) /
+   * maxDepth`), so the label budget below can be derived from it.
+   */
+  maxDepth: number;
 }
 
 type GraphResult = { ok: true; graph: FlowGraph } | { ok: false; reason: string };
@@ -83,9 +100,12 @@ function buildGraph(payload: SankeyPayload, tokens: ChartDesignTokens): GraphRes
   }
 
   // Kahn's algorithm: the layout walks source→target and never terminates on
-  // a cycle, so refuse cyclic graphs with a readable error instead.
+  // a cycle, so refuse cyclic graphs with a readable error instead. The same
+  // pass yields each node's longest-path depth — valid because Kahn's pops in
+  // topological order, so a node's depth is final when it is dequeued.
   const indegree = new Array<number>(names.length).fill(0);
   for (const l of links) indegree[l.target] = indegree[l.target]! + 1;
+  const depth = new Array<number>(names.length).fill(0);
   const queue = indegree.flatMap((d, i) => (d === 0 ? [i] : []));
   let visited = 0;
   while (queue.length > 0) {
@@ -93,6 +113,7 @@ function buildGraph(payload: SankeyPayload, tokens: ChartDesignTokens): GraphRes
     visited += 1;
     for (const l of links) {
       if (l.source !== n) continue;
+      if (depth[n]! + 1 > depth[l.target]!) depth[l.target] = depth[n]! + 1;
       indegree[l.target] = indegree[l.target]! - 1;
       if (indegree[l.target] === 0) queue.push(l.target);
     }
@@ -117,14 +138,23 @@ function buildGraph(payload: SankeyPayload, tokens: ChartDesignTokens): GraphRes
       colors,
       data: { nodes: names.map((name) => ({ name })), links },
       totalInflow,
+      maxDepth: Math.max(0, ...depth),
     },
   };
 }
 
 type Hover = { kind: "node" | "link"; index: number } | null;
 
-function truncateLabel(name: string): string {
-  return name.length > MAX_LABEL_CHARS ? `${name.slice(0, MAX_LABEL_CHARS - 1)}…` : name;
+/**
+ * Fit a node name into `cap` characters of room. A name that already fits is
+ * left alone whatever the room is; one that doesn't is truncated only while the
+ * stub stays readable, and otherwise dropped (null) the way treemap drops
+ * sub-threshold tile labels — the tooltip still carries the full name.
+ */
+function fitLabel(name: string, cap: number): string | null {
+  if (name.length <= cap) return name;
+  if (cap < MIN_LABEL_CHARS) return null;
+  return `${name.slice(0, cap - 1)}…`;
 }
 
 /** Tooltip rows carry either a link payload (source/target resolved to layout
@@ -142,6 +172,7 @@ export function SankeyView({ payload }: { payload: SankeyPayload }) {
   const tokens = useTheme();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<Hover>(null);
+  const [canvasWidth, setCanvasWidth] = useState(0);
   const { title, links, valueLabel } = payload;
 
   const result = useMemo(() => buildGraph(payload, tokens), [payload, tokens]);
@@ -160,6 +191,45 @@ export function SankeyView({ payload }: { payload: SankeyPayload }) {
     return m;
   }, [graph]);
 
+  // Labels are sized against the rendered width — a half-width dashboard tile
+  // has far less room than a standalone widget — so the layout below needs the
+  // measured canvas. Re-attached on `graph` so the observer also picks up a
+  // switch from the error state back to a drawable chart.
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (typeof width === "number") setCanvasWidth(width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [graph]);
+
+  const layout = useMemo(() => {
+    const band =
+      canvasWidth === 0
+        ? LABEL_BAND_MAX
+        : Math.min(LABEL_BAND_MAX, canvasWidth * LABEL_BAND_RATIO);
+    const caps = { column: MAX_LABEL_CHARS, band: MAX_LABEL_CHARS };
+    if (!graph || canvasWidth === 0 || graph.maxDepth < 1) return { band, caps };
+    const toChars = (px: number) =>
+      Math.min(MAX_LABEL_CHARS, Math.floor(px / LABEL_CHAR_PX));
+    // Recharts lays the columns out across the plot left of the reserved band
+    // (`contentWidth = width - margin.left - margin.right`), spacing them at
+    // (plotWidth - nodeWidth) / maxDepth. A label takes that pitch minus the
+    // node it hangs off and a gap at each end; the final column gets the band.
+    const plotWidth = canvasWidth - MARGIN_X * 2 - band;
+    const pitch = (plotWidth - NODE_WIDTH) / graph.maxDepth;
+    return {
+      band,
+      caps: {
+        column: toChars(pitch - NODE_WIDTH - LABEL_GAP * 2),
+        band: toChars(band - LABEL_GAP * 2),
+      },
+    };
+  }, [graph, canvasWidth]);
+
   if (links.length === 0) {
     return (
       <div className="sigil-root">
@@ -177,7 +247,7 @@ export function SankeyView({ payload }: { payload: SankeyPayload }) {
       </div>
     );
   }
-  const { names, colors, data, totalInflow } = graph;
+  const { names, colors, data, totalInflow, maxDepth } = graph;
 
   const nodeOpacity = (index: number): number => {
     if (!hover) return 1;
@@ -208,11 +278,14 @@ export function SankeyView({ payload }: { payload: SankeyPayload }) {
 
   const renderNode = (props: SankeyNodeProps) => {
     const { x, y, width, height, index, payload: node } = props;
-    const isSink = node.targetLinks.length === 0;
-    const showValue = height >= MIN_VALUE_HEIGHT;
-    const labelX = isSink ? x - LABEL_GAP : x + width + LABEL_GAP;
+    const labelX = x + width + LABEL_GAP;
     const midY = y + height / 2;
-    const anchor = isSink ? "end" : "start";
+    // Only sinks land in the final column — Recharts' `align: "justify"` pushes
+    // every node without outgoing links to maxDepth — so those read from the
+    // reserved band and the rest from their own column gap.
+    const cap = node.depth === maxDepth ? layout.caps.band : layout.caps.column;
+    const label = fitLabel(node.name, cap);
+    const showValue = label !== null && height >= MIN_VALUE_HEIGHT;
     return (
       <g
         style={{
@@ -229,25 +302,25 @@ export function SankeyView({ payload }: { payload: SankeyPayload }) {
           ry={2}
           fill={colors[index]}
         />
-        <text
-          x={labelX}
-          y={showValue ? midY - 7 : midY}
-          textAnchor={anchor}
-          dominantBaseline="central"
-          fill={tokens.texts.secondary}
-          style={{
-            fontFamily: tokens.typography.family.sans,
-            fontSize: tokens.typography.scale.label.fontSize,
-            fontWeight: 500,
-          }}
-        >
-          {truncateLabel(node.name)}
-        </text>
+        {label !== null && (
+          <text
+            x={labelX}
+            y={showValue ? midY - 7 : midY}
+            dominantBaseline="central"
+            fill={tokens.texts.secondary}
+            style={{
+              fontFamily: tokens.typography.family.sans,
+              fontSize: tokens.typography.scale.label.fontSize,
+              fontWeight: 500,
+            }}
+          >
+            {label}
+          </text>
+        )}
         {showValue && (
           <text
             x={labelX}
             y={midY + 8}
-            textAnchor={anchor}
             dominantBaseline="central"
             fill={tokens.texts.muted}
             style={{
@@ -319,7 +392,12 @@ export function SankeyView({ payload }: { payload: SankeyPayload }) {
             data={data}
             nodeWidth={NODE_WIDTH}
             nodePadding={NODE_PADDING}
-            margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
+            margin={{
+              top: 12,
+              right: MARGIN_X + layout.band,
+              bottom: 12,
+              left: MARGIN_X,
+            }}
             node={renderNode}
             link={renderLink}
             onMouseEnter={(item, type) =>

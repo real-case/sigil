@@ -1,6 +1,6 @@
 # Sigil — Technical Specification
 
-> **Status (2026-07-02).** This document is the original v0.1 build plan, kept as a design record. The shipped surface has since grown to **10 widgets** — `bar-chart`, `line-chart`, `pie-chart`, `table`, `scatter-chart`, `treemap`, `heatmap`, `stat-panel`, `dashboard`, `map` — behind a registry (`src/registry.ts`), and the npm package is published as **`@real-case/sigil`**. See [README.md](./README.md) for the current widget set and usage; where this spec and the code disagree, the code wins.
+> **Status (2026-07-02).** This document is the original v0.1 build plan, kept as a design record. The shipped surface has since grown to **11 widgets** — `bar-chart`, `line-chart`, `pie-chart`, `table`, `scatter-chart`, `treemap`, `heatmap`, `stat-panel`, `sankey`, `dashboard`, `map` — behind a registry (`src/registry.ts`), and the npm package is published as **`@real-case/sigil`**. See [README.md](./README.md) for the current widget set and usage; where this spec and the code disagree, the code wins.
 
 ## 1. Project Overview
 

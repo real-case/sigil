@@ -3,10 +3,10 @@
 Sigil is a set of **data-driven chart widgets**. You compose a chart by passing
 it one typed `payload` prop — not by styling it. Each widget renders its own
 titled card (with a Copy CSV / Copy PNG toolbar), sizes itself to its container,
-and themes from the design tokens automatically. There are 10 widgets:
+and themes from the design tokens automatically. There are 11 widgets:
 `BarChartView`, `LineChartView`, `PieChartView`, `ScatterChartView`,
-`HeatmapView`, `TableView`, `TreemapView`, `StatPanelView`, `DashboardView`,
-`MapView`. Read each one's
+`HeatmapView`, `TableView`, `TreemapView`, `StatPanelView`, `SankeyView`,
+`DashboardView`, `MapView`. Read each one's
 `components/widgets/<Name>/<Name>.d.ts` for its exact `payload<Name>Props` shape
 and `<Name>.prompt.md` for examples before using it.
 

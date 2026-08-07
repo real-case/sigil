@@ -8,7 +8,7 @@ This is an **optional preset** that teaches Claude (or any MCP-Apps host) to int
 
 Without the preset, Sigil works in plain mode (`render_bar_chart`, normal English/Russian prompts). With it, you can speak in ritual register: *«призываю bar chart»*, *«View Earth on these numbers»*, *«Astrologers proclaim a chart of Q1 sales»*.
 
-> **Scope note:** the preset currently covers the original four widgets — `render_bar_chart`, `render_line_chart`, `render_pie_chart`, `render_table`. The other six (`scatter-chart`, `treemap`, `heatmap`, `stat-panel`, `dashboard`, `map`) ship without incantations for now; address them in plain mode.
+> **Scope note:** the preset currently covers the original four widgets — `render_bar_chart`, `render_line_chart`, `render_pie_chart`, `render_table`. The other seven (`scatter-chart`, `treemap`, `heatmap`, `stat-panel`, `sankey`, `dashboard`, `map`) ship without incantations for now; address them in plain mode.
 
 ---
 

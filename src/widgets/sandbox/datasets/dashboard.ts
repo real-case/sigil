@@ -8,6 +8,7 @@ import { scatterDatasets } from "./scatter.js";
 import { statPanelDatasets } from "./stat-panel.js";
 import { tableDatasets } from "./table.js";
 import { mapDatasets } from "./map.js";
+import { sankeyDatasets } from "./sankey.js";
 
 // Dashboard presets reuse other widgets' catalog payloads verbatim, so a tile
 // renders exactly like that widget's own story.
@@ -52,6 +53,32 @@ export const dashboardDatasets: Dataset<DashboardPayload>[] = [
           payload: payloadById(tableDatasets, "table-sparklines"),
           colSpan: 2,
         },
+      ],
+    },
+  },
+  {
+    id: "dashboard-flow",
+    label: "Flow — sankey full-width + narrow",
+    category: "nested",
+    // Carries the sankey twice on purpose: full-width is how a flow diagram is
+    // normally placed, while the second tile takes the default colSpan 1 — the
+    // tight case where node labels have the least room.
+    payload: {
+      title: "Acquisition funnel",
+      columns: 2,
+      tiles: [
+        {
+          type: "stat-panel",
+          payload: payloadById(statPanelDatasets, "stat-small"),
+          colSpan: 2,
+        },
+        {
+          type: "sankey",
+          payload: payloadById(sankeyDatasets, "sankey-small"),
+          colSpan: 2,
+        },
+        { type: "sankey", payload: payloadById(sankeyDatasets, "sankey-minimal") },
+        { type: "pie-chart", payload: payloadById(pieDatasets, "pie-medium") },
       ],
     },
   },
