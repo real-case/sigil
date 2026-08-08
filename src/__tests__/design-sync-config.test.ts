@@ -1,12 +1,15 @@
-// Drift pin for .design-sync/config.json: the hand-maintained dtsPropsFor
-// payload-type strings must keep naming the live tool surface. Expectations
-// derive from the tools' actual input schemas over the in-memory protocol —
-// not from the config itself — so a payload change that forgets the config
-// fails here. This is exactly the drift that occurred at specs 002
-// (maxSegments) and 004 (column kind), both silent at the time.
+// Drift pin for the hand-maintained /design-sync wiring: the dtsPropsFor
+// payload-type strings must keep naming the live tool surface, and every widget
+// in the registry must be reachable from the bundle entry + titleMap.
+// Expectations derive from the tools' actual input schemas over the in-memory
+// protocol — not from the config itself — so a payload change that forgets the
+// config fails here. This is exactly the drift that occurred at specs 002
+// (maxSegments) and 004 (column kind), both silent at the time; the sankey
+// widget then shipped with a titleMap entry but no entry.tsx export, which was
+// silent for the same reason.
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -19,7 +22,12 @@ const REPO_ROOT = join(HERE, "..", "..");
 
 const config = JSON.parse(
   readFileSync(join(REPO_ROOT, ".design-sync", "config.json"), "utf8"),
-) as { dtsPropsFor: Record<string, string> };
+) as { dtsPropsFor: Record<string, string>; titleMap: Record<string, string> };
+
+const entrySource = readFileSync(
+  join(REPO_ROOT, ".design-sync", "entry.tsx"),
+  "utf8",
+);
 
 const toolName = (widget: string) => `render_${widget.replaceAll("-", "_")}`;
 
@@ -90,5 +98,52 @@ describe("design-sync config payload types", () => {
 
   it("PieChartView dts carries maxSegments", () => {
     expect(config.dtsPropsFor["PieChartView"]!).toContain("maxSegments");
+  });
+});
+
+// NOTES.md's "adding a new widget" checklist is: export the *View from
+// entry.tsx AND add a titleMap entry. Both halves are load-bearing — the
+// Storybook compare harness redirects a story's `./<Name>View.js` import to
+// `window.Sigil.<Name>View` by matching the basename against the bundle's
+// exports, so a missing export silently renders a duplicate source copy
+// instead of the shipped bundle. Nothing else pins them to the registry.
+describe("design-sync bundle wiring", () => {
+  // The dashboard composes the other widgets rather than being composed, but it
+  // is still a rendered View with its own design record, so no widget is exempt.
+  for (const widget of WIDGETS) {
+    const view = viewKey(widget.name);
+
+    it(`${widget.name}: entry.tsx exports ${view} from a real module`, () => {
+      // entry.tsx sits outside the tsconfig program (esbuild compiles it during
+      // the sync), so tsc never resolves these paths — check them here.
+      const re = new RegExp(`export\\s*\\{\\s*${view}\\s*\\}\\s*from\\s*"([^"]+)"`);
+      const match = re.exec(entrySource);
+      expect(
+        match,
+        `.design-sync/entry.tsx is missing "export { ${view} } from …" — see .design-sync/NOTES.md`,
+      ).toBeTruthy();
+      // ".js" specifiers rewrite to the ".tsx" source the same way the bundler
+      // resolves them.
+      const source = match![1]!.replace(/\.js$/, ".tsx");
+      expect(
+        existsSync(join(REPO_ROOT, ".design-sync", source)),
+        `.design-sync/entry.tsx exports ${view} from "${match![1]}", which does not resolve`,
+      ).toBe(true);
+    });
+
+    it(`${widget.name}: titleMap resolves to ${view}`, () => {
+      expect(
+        Object.values(config.titleMap),
+        `.design-sync/config.json titleMap has no entry mapping to ${view}`,
+      ).toContain(view);
+    });
+  }
+
+  it("entry.tsx exports no View the registry does not know about", () => {
+    const exported = [...entrySource.matchAll(/export\s*\{\s*(\w+View)\s*\}/g)].map(
+      (m) => m[1]!,
+    );
+    const known = WIDGETS.map((w) => viewKey(w.name));
+    expect(exported.filter((name) => !known.includes(name))).toEqual([]);
   });
 });

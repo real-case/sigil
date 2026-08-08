@@ -88,4 +88,10 @@ npx storybook build -c .storybook -o "$(git rev-parse --show-toplevel)/.design-s
   Tail stories beyond a future default cap are verified-by-upload, not
   individually graded.
 - Adding a new widget: add its `*View` export to `entry.tsx` and a `titleMap`
-  entry; everything else is automatic.
+  entry; everything else is automatic. Both halves are pinned against the
+  registry by `src/__tests__/design-sync-config.test.ts`, so a forgotten one
+  fails `npm test` rather than silently shipping a widget the bundle has no
+  export for (that happened with `sankey`, which had the `titleMap` entry but
+  no `entry.tsx` export — the compare harness would have rendered a duplicate
+  source copy for it). `tsc` does not cover `entry.tsx`, so the same test also
+  resolves each export's import path.
