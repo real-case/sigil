@@ -38,5 +38,6 @@ export { HeatmapView } from "../src/widgets/heatmap/HeatmapView.js";
 export { ScatterChartView } from "../src/widgets/scatter-chart/ScatterChartView.js";
 export { TreemapView } from "../src/widgets/treemap/TreemapView.js";
 export { StatPanelView } from "../src/widgets/stat-panel/StatPanelView.js";
+export { SankeyView } from "../src/widgets/sankey/SankeyView.js";
 export { DashboardView } from "../src/widgets/dashboard/DashboardView.js";
 export { MapView } from "../src/widgets/map/MapView.js";
