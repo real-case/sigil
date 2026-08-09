@@ -9,3 +9,5 @@ in the linked file. Recalled at task intake.
 - [Raw invisible control bytes can hide in source literals and break exact-match edits](raw-invisible-control-bytes-can-hide-in.md) — gotcha · 2026-08-02 · widgets, table, filter, control-characters, tooling
 - [Verify documentation claims against code, never against sibling docs](verify-documentation-claims-against.md) — process · 2026-08-03 · docs, verification, design-system, process, spec-authoring
 - [Closing a program requires sweeping adjacent records for live claims, not just the queued files](closing-a-program-requires-sweeping.md) — process · 2026-08-04 · docs, closure, reverse-deps, process, spec-authoring
+- [An oracle you have not watched fail is not a proof](an-oracle-you-have-not-watched-fail-is.md) — process · 2026-08-09 · testing, oracles, spec-authoring, verification, vitest
+- [Widget views server-render in the node test env, but error boundaries do not](widget-views-server-render-in-the-node.md) — gotcha · 2026-08-09 · testing, vitest, react, ssr, error-boundary, widgets
