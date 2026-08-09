@@ -11,7 +11,9 @@ import { mapDatasets } from "./map.js";
 import { sankeyDatasets } from "./sankey.js";
 
 // Dashboard presets reuse other widgets' catalog payloads verbatim, so a tile
-// renders exactly like that widget's own story.
+// renders exactly like that widget's own story. The one exception is
+// `dashboard-degraded`, whose broken tiles are inline literals — no catalog
+// carries an invalid payload, and that preset exists to show the error cards.
 export const dashboardDatasets: Dataset<DashboardPayload>[] = [
   {
     id: "dashboard-minimal",
@@ -98,6 +100,34 @@ export const dashboardDatasets: Dataset<DashboardPayload>[] = [
         { type: "map", payload: payloadById(mapDatasets, "map-medium"), colSpan: 2 },
         { type: "bar-chart", payload: payloadById(barDatasets, "bar-small-vertical") },
         { type: "pie-chart", payload: payloadById(pieDatasets, "pie-medium") },
+      ],
+    },
+  },
+  {
+    id: "dashboard-degraded",
+    label: "Degraded — one bad tile must cost one tile",
+    category: "degraded",
+    // The one preset whose tiles are written inline rather than pulled from a
+    // catalog: no catalog holds an invalid payload, and the point here is the
+    // failure cards. Each broken tile sits beside a healthy one so the blast
+    // radius is visible at a glance — before this widget guarded its tiles, any
+    // single row below took the whole dashboard down with it.
+    payload: {
+      title: "Degraded tiles",
+      columns: 2,
+      tiles: [
+        { type: "bar-chart", payload: payloadById(barDatasets, "bar-small-vertical") },
+        // Passes the dashboard guard (object payload) but fails the bar-chart's.
+        {
+          type: "bar-chart",
+          payload: { title: "Missing data", orientation: "vertical" },
+        },
+        { type: "pie-chart", payload: payloadById(pieDatasets, "pie-medium") },
+        // No widget of this type — the version-skew case.
+        { type: "combo-chart", payload: { title: "From a newer server" } },
+        { type: "line-chart", payload: payloadById(lineDatasets, "line-small-categorical") },
+        // Dashboards are deliberately not tileable; distinct copy from "unknown".
+        { type: "dashboard", payload: { title: "Inner", tiles: [] } },
       ],
     },
   },

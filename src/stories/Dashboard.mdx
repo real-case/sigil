@@ -37,13 +37,31 @@ own, you can drop it into a dashboard by pairing its `type` with its payload.
 
 Any widget can be a tile **except the dashboard itself** (no dashboard-in-dashboard):
 `bar-chart`, `line-chart`, `pie-chart`, `table`, `scatter-chart`, `treemap`,
-`heatmap`, `stat-panel`, and `map`.
+`heatmap`, `stat-panel`, `sankey`, and `map`.
 
-Internally the tile `type` is looked up in a small type→View map
-(`src/widgets/shared/widget-views.ts`). That module imports only each widget's
-presentational `*View` — never its `App.tsx` entry, which would call
-`mountWidget` on import — so composing widgets stays free of MCP-mount side
-effects. Adding a widget to that map is all it takes to make it tileable.
+Internally the tile `type` is looked up in a small type→`{ View, isPayload }` map
+(`src/widgets/shared/widget-views.ts`). That module imports each widget's
+presentational `*View` and its `guard.ts` — never its `App.tsx` entry, which would
+call `mountWidget` on import — so composing widgets stays free of MCP-mount side
+effects. Making a widget tileable means adding it to that map **and** to the
+`render_dashboard` tool's tile-type enum, which is what the model picks from.
+
+## When a tile is broken
+
+A tile's `payload` bypasses the tool schema entirely — `render_dashboard` types it
+as an opaque object, because it is another widget's payload — so the dashboard
+validates each tile itself and contains the damage to one card:
+
+| Situation | What renders |
+|---|---|
+| No widget of that `type` | **Unknown widget** — naming the type it was given |
+| `type` is `dashboard` | **Nested dashboard** — the widget exists, it just cannot nest |
+| Payload fails that widget's guard | **Invalid `<type>` tile** |
+| The view throws while rendering | **Could not render `<type>`** — from a per-tile error boundary |
+
+In every case the sibling tiles render normally. The **Degraded** story shows the
+first three side by side; the fourth has no preset, because provoking it needs a
+payload that satisfies its widget's guard and still throws.
 
 ## Layout
 
