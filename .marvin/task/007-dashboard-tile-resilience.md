@@ -1,7 +1,7 @@
 ---
 slug: dashboard-tile-resilience
 type: feature
-status: in-progress
+status: shipped
 created: 2026-08-09
 tracker: specs/composition-program.md#1-dashboard-tile-resilience
 supersedes: none
@@ -536,3 +536,11 @@ The critics confirmed the AC10 design choice (degrade rather than guard-reject) 
 - **`TESTING.md` §A5** could gain a "degraded tile" row when the manual QA checklist is next revised.
 - **`specs/composition-program.md`'s CI claim** (line 354) needs correcting before later specs in the program inherit it.
 - **Item 2 (`widget-registry-derivation`)** now has two fewer mirrors to reconcile: this task deletes the guard's `TILE_TYPES` and pins `WIDGET_VIEWS`, leaving `DashboardTileType` and the `render_dashboard` zod enum as the unpinned pair.
+
+## Delivery
+
+- **PR:** [#54 — Contain a broken dashboard tile to its own card](https://github.com/real-case/sigil/pull/54)
+- **Branch:** `task/dashboard-tile-resilience` → `dev`
+- **Delivered:** 2026-08-09
+- **Verification:** PASS — `npm run typecheck`, `npm test` (372 tests, up from 323), `npm run build`
+- **Carried forward:** the `TileBoundary` reset gap (see Self-Review Notes on the PR) needs a superseding spec — the fix requires a third prop, which the sealed contract pins against.

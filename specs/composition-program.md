@@ -32,7 +32,7 @@ Rules that apply to every item; a spec that breaks one must say so explicitly.
 
 ## 1. Dashboard tile resilience
 
-> ✅ Shipped — spec [`007-dashboard-tile-resilience`](../.marvin/task/007-dashboard-tile-resilience.md)
+> ✅ Shipped — spec [`007-dashboard-tile-resilience`](../.marvin/task/007-dashboard-tile-resilience.md) · PR [#54](https://github.com/real-case/sigil/pull/54)
 >
 > **As-shipped deltas versus this sketch:**
 > - The sketch missed a **live bug**: `isDashboardPayload`'s hardcoded tile-type set had drifted two entries behind the registry, so any `render_dashboard` call containing a `sankey` or `map` tile was rejected at mount and the whole dashboard failed to load. Invisible in the sandbox and Storybook, which render `DashboardView` directly.
