@@ -218,8 +218,13 @@ export type DashboardTileType =
   | "map";
 
 export interface DashboardTile {
-  /** Which widget to render in this tile. */
-  type: DashboardTileType;
+  /**
+   * Which widget to render in this tile. Widened beyond `DashboardTileType` so
+   * an unrecognised type stays representable — the dashboard degrades that one
+   * tile rather than rejecting the payload — while the union keeps autocomplete
+   * on the types that actually render.
+   */
+  type: DashboardTileType | (string & {});
   /** The referenced widget's own payload (same shape its render_* tool takes). */
   payload: unknown;
   /** How many grid columns this tile spans (1..columns). Defaults to 1. */

@@ -2,8 +2,7 @@ import type { DashboardPayload } from "../../shared/payloads.js";
 import { useTheme } from "../shared/theme.js";
 import { Card } from "../shared/Card.js";
 import { EmptyState } from "../shared/EmptyState.js";
-import { EmbeddedContext } from "../shared/embedded.js";
-import { WIDGET_VIEWS } from "../shared/widget-views.js";
+import { Tile } from "./Tile.js";
 
 export function DashboardView({ payload }: { payload: DashboardPayload }) {
   const tokens = useTheme();
@@ -35,7 +34,6 @@ export function DashboardView({ payload }: { payload: DashboardPayload }) {
         }}
       >
         {tiles.map((tile, i) => {
-          const View = WIDGET_VIEWS[tile.type];
           const span = Math.max(1, Math.min(columns, tile.colSpan ?? 1));
           return (
             <Card
@@ -44,17 +42,7 @@ export function DashboardView({ payload }: { payload: DashboardPayload }) {
               elevation="low"
               style={{ gridColumn: `span ${span}`, minWidth: 0, overflow: "hidden" }}
             >
-              {View ? (
-                <EmbeddedContext.Provider value={true}>
-                  <View payload={tile.payload as never} />
-                </EmbeddedContext.Provider>
-              ) : (
-                <EmptyState
-                  variant="error"
-                  title="Unknown widget"
-                  description={`No widget of type "${tile.type}".`}
-                />
-              )}
+              <Tile type={tile.type} payload={tile.payload} />
             </Card>
           );
         })}

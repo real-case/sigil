@@ -19,3 +19,4 @@ export const Minimal: Story = { args: { payload: payloadById(dashboardDatasets, 
 export const Overview: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-overview") } };
 export const Flow: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-flow") } };
 export const Geo: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-geo") } };
+export const Degraded: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-degraded") } };

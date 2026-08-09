@@ -14,7 +14,10 @@ export type DatasetCategory =
   | "edgeLabels"
   | "negatives"
   | "multiSeries"
-  | "nested";
+  | "nested"
+  // Payloads that are deliberately WRONG, to exercise a widget's failure states
+  // rather than its rendering — e.g. the dashboard's per-tile error cards.
+  | "degraded";
 
 export const CATEGORY_ORDER: readonly DatasetCategory[] = [
   "minimal",
@@ -25,6 +28,7 @@ export const CATEGORY_ORDER: readonly DatasetCategory[] = [
   "negatives",
   "multiSeries",
   "nested",
+  "degraded",
 ] as const;
 
 // Point counts associated with each size category. Used by procedural
