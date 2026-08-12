@@ -5,7 +5,7 @@
 // zod-validated handlers; resource reads serve the bundled widget HTML when
 // `dist/widgets` is present (after `npm run build:widgets`), and otherwise
 // assert the informative "bundle missing" error so the suite is green either
-// way.
+// way — locally. Under CI that leniency is withdrawn: see the gate below.
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { existsSync } from "node:fs";
@@ -18,7 +18,17 @@ import { WIDGETS } from "../registry.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(HERE, "..", "..");
-const distBuilt = existsSync(join(REPO_ROOT, "dist", "widgets", "bar-chart", "index.html"));
+
+// Every widget, not a single probe file. Asking only about bar-chart read a
+// part-built tree — an older dist predating a newer widget — as fully built,
+// so the resource loop below failed on the missing one instead of taking the
+// unbuilt branch it was written to take.
+const missingBundles = WIDGETS.filter(
+  (w) => !existsSync(join(REPO_ROOT, "dist", "widgets", w.name, "index.html")),
+).map((w) => w.name);
+const distBuilt = missingBundles.length === 0;
+
+const IN_CI = process.env["CI"] === "true" || process.env["CI"] === "1";
 
 const toolName = (widget: string) => `render_${widget.replaceAll("-", "_")}`;
 
@@ -172,13 +182,32 @@ describe("MCP Apps pipeline (in-process client↔server)", () => {
     expect(uris).toEqual(WIDGETS.map((w) => w.uri).sort());
   });
 
+  // The lenient branch below exists so a developer can run the suite without
+  // building first. In CI it is a trap: `npm test` ran before `npm run build`,
+  // so the checkout never had a dist, the resource assertion silently became
+  // the "bundle missing" assertion, and the strongest check in this file spent
+  // its life not running. Ordering alone would not hold — the next edit to the
+  // workflow can undo it just as quietly — so the suite states the requirement
+  // itself and CI fails loudly if the bundles are not there.
+  it.runIf(IN_CI)("runs against built widget bundles under CI", () => {
+    expect(
+      missingBundles,
+      "unbuilt widget bundles under CI — is 'npm run build' still ahead of 'npm test' in ci.yml?",
+    ).toEqual([]);
+  });
+
   it(
     distBuilt
       ? "serves bundled HTML for every ui:// resource"
       : "reports a helpful error when widget bundles are unbuilt",
     async () => {
       if (!distBuilt) {
-        await expect(client.readResource({ uri: WIDGETS[0]!.uri })).rejects.toThrow(
+        // Probe a widget that is actually absent. Reaching for WIDGETS[0]
+        // assumed "unbuilt" meant "nothing built", so a part-built tree failed
+        // here instead — the same wrong answer the old single-file probe gave,
+        // one branch over.
+        const absent = WIDGETS.find((w) => missingBundles.includes(w.name))!;
+        await expect(client.readResource({ uri: absent.uri })).rejects.toThrow(
           /bundle missing/i,
         );
         return;
