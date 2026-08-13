@@ -59,8 +59,17 @@ const cases: GuardCase[] = [
       "datum missing label": set("data", [{ value: 1 }]),
       "datum non-string label": set("data", [{ label: 1, value: 1 }]),
       "datum non-number value": set("data", [{ label: "a", value: "x" }]),
-      "missing orientation": omit("orientation"),
       "invalid orientation": set("orientation", "diagonal"),
+      "empty title": set("title", ""),
+      "empty data": set("data", []),
+      "datum with empty label": set("data", [{ label: "", value: 1 }]),
+      "datum with NaN value": set("data", [{ label: "a", value: NaN }]),
+      "datum with Infinity value": set("data", [{ label: "a", value: Infinity }]),
+    },
+    accepts: {
+      // The schema marks orientation optional and the handler defaults it, so a
+      // tile carrying exactly what render_bar_chart accepts must pass here.
+      "missing orientation": omit("orientation"),
     },
   },
   {
@@ -74,6 +83,8 @@ const cases: GuardCase[] = [
       "missing title": omit("title"),
       "missing series": omit("series"),
       "series not array": set("series", {}),
+      "empty series": set("series", []),
+      "series with empty data": set("series", [{ name: "s", data: [] }]),
       "series missing name": set("series", [{ data: [{ x: 1, y: 2 }] }]),
       "datum non-numeric y": set("series", [
         { name: "s", data: [{ x: 1, y: "z" }] },
@@ -95,12 +106,18 @@ const cases: GuardCase[] = [
     rejects: {
       "missing title": omit("title"),
       "missing data": omit("data"),
-      "missing variant": omit("variant"),
       "invalid variant": set("variant", "ring"),
       "datum missing value": set("data", [{ label: "a" }]),
       "maxSegments below 2": set("maxSegments", 1),
       "maxSegments non-integer": set("maxSegments", 4.5),
       "maxSegments non-number": set("maxSegments", "5"),
+      "empty data": set("data", []),
+      "datum with negative value": set("data", [{ label: "a", value: -1 }]),
+    },
+    accepts: {
+      // Optional in the schema, defaulted to "donut" by the handler and now by
+      // PieChartView — which previously would have drawn a solid pie.
+      "missing variant": omit("variant"),
     },
   },
   {
@@ -134,9 +151,17 @@ const cases: GuardCase[] = [
         { key: "id", label: "ID", align: "diagonal" },
       ]),
       "row with object value": set("rows", [{ id: { nested: 1 } }]),
+      "non-boolean sortable": set("sortable", "yes"),
+      "empty columns": set("columns", []),
+      "column with empty key": set("columns", [{ key: "", label: "ID" }]),
+    },
+    accepts: {
+      // Both optional in the schema, both defaulted to true by the handler and
+      // by TableView. Requiring them made a tile that omitted them invalid —
+      // and reading them raw would have turned the features off instead.
       "missing sortable": omit("sortable"),
       "missing filterable": omit("filterable"),
-      "non-boolean sortable": set("sortable", "yes"),
+      "empty rows": set("rows", []),
     },
   },
   {
@@ -188,6 +213,8 @@ const cases: GuardCase[] = [
       "datum non-numeric size": set("series", [
         { name: "s", data: [{ x: 1, y: 2, size: "big" }] },
       ]),
+      "empty series": set("series", []),
+      "series with empty data": set("series", [{ name: "s", data: [] }]),
     },
   },
   {
@@ -208,6 +235,7 @@ const cases: GuardCase[] = [
       "invalid nested child": set("data", [
         { label: "x", value: 1, children: [{ label: 1 }] },
       ]),
+      "empty data": set("data", []),
     },
   },
   {
@@ -227,6 +255,10 @@ const cases: GuardCase[] = [
       "cell with float x index": set("cells", [{ x: 0.5, y: 0, value: 5 }]),
       "cell with negative y index": set("cells", [{ x: 0, y: -1, value: 5 }]),
       "cell with non-numeric value": set("cells", [{ x: 0, y: 0, value: "high" }]),
+      "empty xLabels": set("xLabels", []),
+      "empty yLabels": set("yLabels", []),
+      "empty cells": set("cells", []),
+      "empty-string xLabel": set("xLabels", ["a", ""]),
     },
   },
   {
@@ -248,6 +280,12 @@ const cases: GuardCase[] = [
       "node missing name": set("nodes", [{ color: "red" }]),
       "node non-string color": set("nodes", [{ name: "a", color: 7 }]),
       "non-string valueLabel": set("valueLabel", 3),
+      "empty links": set("links", []),
+      "link with empty source": set("links", [{ source: "", target: "b", value: 1 }]),
+    },
+    accepts: {
+      // nodes is optional in the schema — derived from the links when absent.
+      "missing nodes": omit("nodes"),
     },
   },
   {
@@ -261,12 +299,11 @@ const cases: GuardCase[] = [
     },
     rejects: {
       "missing title": omit("title"),
-      "neither data nor points": (v) => {
-        const copy = { ...v };
-        delete copy["data"];
-        delete copy["points"];
-        return copy;
-      },
+      // Both enums went unchecked, so scopeGeo's ternary answered "moon" with
+      // the world map and a us-states request could be served silently wrong.
+      "invalid scope": set("scope", "moon"),
+      "invalid variant": set("variant", "hologram"),
+      "non-array data": set("data", "everywhere"),
       "region missing id": set("data", [{ value: 1 }]),
       "region with empty id": set("data", [{ id: "", value: 1 }]),
       "region non-numeric value": set("data", [{ id: "USA", value: "x" }]),
@@ -276,6 +313,23 @@ const cases: GuardCase[] = [
         const copy = { ...v };
         delete copy["data"];
         copy["points"] = [{ lon: 0, value: 1 }];
+        return copy;
+      },
+    },
+    accepts: {
+      // `render_map({ title })` is a legal call — both arrays are optional in
+      // the schema — and renders the empty state. Requiring one of them made
+      // that exact payload invalid as a tile.
+      "neither data nor points": (v) => {
+        const copy = { ...v };
+        delete copy["data"];
+        delete copy["points"];
+        return copy;
+      },
+      "missing scope and variant": (v) => {
+        const copy = { ...v };
+        delete copy["scope"];
+        delete copy["variant"];
         return copy;
       },
     },
@@ -294,6 +348,43 @@ const cases: GuardCase[] = [
       "item missing label": set("items", [{ value: 1 }]),
       "item with non-scalar value": set("items", [{ label: "A", value: {} }]),
       "item with non-numeric delta": set("items", [{ label: "A", value: 1, delta: "up" }]),
+      // Everything below reached StatPanelView unchecked before: the guard
+      // stopped after label/value/unit/delta/status, and status was accepted as
+      // any string rather than the schema's four-value enum.
+      "item with a non-array trend": set("items", [{ label: "A", value: 1, trend: "oops" }]),
+      "item with a non-numeric trend entry": set("items", [
+        { label: "A", value: 1, trend: [1, "2"] },
+      ]),
+      "item with an unknown status": set("items", [
+        { label: "A", value: 1, status: "banana" },
+      ]),
+      "item with a non-numeric target": set("items", [
+        { label: "A", value: 1, target: "soon" },
+      ]),
+      "item with a non-boolean higherIsBetter": set("items", [
+        { label: "A", value: 1, higherIsBetter: "yes" },
+      ]),
+      "item with a non-string badge": set("items", [{ label: "A", value: 1, badge: 7 }]),
+      "columns above the schema max": set("columns", 5),
+      "columns non-integer": set("columns", 2.5),
+    },
+    accepts: {
+      "every optional field set": set("items", [
+        {
+          label: "A",
+          value: 1,
+          unit: "ms",
+          delta: -2,
+          deltaUnit: "%",
+          deltaCaption: "vs last week",
+          higherIsBetter: false,
+          description: "p95 latency",
+          status: "warning",
+          trend: [1, 2, 3],
+          target: 100,
+          badge: "SLO",
+        },
+      ]),
     },
   },
   {
@@ -316,6 +407,11 @@ const cases: GuardCase[] = [
       "tile with non-numeric colSpan": set("tiles", [
         { type: "bar-chart", payload: {}, colSpan: "2" },
       ]),
+      "tile with colSpan above the schema max": set("tiles", [
+        { type: "bar-chart", payload: {}, colSpan: 9 },
+      ]),
+      "tile with an array payload": set("tiles", [{ type: "bar-chart", payload: [] }]),
+      "columns above the schema max": set("columns", 5),
     },
     // Every type `render_dashboard` accepts must pass. `sankey` and `map` are
     // the regression: a hardcoded eight-entry set here once rejected both, and

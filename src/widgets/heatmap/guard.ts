@@ -1,33 +1,36 @@
 // Payload guard, kept out of App.tsx so it is importable without side effects:
 // App.tsx calls mountWidget on import, which the dashboard must not trigger.
 import type { HeatmapPayload, HeatmapCell } from "../../shared/payloads.js";
+import {
+  asRecord,
+  isFiniteNumber,
+  isIntegerInRange,
+  isNonEmptyArrayOf,
+  isNonEmptyString,
+  isOptionalString,
+} from "../shared/guards.js";
 
 function isHeatmapCell(value: unknown): value is HeatmapCell {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
+  // x and y are z.number().int().nonnegative() — matrix indices. Out-of-range
+  // indices are rendered empty by design, so there is no upper bound to check.
   return (
-    typeof v["x"] === "number" &&
-    Number.isInteger(v["x"]) &&
-    (v["x"] as number) >= 0 &&
-    typeof v["y"] === "number" &&
-    Number.isInteger(v["y"]) &&
-    (v["y"] as number) >= 0 &&
-    typeof v["value"] === "number"
+    isIntegerInRange(v["x"], 0, Number.MAX_SAFE_INTEGER) &&
+    isIntegerInRange(v["y"], 0, Number.MAX_SAFE_INTEGER) &&
+    isFiniteNumber(v["value"])
   );
 }
 
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((v) => typeof v === "string");
-}
-
 export function isHeatmapPayload(value: unknown): value is HeatmapPayload {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   return (
-    typeof v["title"] === "string" &&
-    isStringArray(v["xLabels"]) &&
-    isStringArray(v["yLabels"]) &&
-    Array.isArray(v["cells"]) &&
-    v["cells"].every(isHeatmapCell)
+    isNonEmptyString(v["title"]) &&
+    isNonEmptyArrayOf(v["xLabels"], isNonEmptyString) &&
+    isNonEmptyArrayOf(v["yLabels"], isNonEmptyString) &&
+    isNonEmptyArrayOf(v["cells"], isHeatmapCell) &&
+    isOptionalString(v["xlabel"]) &&
+    isOptionalString(v["ylabel"])
   );
 }

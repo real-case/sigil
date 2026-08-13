@@ -1,3 +1,15 @@
+// These types describe what a widget renders, and a widget is reached two ways:
+// as a tool result, where zod validated the arguments and the handler filled in
+// defaults, and as a dashboard tile, where neither happened — `render_dashboard`
+// types a tile's payload as an opaque record, so nothing on the server inspects
+// it and the payload guard is the entire contract.
+//
+// Fields the tool schema marks optional are therefore optional HERE too, even
+// though the handler always emits them. Requiring one would reject a tile whose
+// payload is exactly what its own render_* tool accepts — which is precisely
+// what `render_dashboard` promises a tile may carry. The View applies the same
+// default the handler does; each such field names it below.
+
 export type Orientation = "vertical" | "horizontal";
 
 export interface BarDatum {
@@ -9,7 +21,8 @@ export interface BarDatum {
 export interface BarChartPayload {
   title: string;
   data: BarDatum[];
-  orientation: Orientation;
+  /** Bar orientation. Defaults to "vertical". */
+  orientation?: Orientation;
   xlabel?: string;
   ylabel?: string;
 }
@@ -42,7 +55,8 @@ export interface PieDatum {
 export interface PieChartPayload {
   title: string;
   data: PieDatum[];
-  variant: PieVariant;
+  /** Chart variant. Defaults to "donut". */
+  variant?: PieVariant;
   /**
    * Maximum number of rendered slices (integer >= 2; default 5). When `data`
    * has more entries, the smallest remainder collapses into a single
@@ -130,8 +144,10 @@ export interface MapPoint {
 
 export interface MapPayload {
   title: string;
-  scope: MapScope;
-  variant: MapVariant;
+  /** Base map. Defaults to "world". */
+  scope?: MapScope;
+  /** How the data is encoded. Defaults to "choropleth". */
+  variant?: MapVariant;
   /** Choropleth regions (used when variant is "choropleth"). */
   data?: MapRegionDatum[];
   /** Bubble markers at coordinates (used when variant is "bubble"). */
@@ -263,6 +279,8 @@ export interface TablePayload {
   title: string;
   columns: TableColumn[];
   rows: TableRow[];
-  sortable: boolean;
-  filterable: boolean;
+  /** Click-to-sort on column headers. Defaults to true. */
+  sortable?: boolean;
+  /** Case-insensitive search box above the table. Defaults to true. */
+  filterable?: boolean;
 }

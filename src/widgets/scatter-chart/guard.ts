@@ -2,36 +2,43 @@
 // App.tsx calls mountWidget on import, which the dashboard must not trigger.
 import type {
   ScatterChartPayload,
-  ScatterDatum,
   ScatterSeries,
+  ScatterDatum,
 } from "../../shared/payloads.js";
+import {
+  asRecord,
+  isFiniteNumber,
+  isNonEmptyArrayOf,
+  isNonEmptyString,
+  isOptionalString,
+} from "../shared/guards.js";
 
 function isScatterDatum(value: unknown): value is ScatterDatum {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   return (
-    typeof v["x"] === "number" &&
-    typeof v["y"] === "number" &&
-    (v["size"] === undefined || (typeof v["size"] === "number" && v["size"] > 0))
+    isFiniteNumber(v["x"]) &&
+    isFiniteNumber(v["y"]) &&
+    // z.number().positive().optional() — zero is not a legal marker size.
+    (v["size"] === undefined || (isFiniteNumber(v["size"]) && v["size"] > 0))
   );
 }
 
 function isScatterSeries(value: unknown): value is ScatterSeries {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   return (
-    typeof v["name"] === "string" &&
-    Array.isArray(v["data"]) &&
-    v["data"].every(isScatterDatum)
+    isNonEmptyString(v["name"]) && isNonEmptyArrayOf(v["data"], isScatterDatum)
   );
 }
 
 export function isScatterChartPayload(value: unknown): value is ScatterChartPayload {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   return (
-    typeof v["title"] === "string" &&
-    Array.isArray(v["series"]) &&
-    v["series"].every(isScatterSeries)
+    isNonEmptyString(v["title"]) &&
+    isNonEmptyArrayOf(v["series"], isScatterSeries) &&
+    isOptionalString(v["xlabel"]) &&
+    isOptionalString(v["ylabel"])
   );
 }

@@ -1,52 +1,68 @@
 // Payload guard, kept out of App.tsx so it is importable without side effects:
 // App.tsx calls mountWidget on import, which the dashboard must not trigger.
 import type {
+  ColumnAlign,
+  ColumnKind,
   TableColumn,
   TablePayload,
   TableRow,
 } from "../../shared/payloads.js";
+import {
+  asRecord,
+  isFiniteNumber,
+  isNonEmptyArrayOf,
+  isNonEmptyString,
+  isOptionalBoolean,
+  isOptionalOneOf,
+} from "../shared/guards.js";
+
+const ALIGNMENTS: readonly ColumnAlign[] = ["left", "right", "center"];
+const KINDS: readonly ColumnKind[] = ["text", "sparkline"];
 
 function isTableColumn(value: unknown): value is TableColumn {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   return (
-    typeof v["key"] === "string" &&
-    typeof v["label"] === "string" &&
-    (v["align"] === undefined ||
-      v["align"] === "left" ||
-      v["align"] === "right" ||
-      v["align"] === "center") &&
-    (v["kind"] === undefined || v["kind"] === "text" || v["kind"] === "sparkline")
+    isNonEmptyString(v["key"]) &&
+    isNonEmptyString(v["label"]) &&
+    isOptionalOneOf(v["align"], ALIGNMENTS) &&
+    isOptionalOneOf(v["kind"], KINDS)
   );
 }
 
 // Row validation is column-aware: an array cell passes only when a matching
-// column declares kind "sparkline" and every entry is a finite number.
-// Scalars stay legal everywhere — including under sparkline columns — and
-// unknown row keys keep the scalar-only rule.
+// column declares kind "sparkline" and every entry is a finite number. Scalars
+// stay legal everywhere — including under sparkline columns — and unknown row
+// keys keep the scalar-only rule.
+//
+// This is deliberately STRICTER than the tool schema, which types rows as a
+// record of string | number | number[] and cannot see the column list from
+// inside a row. The extra strictness is the point: an array under a text column
+// has no rendering and would otherwise reach TableView as a stray object.
 function isTableRow(value: unknown, sparklineKeys: ReadonlySet<string>): value is TableRow {
-  if (!value || typeof value !== "object") return false;
-  return Object.entries(value as Record<string, unknown>).every(([key, cell]) => {
+  const v = asRecord(value);
+  if (!v) return false;
+  return Object.entries(v).every(([key, cell]) => {
     if (Array.isArray(cell)) {
-      return (
-        sparklineKeys.has(key) &&
-        cell.every((n) => typeof n === "number" && Number.isFinite(n))
-      );
+      return sparklineKeys.has(key) && cell.every(isFiniteNumber);
     }
-    return typeof cell === "string" || typeof cell === "number";
+    return typeof cell === "string" || isFiniteNumber(cell);
   });
 }
 
 export function isTablePayload(value: unknown): value is TablePayload {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   if (
-    typeof v["title"] !== "string" ||
-    !Array.isArray(v["columns"]) ||
-    !v["columns"].every(isTableColumn) ||
+    !isNonEmptyString(v["title"]) ||
+    !isNonEmptyArrayOf(v["columns"], isTableColumn) ||
+    // Rows may legitimately be empty — the schema allows it and TableView has
+    // an empty state. Their contents are checked below, once the sparkline
+    // columns are known.
     !Array.isArray(v["rows"]) ||
-    typeof v["sortable"] !== "boolean" ||
-    typeof v["filterable"] !== "boolean"
+    // Both optional: the schema defaults each to true.
+    !isOptionalBoolean(v["sortable"]) ||
+    !isOptionalBoolean(v["filterable"])
   ) {
     return false;
   }

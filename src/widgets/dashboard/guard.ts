@@ -8,27 +8,34 @@
 // against WIDGET_VIEWS and degrades a single tile instead, so an unrecognised
 // type — a newer server talking to a cached older bundle, say — costs one tile
 // rather than the entire grid.
+//
+// That makes `type` the one field here looser than the tool schema, which does
+// enumerate the ten tileable widgets. The looseness is the feature; everything
+// else below matches the schema.
 import type { DashboardPayload, DashboardTile } from "../../shared/payloads.js";
+import {
+  asRecord,
+  isIntegerInRange,
+  isNonEmptyArrayOf,
+  isNonEmptyString,
+} from "../shared/guards.js";
 
 function isDashboardTile(value: unknown): value is DashboardTile {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   return (
-    typeof v["type"] === "string" &&
-    v["type"].length > 0 &&
-    typeof v["payload"] === "object" &&
-    v["payload"] !== null &&
-    (v["colSpan"] === undefined || typeof v["colSpan"] === "number")
+    isNonEmptyString(v["type"]) &&
+    asRecord(v["payload"]) !== null &&
+    (v["colSpan"] === undefined || isIntegerInRange(v["colSpan"], 1, 4))
   );
 }
 
 export function isDashboardPayload(value: unknown): value is DashboardPayload {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   return (
-    typeof v["title"] === "string" &&
-    Array.isArray(v["tiles"]) &&
-    v["tiles"].length > 0 &&
-    v["tiles"].every(isDashboardTile)
+    isNonEmptyString(v["title"]) &&
+    (v["columns"] === undefined || isIntegerInRange(v["columns"], 1, 4)) &&
+    isNonEmptyArrayOf(v["tiles"], isDashboardTile)
   );
 }

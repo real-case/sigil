@@ -88,6 +88,72 @@ describe("dashboard tiles", () => {
     expect(html).toContain("HEALTHY SIBLING");
   });
 
+  it("renders tiles carrying exactly what their render_* tool accepts", () => {
+    // What `render_dashboard`'s description promises a tile may hold, and what
+    // a model actually writes: the tool's arguments, with every optional left
+    // out. Each of these degraded to an "Invalid <type> tile" card before,
+    // because the guards were written against the handler's output instead.
+    const html = render([
+      { type: "bar-chart", payload: { title: "NO ORIENTATION", data: [{ label: "a", value: 1 }] } },
+      { type: "pie-chart", payload: { title: "NO VARIANT", data: [{ label: "a", value: 1 }] } },
+      {
+        type: "table",
+        payload: { title: "NO FLAGS", columns: [{ key: "a", label: "A" }], rows: [{ a: 1 }] },
+      },
+      { type: "map", payload: { title: "NO REGIONS" } },
+    ]);
+
+    expect(html).toContain("NO ORIENTATION");
+    expect(html).toContain("NO VARIANT");
+    expect(html).toContain("NO FLAGS");
+    expect(html).toContain("NO REGIONS");
+    expect(html).not.toContain("did not match");
+  });
+
+  it("applies the schema's defaults to a tile, rather than merely tolerating the gap", () => {
+    // Accepting the payload is half the fix. `filterable` defaults to true, so
+    // omitting it must still render the filter control — reading the field raw
+    // would have silently produced a table with the feature switched off.
+    //
+    // The marker is the input's own `type="search"`, not its class: TableView
+    // ships its CSS in an inline <style>, so the class name is in the markup
+    // whether or not the control rendered.
+    const withFlag = render([
+      {
+        type: "table",
+        payload: {
+          title: "T",
+          columns: [{ key: "a", label: "A" }],
+          rows: [{ a: 1 }],
+          filterable: true,
+        },
+      },
+    ]);
+    const withoutFlag = render([
+      {
+        type: "table",
+        payload: { title: "T", columns: [{ key: "a", label: "A" }], rows: [{ a: 1 }] },
+      },
+    ]);
+
+    expect(withFlag).toContain('type="search"');
+    expect(withoutFlag).toContain('type="search"');
+
+    // And the opposite still holds, or the assertion above proves nothing.
+    const disabled = render([
+      {
+        type: "table",
+        payload: {
+          title: "T",
+          columns: [{ key: "a", label: "A" }],
+          rows: [{ a: 1 }],
+          filterable: false,
+        },
+      },
+    ]);
+    expect(disabled).not.toContain('type="search"');
+  });
+
   it("renders sankey and map tiles, which the old tile-type set rejected outright", () => {
     const html = render([
       { type: "sankey", payload: { title: "FLOW", links: [{ source: "A", target: "B", value: 1 }] } },
