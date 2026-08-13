@@ -5,32 +5,39 @@ import type {
   LineSeries,
   LineDatum,
 } from "../../shared/payloads.js";
+import {
+  asRecord,
+  isFiniteNumber,
+  isNonEmptyArrayOf,
+  isNonEmptyString,
+  isOptionalString,
+} from "../shared/guards.js";
 
 function isLineDatum(value: unknown): value is LineDatum {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
+  // `x` is a bare z.string() in the schema — no min(1) — so "" is a legal
+  // category label here even though titles and series names reject it.
   return (
-    (typeof v["x"] === "string" || typeof v["x"] === "number") &&
-    typeof v["y"] === "number"
+    (typeof v["x"] === "string" || isFiniteNumber(v["x"])) && isFiniteNumber(v["y"])
   );
 }
 
 function isLineSeries(value: unknown): value is LineSeries {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   return (
-    typeof v["name"] === "string" &&
-    Array.isArray(v["data"]) &&
-    v["data"].every(isLineDatum)
+    isNonEmptyString(v["name"]) && isNonEmptyArrayOf(v["data"], isLineDatum)
   );
 }
 
 export function isLineChartPayload(value: unknown): value is LineChartPayload {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
+  const v = asRecord(value);
+  if (!v) return false;
   return (
-    typeof v["title"] === "string" &&
-    Array.isArray(v["series"]) &&
-    v["series"].every(isLineSeries)
+    isNonEmptyString(v["title"]) &&
+    isNonEmptyArrayOf(v["series"], isLineSeries) &&
+    isOptionalString(v["xlabel"]) &&
+    isOptionalString(v["ylabel"])
   );
 }

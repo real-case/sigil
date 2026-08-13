@@ -65,7 +65,9 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
   const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
   const [expanded, setExpanded] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { title, data, variant } = payload;
+  // "donut", not "pie": the schema's documented default, applied here for the
+  // tile path where no handler ran. See the note atop shared/payloads.ts.
+  const { title, data, variant = "donut" } = payload;
   // Same clamp the reducer applies, so the "Show top N" label never lies.
   const cap = normalizeMaxSegments(payload.maxSegments);
 

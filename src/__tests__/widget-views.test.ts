@@ -57,6 +57,8 @@ describe("widget-views seam pins", () => {
     const files = [
       join(SRC, "widgets", "shared", "widget-views.ts"),
       join(SRC, "widgets", "shared", "TileBoundary.tsx"),
+      // Every guard imports this, so it inherits their constraint.
+      join(SRC, "widgets", "shared", "guards.ts"),
       join(SRC, "widgets", "dashboard", "Tile.tsx"),
       ...WIDGETS.map((w) => join(SRC, "widgets", w.name, "guard.ts")),
     ];

@@ -98,7 +98,9 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
   const [focused, setFocused] = useState<number | null>(null);
   const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { title, data, orientation, xlabel, ylabel } = payload;
+  // Defaults mirror the render_bar_chart handler, for the tile path where no
+  // handler ran. See the note atop shared/payloads.ts.
+  const { title, data, orientation = "vertical", xlabel, ylabel } = payload;
   const isHorizontal = orientation === "horizontal";
 
   const copyCsv = () =>

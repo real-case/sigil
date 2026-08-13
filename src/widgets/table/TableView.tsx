@@ -125,7 +125,10 @@ export function TableView({ payload }: { payload: TablePayload }) {
   // raised.
   const embedded = useEmbedded();
 
-  const { title, columns, rows, sortable, filterable } = payload;
+  // Both default to true, matching the render_table handler. Reading them raw
+  // made a tile that omitted them silently non-sortable and non-filterable —
+  // the opposite of the documented default. See the note atop payloads.ts.
+  const { title, columns, rows, sortable = true, filterable = true } = payload;
 
   // Sparkline columns skip numeric detection: their cells are series (or
   // occasional scalars) and the column centers rather than right-aligns.
