@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WIDGETS } from "../registry.js";
+import { DASHBOARD_TILE_TYPES } from "../shared/payloads.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const WIDGETS_DIR = join(HERE, "..", "widgets");
@@ -52,5 +53,18 @@ describe("widget registry", () => {
   it("widget URIs are unique", () => {
     const uris = WIDGETS.map((w) => w.uri);
     expect(new Set(uris).size).toBe(uris.length);
+  });
+
+  it("the tileable set is every widget except dashboard", () => {
+    // DASHBOARD_TILE_TYPES feeds the render_dashboard schema's enum and, through
+    // DashboardTileType, the keys WIDGET_VIEWS is required to supply. Nothing
+    // else tied it to the registry: before this pin a twelfth widget could be
+    // registered, callable and rendered on its own, yet impossible to place in
+    // a dashboard, with the whole suite green.
+    expect([...DASHBOARD_TILE_TYPES].sort()).toEqual(
+      WIDGETS.map((w) => w.name)
+        .filter((name) => name !== "dashboard")
+        .sort(),
+    );
   });
 });
