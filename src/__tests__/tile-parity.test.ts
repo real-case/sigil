@@ -33,17 +33,45 @@ import { isStatPanelPayload } from "../widgets/stat-panel/guard.js";
 import { isSankeyPayload } from "../widgets/sankey/guard.js";
 import { isMapPayload } from "../widgets/map/guard.js";
 import { isDashboardPayload } from "../widgets/dashboard/guard.js";
+import type {
+  BarChartPayload,
+  LineChartPayload,
+  PieChartPayload,
+  TablePayload,
+  ScatterChartPayload,
+  TreemapPayload,
+  HeatmapPayload,
+  StatPanelPayload,
+  SankeyPayload,
+  MapPayload,
+  DashboardPayload,
+} from "../shared/payloads.js";
 
-interface ParityCase {
+interface ParityCase<P> {
   guard: (value: unknown) => boolean;
   /** Only the fields the schema requires — what a terse tool call looks like. */
-  minimal: Record<string, unknown>;
+  minimal: P;
   /** Every optional the schema declares, so none of them is merely untested. */
-  maximal: Record<string, unknown>;
+  maximal: P;
 }
 
-const CASES: Record<string, ParityCase> = {
-  "bar-chart": {
+/**
+ * Types each corpus entry as the payload its guard narrows to, then erases that
+ * type so the cases can share one table.
+ *
+ * The erasure is deliberate and the typing is the point: a guard declared
+ * `value is MapPayload` is an assertion `tsc` takes on faith, so relaxing a
+ * guard to treat a field as optional while the payload type still declares it
+ * required produces a narrowing that lies, and no runtime assertion anywhere
+ * can see it. Writing the corpus at the payload type turns that into a
+ * compile error — which is how the map entry below was caught.
+ */
+type ErasedCase = ParityCase<Record<string, unknown>>;
+
+const parity = <P,>(c: ParityCase<P>): ErasedCase => c as unknown as ErasedCase;
+
+const CASES: Record<string, ErasedCase> = {
+  "bar-chart": parity<BarChartPayload>({
     guard: isBarChartPayload,
     minimal: { title: "T", data: [{ label: "a", value: 1 }] },
     maximal: {
@@ -53,8 +81,8 @@ const CASES: Record<string, ParityCase> = {
       xlabel: "x",
       ylabel: "y",
     },
-  },
-  "line-chart": {
+  }),
+  "line-chart": parity<LineChartPayload>({
     guard: isLineChartPayload,
     minimal: { title: "T", series: [{ name: "s", data: [{ x: "Jan", y: 1 }] }] },
     maximal: {
@@ -63,8 +91,8 @@ const CASES: Record<string, ParityCase> = {
       xlabel: "x",
       ylabel: "y",
     },
-  },
-  "pie-chart": {
+  }),
+  "pie-chart": parity<PieChartPayload>({
     guard: isPieChartPayload,
     minimal: { title: "T", data: [{ label: "a", value: 1 }] },
     maximal: {
@@ -73,8 +101,8 @@ const CASES: Record<string, ParityCase> = {
       variant: "pie",
       maxSegments: 7,
     },
-  },
-  table: {
+  }),
+  table: parity<TablePayload>({
     guard: isTablePayload,
     minimal: { title: "T", columns: [{ key: "a", label: "A" }], rows: [] },
     maximal: {
@@ -87,8 +115,8 @@ const CASES: Record<string, ParityCase> = {
       sortable: false,
       filterable: false,
     },
-  },
-  "scatter-chart": {
+  }),
+  "scatter-chart": parity<ScatterChartPayload>({
     guard: isScatterChartPayload,
     minimal: { title: "T", series: [{ name: "s", data: [{ x: 1, y: 2 }] }] },
     maximal: {
@@ -97,8 +125,8 @@ const CASES: Record<string, ParityCase> = {
       xlabel: "x",
       ylabel: "y",
     },
-  },
-  treemap: {
+  }),
+  treemap: parity<TreemapPayload>({
     guard: isTreemapPayload,
     minimal: { title: "T", data: [{ label: "a", value: 1 }] },
     maximal: {
@@ -112,8 +140,8 @@ const CASES: Record<string, ParityCase> = {
         },
       ],
     },
-  },
-  heatmap: {
+  }),
+  heatmap: parity<HeatmapPayload>({
     guard: isHeatmapPayload,
     minimal: {
       title: "T",
@@ -129,8 +157,8 @@ const CASES: Record<string, ParityCase> = {
       xlabel: "x",
       ylabel: "y",
     },
-  },
-  "stat-panel": {
+  }),
+  "stat-panel": parity<StatPanelPayload>({
     guard: isStatPanelPayload,
     minimal: { title: "T", items: [{ label: "A", value: 1 }] },
     maximal: {
@@ -153,8 +181,8 @@ const CASES: Record<string, ParityCase> = {
       ],
       columns: 3,
     },
-  },
-  sankey: {
+  }),
+  sankey: parity<SankeyPayload>({
     guard: isSankeyPayload,
     minimal: { title: "T", links: [{ source: "a", target: "b", value: 1 }] },
     maximal: {
@@ -163,8 +191,8 @@ const CASES: Record<string, ParityCase> = {
       links: [{ source: "a", target: "b", value: 1 }],
       valueLabel: "users",
     },
-  },
-  map: {
+  }),
+  map: parity<MapPayload>({
     // The schema requires nothing but a title — both `data` and `points` are
     // optional, and the widget has an empty state for exactly this.
     guard: isMapPayload,
@@ -177,8 +205,8 @@ const CASES: Record<string, ParityCase> = {
       points: [{ lat: 37, lon: -122, value: 1, label: "SF" }],
       valueLabel: "GDP",
     },
-  },
-  dashboard: {
+  }),
+  dashboard: parity<DashboardPayload>({
     guard: isDashboardPayload,
     minimal: {
       title: "T",
@@ -195,7 +223,7 @@ const CASES: Record<string, ParityCase> = {
         },
       ],
     },
-  },
+  }),
 };
 
 const toolName = (widget: string) => `render_${widget.replaceAll("-", "_")}`;

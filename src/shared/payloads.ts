@@ -144,8 +144,10 @@ export interface MapPoint {
 
 export interface MapPayload {
   title: string;
-  scope: MapScope;
-  variant: MapVariant;
+  /** Base map. Defaults to "world". */
+  scope?: MapScope;
+  /** How the data is encoded. Defaults to "choropleth". */
+  variant?: MapVariant;
   /** Choropleth regions (used when variant is "choropleth"). */
   data?: MapRegionDatum[];
   /** Bubble markers at coordinates (used when variant is "bubble"). */
