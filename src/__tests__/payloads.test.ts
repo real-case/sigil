@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { WIDGETS } from "../registry.js";
 import { isBarChartPayload } from "../widgets/bar-chart/guard.js";
 import { isLineChartPayload } from "../widgets/line-chart/guard.js";
 import { isPieChartPayload } from "../widgets/pie-chart/guard.js";
@@ -452,6 +453,15 @@ const cases: GuardCase[] = [
 ];
 
 describe("payload guards", () => {
+  it("covers every registered widget", () => {
+    // The case list is hand-written and nothing else looks at it, so a twelfth
+    // widget's guard would go entirely untested here with the file still green.
+    // Suffixed cases ("table (sparkline)") are extra angles on a widget already
+    // covered, hence the trim rather than an exact-name match.
+    const covered = new Set(cases.map((c) => c.name.replace(/\s*\(.*\)$/, "")));
+    expect([...covered].sort()).toEqual(WIDGETS.map((w) => w.name).sort());
+  });
+
   for (const c of cases) {
     describe(c.name, () => {
       it("accepts a valid payload", () => {

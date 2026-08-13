@@ -28,7 +28,8 @@ Key entry points:
 ### Other conventions
 
 - Don't propose bundle-size optimisations unprompted. Widgets ship as self-contained single-file HTML (the MCP Apps constraint), so inlining Recharts, TopoJSON atlases, and fonts into every widget is intentional — portability beats kilobytes here.
-- When adding a new widget, only create new files; the registry pattern means no enumeration list needs editing.
+- Adding a widget is mostly new files, but a few existing lists need entries too — the registry pattern shrinks that set, it does not empty it. Add the widget to `src/registry.ts` first, then run `npm test`: every list that has to track the registry is pinned by a test that fails naming the widget that is missing, so the suite tells you what to edit next.
+- Two exceptions no test will mention, so they are on you: the sandbox dataset registry (`src/widgets/sandbox/datasets/index.ts` — both its `WidgetKey` union and `WIDGET_ENTRIES`), and the widget counts in `README.md` and at the top of this file.
 
 ### Branch & release workflow
 

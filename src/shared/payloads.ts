@@ -221,17 +221,35 @@ export interface StatPanelPayload {
   columns?: number;
 }
 
-export type DashboardTileType =
-  | "bar-chart"
-  | "line-chart"
-  | "pie-chart"
-  | "table"
-  | "scatter-chart"
-  | "treemap"
-  | "heatmap"
-  | "stat-panel"
-  | "sankey"
-  | "map";
+/**
+ * The widgets that may appear as a dashboard tile: every registered widget
+ * except `dashboard` itself, which cannot nest.
+ *
+ * One list with three consumers — the `render_dashboard` tool schema, the
+ * `DashboardTileType` union below, and `WIDGET_VIEWS` through that union —
+ * because as separate lists it drifted. The payload guard used to carry a
+ * fourth copy that sat two entries behind, so a sankey or map tile was rejected
+ * outright; that copy is gone, but the tool schema kept its own enum, and
+ * nothing failed when the two disagreed.
+ *
+ * Not derived from `WIDGETS` directly: the registry imports every tool module,
+ * and this file is reachable from the widget bundles, so the import would drag
+ * the server into all eleven of them. `registry.test.ts` pins it instead.
+ */
+export const DASHBOARD_TILE_TYPES = [
+  "bar-chart",
+  "line-chart",
+  "pie-chart",
+  "table",
+  "scatter-chart",
+  "treemap",
+  "heatmap",
+  "stat-panel",
+  "sankey",
+  "map",
+] as const;
+
+export type DashboardTileType = (typeof DASHBOARD_TILE_TYPES)[number];
 
 export interface DashboardTile {
   /**

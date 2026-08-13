@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
+import { DASHBOARD_TILE_TYPES } from "../shared/payloads.js";
 import type { DashboardPayload } from "../shared/payloads.js";
 
 export const DASHBOARD_UI_URI = "ui://sigil/dashboard";
@@ -26,19 +27,11 @@ const inputSchema = {
   tiles: z
     .array(
       z.object({
+        // Derived, not restated: this enum was the last copy of the tileable
+        // set with nothing pinning it to the registry, so a twelfth widget
+        // would have been unreachable as a tile with every test still green.
         type: z
-          .enum([
-            "bar-chart",
-            "line-chart",
-            "pie-chart",
-            "table",
-            "scatter-chart",
-            "treemap",
-            "heatmap",
-            "stat-panel",
-            "sankey",
-            "map",
-          ])
+          .enum(DASHBOARD_TILE_TYPES)
           .describe("Which widget to render in this tile."),
         payload: z
           .record(z.string(), z.unknown())
