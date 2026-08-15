@@ -24,6 +24,7 @@ jobs:
 
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint
 
       # Build before test, not after: the e2e suite serves each widget's bundled
       # HTML out of dist/widgets, and on an unbuilt tree it silently downgrades

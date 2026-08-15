@@ -215,8 +215,7 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
 
   // Dense vertical charts: alternate labels between two rows so neighbours
   // with similar heights don't run together ("2.7K2.6K").
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderStaggeredLabel = (props: any) => {
+  const renderStaggeredLabel = (props: unknown) => {
     const { x, y, width, index, value } = props as {
       x?: number | string;
       y?: number | string;
@@ -402,7 +401,10 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   onClick={(_, i) => toggleMute(i)}
                   // Recharts 3 deprecates <Cell>; per-bar fill/opacity render
                   // through a custom shape instead.
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // Recharts hands the shape its own computed bar geometry and
+                  // this spreads it straight back into <Rectangle>. Narrowing
+                  // the parameter only moves the cast to the spread.
+                  // biome-ignore lint/suspicious/noExplicitAny: spread straight back into Recharts' own component
                   shape={(props: any) => {
                     const i: number =
                       typeof props.index === "number"
