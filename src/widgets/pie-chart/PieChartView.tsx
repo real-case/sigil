@@ -227,7 +227,10 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
                   strokeWidth={isDonut ? 0 : 2}
                   // Recharts 3.9: one shape renderer for every sector; the
                   // hovered one arrives with isActive and grows a little.
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // Recharts hands the shape its own computed sector geometry
+                  // and this spreads it straight back into <Sector>. Narrowing
+                  // the parameter only moves the cast to the spread.
+                  // biome-ignore lint/suspicious/noExplicitAny: spread straight back into Recharts' own component
                   shape={(p: any) => {
                     return (
                       <Sector

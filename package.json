@@ -30,6 +30,8 @@
     "start:stdio": "node dist/server/stdio.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "lint": "biome lint",
+    "lint:fix": "biome lint --write",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "rm -rf dist && npm run build"
   },
@@ -71,6 +73,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.8",
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@fontsource/ibm-plex-sans": "^5.2.8",
     "@storybook/addon-a11y": "^10.4.2",
