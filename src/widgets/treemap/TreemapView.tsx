@@ -6,6 +6,7 @@ import { useRovingFocus, type RovingFocus } from "../shared/roving-focus.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
 import { EmptyState } from "../shared/EmptyState.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const MIN_NAME_WIDTH = 40;
@@ -282,6 +283,11 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
       <div className="sigil-canvas" ref={canvasRef}>
         <ResponsiveContainer width="100%" height={360}>
           <Treemap
+            aria-label={chartLabel(
+              title,
+              "treemap",
+              countOf(leafNames.length, "tile"),
+            )}
             data={tree}
             dataKey="value"
             nameKey="name"

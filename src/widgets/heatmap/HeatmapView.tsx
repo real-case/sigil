@@ -5,6 +5,7 @@ import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { ColorScaleLegend, intensityAlpha } from "../shared/color-scale.js";
 import { useRovingFocus } from "../shared/roving-focus.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const CHART_HEIGHT = 360;
@@ -209,7 +210,11 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
             // A bare aria-label rather than role="img": role="img" would prune
             // the cells below out of the accessibility tree, and they are the
             // part worth reaching.
-            aria-label={`${title} — heatmap, ${yLabels.length} rows by ${columns} columns`}
+            aria-label={chartLabel(
+              title,
+              "heatmap",
+              `${countOf(yLabels.length, "row")} by ${countOf(columns, "column")}`,
+            )}
           >
             {ylabel && (
               <text

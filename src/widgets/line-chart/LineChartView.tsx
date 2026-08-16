@@ -22,6 +22,7 @@ import {
   fmtNumber,
   fmtStat,
 } from "../shared/chart-text.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const MUTED_OPACITY = 0.18;
@@ -189,6 +190,11 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
       <div className="sigil-canvas" ref={canvasRef}>
         <ResponsiveContainer width="100%" height={340}>
           <AreaChart
+            aria-label={chartLabel(
+              title,
+              "line chart",
+              `${countOf(series.length, "series", "series")} over ${countOf(rows.length, "point")}`,
+            )}
             data={rows}
             margin={{
               top: 12,

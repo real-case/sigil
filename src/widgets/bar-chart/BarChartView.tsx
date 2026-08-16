@@ -26,6 +26,7 @@ import {
   fmtCompact,
   fmtShare,
 } from "../shared/chart-text.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 
 const MUTED_OPACITY = 0.18;
@@ -269,6 +270,11 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
           <div className="sigil-canvas" ref={canvasRef}>
             <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart
+                aria-label={chartLabel(
+                  title,
+                  isHorizontal ? "horizontal bar chart" : "bar chart",
+                  countOf(data.length, "bar"),
+                )}
                 data={data}
                 layout={isHorizontal ? "vertical" : "horizontal"}
                 margin={{

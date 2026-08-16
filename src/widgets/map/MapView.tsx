@@ -10,6 +10,7 @@ import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { ColorScaleLegend, intensityAlpha } from "../shared/color-scale.js";
 import { useRovingFocus } from "../shared/roving-focus.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 import { scopeGeo, regionName, type RegionFeature, type ScopeGeo } from "./geo.js";
 
@@ -315,8 +316,20 @@ export function MapView({ payload }: { payload: MapPayload }) {
             // part worth reaching.
             aria-label={
               isBubble
-                ? `${title} — bubble map, ${bubbles?.placed.length ?? 0} points`
-                : `${title} — choropleth map, ${dataRegions.length} ${geo.regionLabelPlural.toLowerCase()} with data`
+                ? chartLabel(
+                    title,
+                    "bubble map",
+                    countOf(bubbles?.placed.length ?? 0, "point"),
+                  )
+                : chartLabel(
+                    title,
+                    "choropleth map",
+                    `${countOf(
+                      dataRegions.length,
+                      geo.regionLabel.toLowerCase(),
+                      geo.regionLabelPlural.toLowerCase(),
+                    )} with data`,
+                  )
             }
           >
             {/* Land with nothing to say: painted first, inert, out of the
