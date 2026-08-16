@@ -27,6 +27,7 @@ import {
   fmtShare,
 } from "../shared/chart-text.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
+import { barChartLabel } from "../shared/chart-a11y.js";
 
 const MUTED_OPACITY = 0.18;
 const UNFOCUSED_OPACITY = 0.32;
@@ -270,6 +271,7 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
             <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart
                 data={data}
+                aria-label={barChartLabel(title, data.length, orientation)}
                 layout={isHorizontal ? "vertical" : "horizontal"}
                 margin={{
                   // Vertical pill mode needs headroom for on-top value labels

@@ -23,6 +23,7 @@ import {
   fmtStat,
 } from "../shared/chart-text.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
+import { lineChartLabel } from "../shared/chart-a11y.js";
 
 const MUTED_OPACITY = 0.18;
 const UNFOCUSED_OPACITY = 0.2;
@@ -190,6 +191,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
         <ResponsiveContainer width="100%" height={340}>
           <AreaChart
             data={rows}
+            aria-label={lineChartLabel(title, series.length, totalPoints)}
             margin={{
               top: 12,
               right: 16,

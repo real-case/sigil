@@ -14,6 +14,7 @@ import { SigilTooltip, type TooltipRow } from "../shared/SigilTooltip.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { fmtCompact, fmtNumber } from "../shared/chart-text.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
+import { sankeyLabel } from "../shared/chart-a11y.js";
 
 const CANVAS_HEIGHT = 360;
 const NODE_WIDTH = 12;
@@ -390,6 +391,7 @@ export function SankeyView({ payload }: { payload: SankeyPayload }) {
         <ResponsiveContainer width="100%" height={CANVAS_HEIGHT}>
           <Sankey
             data={data}
+            aria-label={sankeyLabel(title, names.length, data.links.length)}
             nodeWidth={NODE_WIDTH}
             nodePadding={NODE_PADDING}
             margin={{

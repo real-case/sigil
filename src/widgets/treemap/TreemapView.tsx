@@ -6,6 +6,7 @@ import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
+import { treemapLabel } from "../shared/chart-a11y.js";
 
 const MIN_NAME_WIDTH = 40;
 const MIN_NAME_HEIGHT = 20;
@@ -65,6 +66,15 @@ function flattenLeaves(
     }
   }
   return out;
+}
+
+/** Nodes that have children, at any depth — the tiles you see but cannot select. */
+function countGroups(nodes: TreemapNode[]): number {
+  let n = 0;
+  for (const node of nodes) {
+    if (node.children?.length) n += 1 + countGroups(node.children);
+  }
+  return n;
 }
 
 interface NodeContentProps {
@@ -185,6 +195,7 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
 
   const tree = useMemo(() => toRechartsTree(data, tokens), [data, tokens]);
   const leaves = useMemo(() => flattenLeaves(data), [data]);
+  const groups = useMemo(() => countGroups(data), [data]);
   // Parent groups can't carry an on-canvas header (Recharts lays children over
   // the whole parent rect), so surface the full breadcrumb in the tooltip.
   const pathByLeaf = useMemo(() => {
@@ -223,6 +234,7 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
         <ResponsiveContainer width="100%" height={360}>
           <Treemap
             data={tree}
+            aria-label={treemapLabel(title, leaves.length, groups)}
             dataKey="value"
             nameKey="name"
             stroke={tokens.surfaces.bg}

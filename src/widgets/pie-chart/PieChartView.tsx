@@ -20,6 +20,7 @@ import { ValueLegend } from "../shared/ValueLegend.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { fmtNumber, fmtCompact, fmtShare } from "../shared/chart-text.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
+import { pieChartLabel } from "../shared/chart-a11y.js";
 
 const MUTED_OPACITY = 0.18;
 const UNFOCUSED_OPACITY = 0.32;
@@ -208,7 +209,10 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
         <div className="sigil-plot">
           <div className="sigil-canvas" ref={canvasRef}>
             <ResponsiveContainer width="100%" height={340}>
-              <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <PieChart
+                aria-label={pieChartLabel(title, shown.length, variant)}
+                margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+              >
                 <Pie
                   data={pieData}
                   dataKey="value"
