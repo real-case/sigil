@@ -4,6 +4,8 @@ import { useTheme } from "../shared/theme.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { ColorScaleLegend, intensityAlpha } from "../shared/color-scale.js";
+import { useRovingFocus } from "../shared/roving-focus.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const CHART_HEIGHT = 360;
@@ -83,6 +85,24 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
     [cells, xLabels.length],
   );
 
+  const columns = xLabels.length;
+  const cellKey = (x: number, y: number) => `${x}:${y}`;
+  const toggleSelection = (key: string) =>
+    setSelected((prev) => (prev === key ? null : key));
+
+  // The matrix is one composite widget, not one tab stop per cell: arrows walk
+  // it in two dimensions and Enter/Space selects, exactly as a click does.
+  // Value-less cells keep their place in the sequence so arrowing across the
+  // grid never falls into a hole.
+  const roving = useRovingFocus<SVGRectElement>({
+    count: columns * yLabels.length,
+    columns,
+    onActivate: (index) => {
+      if (!lookup.values.has(index)) return;
+      toggleSelection(cellKey(index % columns, Math.floor(index / columns)));
+    },
+  });
+
   if (xLabels.length === 0 || yLabels.length === 0 || cells.length === 0) {
     return (
       <div className="sigil-root">
@@ -118,7 +138,6 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
   const totalWidth = Math.max(matrixLeft + cellWidth * xLabels.length + rightPad, 1);
 
   const seriesHue = tokens.series[0]!;
-  const cellKey = (x: number, y: number) => `${x}:${y}`;
 
   const copyCsv = () => {
     const header = ["", ...xLabels];
@@ -148,11 +167,15 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
     );
   };
   const handleCellLeave = () => setTooltip(null);
+  // Keyboard focus has no pointer to anchor to, so the tooltip hangs off the
+  // focused cell itself — the same readout a hovering mouse gets.
+  const handleCellFocus = (cell: HeatmapCell, el: SVGRectElement) => {
+    const box = el.getBoundingClientRect();
+    setTooltip({ cell, pageX: box.left + box.width / 2, pageY: box.bottom });
+  };
 
   const opacityFor = (key: string) =>
     selected === null || selected === key ? 1 : 0.3;
-  const toggleSelection = (key: string) =>
-    setSelected((prev) => (prev === key ? null : key));
 
   const axisLabelStyle = {
     fill: tokens.texts.secondary,
@@ -184,6 +207,14 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
             height={totalHeight}
             viewBox={`0 0 ${totalWidth} ${totalHeight}`}
             style={{ display: "block", maxWidth: "100%" }}
+            // A bare aria-label rather than role="img": role="img" would prune
+            // the cells below out of the accessibility tree, and they are the
+            // part worth reaching.
+            aria-label={chartLabel(
+              title,
+              "heatmap",
+              `${countOf(yLabels.length, "row")} by ${countOf(columns, "column")}`,
+            )}
           >
             {ylabel && (
               <text
@@ -228,39 +259,64 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
               );
             })}
 
-            {Array.from({ length: yLabels.length }).flatMap((_, y) =>
-              Array.from({ length: xLabels.length }).map((_, x) => {
-                const cell = lookup.values.get(y * xLabels.length + x);
-                const key = cellKey(x, y);
-                const alpha = cell
-                  ? intensityAlpha(cell.value, lookup.min, lookup.max)
-                  : 0;
-                const drawWidth = Math.max(0, cellWidth - CELL_GAP);
-                const drawHeight = Math.max(0, cellHeight - CELL_GAP);
-                return (
-                  <rect
-                    key={key}
-                    x={matrixLeft + cellWidth * x + CELL_GAP / 2}
-                    y={matrixTop + cellHeight * y + CELL_GAP / 2}
-                    width={drawWidth}
-                    height={drawHeight}
-                    rx={CELL_RADIUS}
-                    ry={CELL_RADIUS}
-                    fill={cell ? seriesHue : tokens.surfaces.surfaceSunken}
-                    fillOpacity={cell ? alpha * opacityFor(key) : 1}
-                    style={{
-                      cursor: cell ? "pointer" : "default",
-                      transition:
-                        "fill-opacity var(--sigil-duration-fast) var(--sigil-easing-standard)",
-                    }}
-                    onMouseEnter={cell ? (e) => handleCellEnter(cell, e) : undefined}
-                    onMouseMove={cell ? handleCellMove : undefined}
-                    onMouseLeave={cell ? handleCellLeave : undefined}
-                    onClick={cell ? () => toggleSelection(key) : undefined}
-                  />
-                );
-              }),
-            )}
+            {/* biome-ignore lint/a11y/useSemanticElements: a <table> cannot exist inside an <svg>; grid/row/gridcell is the only way to say "matrix" here. */}
+            <g role="grid" aria-label={`${title}, ${yLabels.length} by ${columns} matrix`}>
+              {yLabels.map((yLabel, y) => (
+                // biome-ignore lint/a11y/useSemanticElements: as above — <tr> cannot exist inside an <svg>.
+                <g role="row" key={`row-${y}`}>
+                  {xLabels.map((xLabel, x) => {
+                    const index = y * columns + x;
+                    const cell = lookup.values.get(index);
+                    const key = cellKey(x, y);
+                    const alpha = cell
+                      ? intensityAlpha(cell.value, lookup.min, lookup.max)
+                      : 0;
+                    const drawWidth = Math.max(0, cellWidth - CELL_GAP);
+                    const drawHeight = Math.max(0, cellHeight - CELL_GAP);
+                    const { ref, tabIndex, onFocus, onKeyDown } = roving.itemProps(index);
+                    return (
+                      // biome-ignore lint/a11y/useSemanticElements: as above — <td> cannot exist inside an <svg>.
+                      <rect
+                        key={key}
+                        ref={ref}
+                        className="sigil-mark"
+                        role="gridcell"
+                        tabIndex={tabIndex}
+                        aria-label={
+                          cell
+                            ? `${yLabel}, ${xLabel}: ${NUMBER_FMT.format(cell.value)}`
+                            : `${yLabel}, ${xLabel}: no data`
+                        }
+                        aria-selected={selected === key}
+                        x={matrixLeft + cellWidth * x + CELL_GAP / 2}
+                        y={matrixTop + cellHeight * y + CELL_GAP / 2}
+                        width={drawWidth}
+                        height={drawHeight}
+                        rx={CELL_RADIUS}
+                        ry={CELL_RADIUS}
+                        fill={cell ? seriesHue : tokens.surfaces.surfaceSunken}
+                        fillOpacity={cell ? alpha * opacityFor(key) : 1}
+                        style={{
+                          cursor: cell ? "pointer" : "default",
+                          transition:
+                            "fill-opacity var(--sigil-duration-fast) var(--sigil-easing-standard)",
+                        }}
+                        onKeyDown={onKeyDown}
+                        onFocus={(e) => {
+                          onFocus();
+                          if (cell) handleCellFocus(cell, e.currentTarget);
+                        }}
+                        onBlur={handleCellLeave}
+                        onMouseEnter={cell ? (e) => handleCellEnter(cell, e) : undefined}
+                        onMouseMove={cell ? handleCellMove : undefined}
+                        onMouseLeave={cell ? handleCellLeave : undefined}
+                        onClick={cell ? () => toggleSelection(key) : undefined}
+                      />
+                    );
+                  })}
+                </g>
+              ))}
+            </g>
 
             {xlabel && (
               <text

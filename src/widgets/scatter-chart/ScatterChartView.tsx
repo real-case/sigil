@@ -25,6 +25,7 @@ import {
   fmtNumber,
   fmtStat,
 } from "../shared/chart-text.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const MUTED_OPACITY = 0.18;
@@ -143,6 +144,11 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
       <div className="sigil-canvas" ref={canvasRef}>
         <ResponsiveContainer width="100%" height={340}>
           <ScatterChart
+            aria-label={chartLabel(
+              title,
+              "scatter chart",
+              `${countOf(series.length, "series", "series")}, ${countOf(totalPoints, "point")}`,
+            )}
             margin={{
               top: 12,
               right: 16,

@@ -25,6 +25,8 @@ export interface ScopeGeo {
   resolve: (id: string) => RegionFeature | null;
   /** Noun for the region kind, used in CSV headers. */
   regionLabel: string;
+  /** Plural of `regionLabel`, for accessible names that count regions. */
+  regionLabelPlural: string;
   /** height / width for the fit box, ≈ the projection's natural aspect. */
   aspect: number;
 }
@@ -100,6 +102,7 @@ const worldGeo: ScopeGeo = {
   projection: geoNaturalEarth1,
   resolve: resolveCountry,
   regionLabel: "Country",
+  regionLabelPlural: "Countries",
   aspect: 0.52,
 };
 
@@ -141,6 +144,7 @@ const usGeo: ScopeGeo = {
   projection: geoAlbersUsa,
   resolve: resolveState,
   regionLabel: "State",
+  regionLabelPlural: "States",
   aspect: 0.6,
 };
 

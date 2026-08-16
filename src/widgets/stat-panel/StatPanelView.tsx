@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { StatItem, StatPanelPayload, StatStatus } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Card } from "../shared/Card.js";
@@ -56,7 +55,17 @@ function badgeStyle(status: StatStatus | undefined): {
 // Compact area+line sparkline. The viewBox is stretched to the card width
 // (preserveAspectRatio="none"); a non-scaling stroke keeps the line crisp and
 // the end marker is omitted so the horizontal stretch can't distort it.
-function Sparkline({ values, color, gradientId }: { values: number[]; color: string; gradientId: string }) {
+function Sparkline({
+  values,
+  color,
+  gradientId,
+  label,
+}: {
+  values: number[];
+  color: string;
+  gradientId: string;
+  label: string;
+}) {
   const W = 100;
   const H = 28;
   const pad = 2;
@@ -75,7 +84,11 @@ function Sparkline({ values, color, gradientId }: { values: number[]; color: str
       preserveAspectRatio="none"
       width="100%"
       height={H}
-      aria-hidden
+      role="img"
+      // The trend series appears nowhere else on the card, so the sparkline is
+      // the only place it exists — name it after the metric it belongs to and
+      // spell out the span it draws, rather than hiding it from assistive tech.
+      aria-label={`${label} trend: ${n} points, ${NUMBER_FMT.format(values[0]!)} to ${NUMBER_FMT.format(values[n - 1]!)}`}
       style={{ display: "block" }}
     >
       <defs>
@@ -107,7 +120,6 @@ function StatCard({
   tokens: ChartDesignTokens;
   index: number;
 }) {
-  const [hovered, setHovered] = useState(false);
   // Inside a dashboard tile (itself a surface) recede the card to a sunken well
   // so it doesn't read as surface-on-surface; standalone it stays raised.
   const embedded = useEmbedded();
@@ -152,21 +164,18 @@ function StatCard({
     <Card
       padding="lg"
       surface={embedded ? "sunken" : "surface"}
-      elevation={embedded ? "none" : hovered ? "mid" : "low"}
+      // The raised-on-hover lift is a decoration with nothing behind it, so it
+      // belongs in the stylesheet rather than in React state — see
+      // `.sigil-stat-card` in styles.css. Card leaves box-shadow to CSS here.
+      elevation="none"
+      className={`sigil-stat-card${embedded ? " is-embedded" : ""}`}
       style={{
         position: "relative",
         overflow: "hidden",
         borderLeft: status ? `3px solid ${statusAccent(status)}` : undefined,
-        transform: !embedded && hovered ? "translateY(-1px)" : "translateY(0)",
-        transition:
-          "transform var(--sigil-duration-fast) var(--sigil-easing-standard), box-shadow var(--sigil-duration-fast) var(--sigil-easing-standard)",
       }}
     >
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{ display: "flex", flexDirection: "column", gap: 8 }}
-      >
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <div
           style={{
             display: "flex",
@@ -282,7 +291,12 @@ function StatCard({
         )}
 
         {hasTrend && (
-          <Sparkline values={trend!} color={accentColor} gradientId={`sigil-spark-${index}`} />
+          <Sparkline
+            values={trend!}
+            color={accentColor}
+            gradientId={`sigil-spark-${index}`}
+            label={label}
+          />
         )}
 
         {description && (

@@ -193,7 +193,7 @@ body,
   .sigil-legend--row {
     flex-direction: column;
   }
-  .sigil-legend--row .sigil-leg {
+  .sigil-legend--row .sigil-leg-item {
     min-width: 0;
   }
 }
@@ -205,6 +205,17 @@ body,
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  /* A real <ul>/<li>: the list markers and the UA's own indent are dropped, and
+     the <li> is a bare flex item so the button below it keeps the layout it had
+     when the button was the direct child. */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sigil-leg-item {
+  display: flex;
+  min-width: 0;
 }
 
 .sigil-legend--row {
@@ -215,12 +226,14 @@ body,
   margin-top: var(--sigil-space-lg);
 }
 
-.sigil-legend--row .sigil-leg {
+.sigil-legend--row .sigil-leg-item {
   min-width: 176px;
 }
 
 .sigil-leg {
   --c: var(--sigil-series-0);
+  flex: 1;
+  min-width: 0;
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr) auto;
   grid-template-areas:
@@ -418,6 +431,52 @@ body,
   margin: 0;
   font-size: var(--sigil-font-label-size);
   line-height: var(--sigil-font-label-line-height);
+}
+
+/* ---- stat card ---------------------------------------------------------- */
+
+/* The lift on hover is decoration — there is nothing behind it for a keyboard
+   to reach — so it is a stylesheet concern, not React state. Card is asked for
+   elevation="none" precisely so these rules can own the shadow. */
+.sigil-stat-card {
+  transition:
+    transform var(--sigil-duration-fast) var(--sigil-easing-standard),
+    box-shadow var(--sigil-duration-fast) var(--sigil-easing-standard);
+}
+
+.sigil-stat-card:not(.is-embedded) {
+  box-shadow: var(--sigil-shadow-low);
+}
+
+.sigil-stat-card:not(.is-embedded):hover {
+  box-shadow: var(--sigil-shadow-mid);
+  transform: translateY(-1px);
+}
+
+/* ---- keyboard-reachable chart marks ------------------------------------- */
+
+/* Heatmap cells, map regions and treemap tiles are one composite widget each
+   (see roving-focus.ts): a single mark holds the tab stop and the arrow keys
+   move it. The ring is drawn twice on purpose — `outline` is the real focus
+   indicator, and the stroke underneath survives the browsers that still paint
+   outlines inconsistently on SVG geometry. */
+.sigil-mark:focus {
+  outline: none;
+}
+
+.sigil-mark:focus-visible {
+  outline: var(--sigil-focus-ring-width) solid var(--sigil-focus-ring);
+  outline-offset: var(--sigil-focus-ring-offset);
+  stroke: var(--sigil-focus-ring);
+  stroke-width: 2;
+  paint-order: stroke;
+}
+
+/* A treemap tile is a <g>; the ring has to land on the rect it wraps, whose own
+   stroke attribute would otherwise win over the inherited one. */
+.sigil-mark:focus-visible > rect {
+  stroke: var(--sigil-focus-ring);
+  stroke-width: 2;
 }
 
 /* Shared keyframes used by primitives. */
