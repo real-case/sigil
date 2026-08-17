@@ -45,8 +45,15 @@ function packageOf(spec: string): string {
   return spec.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0]!;
 }
 
-/** Every bare package imported by the entry points' transitive source graph. */
-function collectServerImports(): Map<string, string[]> {
+/**
+ * Every bare package imported by the entry points' transitive source graph,
+ * plus the files the walk visited — the second is what proves the first is not
+ * vacuous.
+ */
+function collectServerImports(): {
+  byPackage: Map<string, string[]>;
+  visited: Set<string>;
+} {
   const byPackage = new Map<string, string[]>();
   const seen = new Set<string>();
   const queue = [...ENTRY_POINTS];
@@ -71,7 +78,7 @@ function collectServerImports(): Map<string, string[]> {
       byPackage.set(pkg, importers);
     }
   }
-  return byPackage;
+  return { byPackage, visited: seen };
 }
 
 describe("published server dependencies", () => {
@@ -79,13 +86,18 @@ describe("published server dependencies", () => {
     readFileSync(join(REPO_ROOT, "package.json"), "utf8"),
   ) as { dependencies?: Record<string, string> };
   const declared = new Set(Object.keys(manifest.dependencies ?? {}));
-  const imported = collectServerImports();
+  const { byPackage: imported, visited } = collectServerImports();
 
   it("reaches every tool module from an entry point", () => {
     // Guards the walk itself: a resolver that quietly returned null for every
     // relative import would leave `imported` near-empty and the pin below
-    // vacuously green.
-    expect(imported.get("zod")?.length).toBe(11);
+    // vacuously green. Stated as the files reached rather than as some
+    // package's importer count, which moves whenever a dependency does — it
+    // used to count zod's eleven importing tool modules, and then the schemas
+    // moved into one shared module and took the count with them.
+    const walked = [...visited].map((f) => relative(REPO_ROOT, f));
+    const toolModules = walked.filter((f) => f.startsWith("src/tools/"));
+    expect(toolModules.length, `only walked: ${walked.join(", ")}`).toBe(12);
   });
 
   it("declares every package the server bundle imports", () => {

@@ -1,6 +1,6 @@
-import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
+import { treemapSchema } from "../shared/schemas.js";
 import type { TreemapPayload, TreemapNode } from "../shared/payloads.js";
 
 export const TREEMAP_UI_URI = "ui://sigil/treemap";
@@ -12,34 +12,6 @@ const description = [
   "For flat 5-15 category proportions, prefer render_pie_chart. For ranking discrete categories, prefer render_bar_chart.",
 ].join(" ");
 
-const treemapNodeSchema: z.ZodType<TreemapNode> = z.lazy(() =>
-  z.object({
-    label: z.string().min(1).describe("Node label shown in the rectangle and tooltip."),
-    value: z
-      .number()
-      .nonnegative()
-      .describe(
-        "Numeric value controlling rectangle area. For parents with children, may be omitted (set to 0) — sum of children is used.",
-      ),
-    color: z
-      .string()
-      .optional()
-      .describe("Optional CSS color override for this node. Defaults to the palette."),
-    children: z
-      .array(treemapNodeSchema)
-      .optional()
-      .describe("Optional nested nodes for hierarchical data."),
-  }),
-);
-
-const inputSchema = {
-  title: z.string().min(1).describe("Chart title shown above the treemap."),
-  data: z
-    .array(treemapNodeSchema)
-    .min(1)
-    .describe("Top-level nodes. Each may have nested children for hierarchical layouts."),
-};
-
 export function registerTreemapTool(server: McpServer) {
   registerAppTool(
     server,
@@ -47,7 +19,7 @@ export function registerTreemapTool(server: McpServer) {
     {
       title: "Treemap",
       description,
-      inputSchema,
+      inputSchema: treemapSchema.shape,
       _meta: { ui: { resourceUri: TREEMAP_UI_URI } },
     },
     async (args) => {
