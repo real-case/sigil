@@ -58,7 +58,7 @@ describe("widget-views seam pins", () => {
       join(SRC, "widgets", "shared", "widget-views.ts"),
       join(SRC, "widgets", "shared", "TileBoundary.tsx"),
       // Every guard imports this, so it inherits their constraint.
-      join(SRC, "widgets", "shared", "guards.ts"),
+      join(SRC, "shared", "schemas.ts"),
       join(SRC, "widgets", "dashboard", "Tile.tsx"),
       ...WIDGETS.map((w) => join(SRC, "widgets", w.name, "guard.ts")),
     ];
