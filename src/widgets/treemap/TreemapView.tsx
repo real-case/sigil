@@ -69,6 +69,35 @@ function flattenLeaves(
   return out;
 }
 
+/**
+ * Internal nodes below the invisible root — the group blocks a viewer sees but
+ * cannot select. They are drawn, so a name that counts only leaves understates
+ * what is on screen; they are not in the keyboard sequence, so they cannot be
+ * folded into the leaf count either.
+ */
+export function countGroups(nodes: TreemapNode[]): number {
+  let n = 0;
+  for (const node of nodes) {
+    if (node.children?.length) n += 1 + countGroups(node.children);
+  }
+  return n;
+}
+
+/**
+ * Detail half of the treemap's accessible name. Exported because the Recharts
+ * `<svg>` never reaches the server renderer — `renderToString` of this view
+ * emits no `aria-label` at all — so the assembled string is only testable here,
+ * not through the rendered output.
+ *
+ * "in N groups" rather than a comma clause, matching the line chart's
+ * "N series over M points".
+ */
+export function treemapDetail(tiles: number, groups: number): string {
+  return groups > 0
+    ? `${countOf(tiles, "tile")} in ${countOf(groups, "group")}`
+    : countOf(tiles, "tile");
+}
+
 interface NodeContentProps {
   x?: number;
   y?: number;
@@ -235,6 +264,7 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
     return m;
   }, [leaves]);
   const leafNames = useMemo(() => Array.from(leafOrder.keys()), [leafOrder]);
+  const groupCount = useMemo(() => countGroups(data), [data]);
 
   const toggleSelection = useCallback(
     (name: string) => setSelectedName((prev) => (prev === name ? null : name)),
@@ -286,7 +316,7 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
             aria-label={chartLabel(
               title,
               "treemap",
-              countOf(leafNames.length, "tile"),
+              treemapDetail(leafNames.length, groupCount),
             )}
             data={tree}
             dataKey="value"
