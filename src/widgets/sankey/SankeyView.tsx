@@ -13,6 +13,7 @@ import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip, type TooltipRow } from "../shared/SigilTooltip.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { fmtCompact, fmtNumber } from "../shared/chart-text.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const CANVAS_HEIGHT = 360;
@@ -389,6 +390,11 @@ export function SankeyView({ payload }: { payload: SankeyPayload }) {
       <div className="sigil-canvas" ref={canvasRef}>
         <ResponsiveContainer width="100%" height={CANVAS_HEIGHT}>
           <Sankey
+            aria-label={chartLabel(
+              title,
+              "sankey diagram",
+              `${countOf(data.nodes.length, "node")}, ${countOf(data.links.length, "link")}`,
+            )}
             data={data}
             nodeWidth={NODE_WIDTH}
             nodePadding={NODE_PADDING}

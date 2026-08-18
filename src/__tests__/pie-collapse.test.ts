@@ -81,7 +81,9 @@ describe("collapsePieData", () => {
     it("does not mutate the input array or its entries", () => {
       const data = slices(6, 5, 4, 3, 2, 1);
       Object.freeze(data);
-      data.forEach((d) => Object.freeze(d));
+      data.forEach((d) => {
+        Object.freeze(d);
+      });
       const snapshot = JSON.stringify(data);
 
       const { display } = collapsePieData(data);

@@ -11,8 +11,11 @@ const PADDING: Record<CardPadding, string> = {
   lg: "var(--sigil-space-lg)",
 };
 
-const ELEVATION: Record<CardElevation, string> = {
-  none: "none",
+const ELEVATION: Record<CardElevation, string | undefined> = {
+  // Undefined rather than "none": React drops the declaration entirely, so a
+  // card that wants its shadow from a stylesheet (a :hover lift, say) can have
+  // one. An inline "none" would outrank any class rule.
+  none: undefined,
   low: "var(--sigil-shadow-low)",
   mid: "var(--sigil-shadow-mid)",
   high: "var(--sigil-shadow-high)",

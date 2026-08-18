@@ -1,26 +1,12 @@
 // Payload guard, kept out of App.tsx so it is importable without side effects:
 // App.tsx calls mountWidget on import, which the dashboard must not trigger.
-import type { TreemapPayload, TreemapNode } from "../../shared/payloads.js";
-
-function isTreemapNode(value: unknown): value is TreemapNode {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  if (typeof v["label"] !== "string") return false;
-  if (typeof v["value"] !== "number" || v["value"] < 0) return false;
-  if (v["color"] !== undefined && typeof v["color"] !== "string") return false;
-  if (v["children"] !== undefined) {
-    if (!Array.isArray(v["children"])) return false;
-    if (!v["children"].every(isTreemapNode)) return false;
-  }
-  return true;
-}
+//
+// The schema is the definition — see src/shared/schemas.ts. A dashboard tile
+// never reaches the tool's zod validation, so for a tile this call IS the
+// contract; running the same schema is what keeps the two paths honest.
+import type { TreemapPayload } from "../../shared/payloads.js";
+import { treemapSchema } from "../../shared/schemas.js";
 
 export function isTreemapPayload(value: unknown): value is TreemapPayload {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v["title"] === "string" &&
-    Array.isArray(v["data"]) &&
-    v["data"].every(isTreemapNode)
-  );
+  return treemapSchema.safeParse(value).success;
 }

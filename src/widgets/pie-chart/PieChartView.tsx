@@ -19,6 +19,7 @@ import { SigilTooltip } from "../shared/SigilTooltip.js";
 import { ValueLegend } from "../shared/ValueLegend.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { fmtNumber, fmtCompact, fmtShare } from "../shared/chart-text.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 
 const MUTED_OPACITY = 0.18;
@@ -65,7 +66,9 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
   const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
   const [expanded, setExpanded] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { title, data, variant } = payload;
+  // "donut", not "pie": the schema's documented default, applied here for the
+  // tile path where no handler ran. See the note atop shared/payloads.ts.
+  const { title, data, variant = "donut" } = payload;
   // Same clamp the reducer applies, so the "Show top N" label never lies.
   const cap = normalizeMaxSegments(payload.maxSegments);
 
@@ -206,7 +209,14 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
         <div className="sigil-plot">
           <div className="sigil-canvas" ref={canvasRef}>
             <ResponsiveContainer width="100%" height={340}>
-              <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+              <PieChart
+                aria-label={chartLabel(
+                  title,
+                  isDonut ? "donut chart" : "pie chart",
+                  countOf(pieData.length, "slice"),
+                )}
+                margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
+              >
                 <Pie
                   data={pieData}
                   dataKey="value"
@@ -225,7 +235,10 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
                   strokeWidth={isDonut ? 0 : 2}
                   // Recharts 3.9: one shape renderer for every sector; the
                   // hovered one arrives with isActive and grows a little.
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // Recharts hands the shape its own computed sector geometry
+                  // and this spreads it straight back into <Sector>. Narrowing
+                  // the parameter only moves the cast to the spread.
+                  // biome-ignore lint/suspicious/noExplicitAny: spread straight back into Recharts' own component
                   shape={(p: any) => {
                     return (
                       <Sector

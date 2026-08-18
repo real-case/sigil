@@ -1,32 +1,12 @@
 // Payload guard, kept out of App.tsx so it is importable without side effects:
 // App.tsx calls mountWidget on import, which the dashboard must not trigger.
-import type { MapPayload, MapRegionDatum, MapPoint } from "../../shared/payloads.js";
-
-function isMapRegionDatum(value: unknown): value is MapRegionDatum {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v["id"] === "string" &&
-    v["id"].length > 0 &&
-    typeof v["value"] === "number"
-  );
-}
-
-function isMapPoint(value: unknown): value is MapPoint {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v["lat"] === "number" &&
-    typeof v["lon"] === "number" &&
-    typeof v["value"] === "number"
-  );
-}
+//
+// The schema is the definition — see src/shared/schemas.ts. A dashboard tile
+// never reaches the tool's zod validation, so for a tile this call IS the
+// contract; running the same schema is what keeps the two paths honest.
+import type { MapPayload } from "../../shared/payloads.js";
+import { mapSchema } from "../../shared/schemas.js";
 
 export function isMapPayload(value: unknown): value is MapPayload {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  if (typeof v["title"] !== "string") return false;
-  const hasData = Array.isArray(v["data"]) && v["data"].every(isMapRegionDatum);
-  const hasPoints = Array.isArray(v["points"]) && v["points"].every(isMapPoint);
-  return hasData || hasPoints;
+  return mapSchema.safeParse(value).success;
 }

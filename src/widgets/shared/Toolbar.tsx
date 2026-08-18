@@ -15,7 +15,7 @@ export function CsvIcon() {
       stroke="currentColor"
       strokeWidth="1.4"
       strokeLinecap="round"
-      aria-hidden
+      aria-hidden="true"
     >
       <path d="M9 17v-6M12 17v-3M15 17v-8" />
       <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -34,7 +34,7 @@ export function PngIcon() {
       stroke="currentColor"
       strokeWidth="1.4"
       strokeLinecap="round"
-      aria-hidden
+      aria-hidden="true"
     >
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <circle cx="8.5" cy="8.5" r="1.5" />

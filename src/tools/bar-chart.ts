@@ -1,6 +1,6 @@
-import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
+import { barChartSchema } from "../shared/schemas.js";
 import type { BarChartPayload } from "../shared/payloads.js";
 
 export const BAR_CHART_UI_URI = "ui://sigil/bar-chart";
@@ -13,33 +13,6 @@ const description = [
   "For part-of-whole proportions, use render_pie_chart instead.",
 ].join(" ");
 
-const inputSchema = {
-  title: z.string().min(1).describe("Chart title shown above the bars."),
-  data: z
-    .array(
-      z.object({
-        label: z
-          .string()
-          .min(1)
-          .describe("Category label (x-axis for vertical, y-axis for horizontal)."),
-        value: z.number().describe("Numeric value controlling bar length."),
-        color: z
-          .string()
-          .optional()
-          .describe(
-            "Optional CSS color override for this bar (e.g. '#6366F1'). If omitted, uses the theme palette.",
-          ),
-      }),
-    )
-    .min(1)
-    .describe("Array of bars. Provide at least one data point."),
-  orientation: z
-    .enum(["vertical", "horizontal"])
-    .optional()
-    .describe("Bar orientation. Defaults to 'vertical'."),
-  xlabel: z.string().optional().describe("Label for the x-axis."),
-  ylabel: z.string().optional().describe("Label for the y-axis."),
-};
 
 export function registerBarChartTool(server: McpServer) {
   registerAppTool(
@@ -48,7 +21,7 @@ export function registerBarChartTool(server: McpServer) {
     {
       title: "Bar Chart",
       description,
-      inputSchema,
+      inputSchema: barChartSchema.shape,
       _meta: { ui: { resourceUri: BAR_CHART_UI_URI } },
     },
     async (args) => {

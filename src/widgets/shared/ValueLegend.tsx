@@ -56,61 +56,58 @@ export function ValueLegend({
 }: ValueLegendProps) {
   void focused; // focus feedback lives in the plot; rows restyle on :hover
   return (
-    <div
-      role="list"
-      className={`sigil-legend${layout === "row" ? " sigil-legend--row" : ""}`}
-    >
+    <ul className={`sigil-legend${layout === "row" ? " sigil-legend--row" : ""}`}>
       {items.map((item, i) => {
         const isMuted = muted.has(i);
         return (
-          <button
-            key={`${item.name}-${i}`}
-            type="button"
-            role="listitem"
-            className={
-              "sigil-leg" +
-              (item.range ? " sigil-leg--lite" : "") +
-              (isMuted ? " is-muted" : "")
-            }
-            style={{ "--c": item.color } as CSSProperties}
-            aria-pressed={isMuted}
-            onMouseEnter={() => onFocus(i)}
-            onMouseLeave={() => onFocus(null)}
-            onFocus={() => onFocus(i)}
-            onBlur={() => onFocus(null)}
-            onClick={() => onToggleMute(i)}
-          >
-            <span className="sigil-leg-sw" aria-hidden />
-            <span className="sigil-leg-name">{item.name}</span>
-            <span className="sigil-leg-val">
-              {item.value}
-              {item.suffix !== undefined && (
-                <span className="sigil-leg-pct">{item.suffix}</span>
-              )}
-            </span>
-            {item.range ? (
-              <span className="sigil-leg-range" aria-hidden>
-                <i className="sigil-leg-track" />
-                <i
-                  className="sigil-leg-span"
-                  style={{
-                    left: `${clampPct(item.range.lo)}%`,
-                    right: `${clampPct(100 - item.range.hi)}%`,
-                  }}
-                />
-                <i
-                  className="sigil-leg-avg"
-                  style={{ left: `${clampPct(item.range.avg)}%` }}
-                />
+          <li key={`${item.name}-${i}`} className="sigil-leg-item">
+            <button
+              type="button"
+              className={
+                "sigil-leg" +
+                (item.range ? " sigil-leg--lite" : "") +
+                (isMuted ? " is-muted" : "")
+              }
+              style={{ "--c": item.color } as CSSProperties}
+              aria-pressed={isMuted}
+              onMouseEnter={() => onFocus(i)}
+              onMouseLeave={() => onFocus(null)}
+              onFocus={() => onFocus(i)}
+              onBlur={() => onFocus(null)}
+              onClick={() => onToggleMute(i)}
+            >
+              <span className="sigil-leg-sw" aria-hidden />
+              <span className="sigil-leg-name">{item.name}</span>
+              <span className="sigil-leg-val">
+                {item.value}
+                {item.suffix !== undefined && (
+                  <span className="sigil-leg-pct">{item.suffix}</span>
+                )}
               </span>
-            ) : item.meter !== undefined ? (
-              <span className="sigil-leg-meter" aria-hidden>
-                <i style={{ width: `${clampPct(item.meter)}%` }} />
-              </span>
-            ) : null}
-          </button>
+              {item.range ? (
+                <span className="sigil-leg-range" aria-hidden>
+                  <i className="sigil-leg-track" />
+                  <i
+                    className="sigil-leg-span"
+                    style={{
+                      left: `${clampPct(item.range.lo)}%`,
+                      right: `${clampPct(100 - item.range.hi)}%`,
+                    }}
+                  />
+                  <i
+                    className="sigil-leg-avg"
+                    style={{ left: `${clampPct(item.range.avg)}%` }}
+                  />
+                </span>
+              ) : item.meter !== undefined ? (
+                <span className="sigil-leg-meter" aria-hidden>
+                  <i style={{ width: `${clampPct(item.meter)}%` }} />
+                </span>
+              ) : null}
+            </button>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

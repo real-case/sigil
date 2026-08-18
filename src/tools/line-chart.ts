@@ -1,6 +1,6 @@
-import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
+import { lineChartSchema } from "../shared/schemas.js";
 import type { LineChartPayload } from "../shared/payloads.js";
 
 export const LINE_CHART_UI_URI = "ui://sigil/line-chart";
@@ -13,34 +13,6 @@ const description = [
   "For part-of-whole proportions, use render_pie_chart.",
 ].join(" ");
 
-const inputSchema = {
-  title: z.string().min(1).describe("Chart title shown above the lines."),
-  series: z
-    .array(
-      z.object({
-        name: z
-          .string()
-          .min(1)
-          .describe("Series name. Appears in the legend and tooltip."),
-        data: z
-          .array(
-            z.object({
-              x: z
-                .union([z.string(), z.number()])
-                .describe("X-axis value. Strings form category axis; numbers form numeric axis."),
-              y: z.number().describe("Y-axis value for this point."),
-            }),
-          )
-          .min(1)
-          .describe("Ordered points for this series. Provide at least one."),
-      }),
-    )
-    .min(1)
-    .describe("One or more series to overlay. Provide at least one."),
-  xlabel: z.string().optional().describe("Label for the x-axis."),
-  ylabel: z.string().optional().describe("Label for the y-axis."),
-};
-
 export function registerLineChartTool(server: McpServer) {
   registerAppTool(
     server,
@@ -48,7 +20,7 @@ export function registerLineChartTool(server: McpServer) {
     {
       title: "Line Chart",
       description,
-      inputSchema,
+      inputSchema: lineChartSchema.shape,
       _meta: { ui: { resourceUri: LINE_CHART_UI_URI } },
     },
     async (args) => {

@@ -363,7 +363,9 @@ const forcedThemeListeners = new Set<() => void>();
 export function setForcedTheme(theme: ThemeName | null): void {
   if (forcedTheme === theme) return;
   forcedTheme = theme;
-  forcedThemeListeners.forEach((fn) => fn());
+  forcedThemeListeners.forEach((fn) => {
+    fn();
+  });
 }
 
 export function getForcedTheme(): ThemeName | null {
@@ -420,7 +422,9 @@ function tokensToDeclarations(t: ChartDesignTokens): string {
   const lines: string[] = [];
 
   // Series (legacy names)
-  t.seriesColors.forEach((c, i) => lines.push(`--sigil-series-${i}: ${c};`));
+  t.seriesColors.forEach((c, i) => {
+    lines.push(`--sigil-series-${i}: ${c};`);
+  });
 
   // Surfaces
   lines.push(`--sigil-bg: ${t.surfaces.bg};`);

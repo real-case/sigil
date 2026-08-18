@@ -26,6 +26,7 @@ import {
   fmtCompact,
   fmtShare,
 } from "../shared/chart-text.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 
 const MUTED_OPACITY = 0.18;
@@ -98,7 +99,9 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
   const [focused, setFocused] = useState<number | null>(null);
   const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { title, data, orientation, xlabel, ylabel } = payload;
+  // Defaults mirror the render_bar_chart handler, for the tile path where no
+  // handler ran. See the note atop shared/payloads.ts.
+  const { title, data, orientation = "vertical", xlabel, ylabel } = payload;
   const isHorizontal = orientation === "horizontal";
 
   const copyCsv = () =>
@@ -213,8 +216,7 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
 
   // Dense vertical charts: alternate labels between two rows so neighbours
   // with similar heights don't run together ("2.7K2.6K").
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderStaggeredLabel = (props: any) => {
+  const renderStaggeredLabel = (props: unknown) => {
     const { x, y, width, index, value } = props as {
       x?: number | string;
       y?: number | string;
@@ -268,6 +270,11 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
           <div className="sigil-canvas" ref={canvasRef}>
             <ResponsiveContainer width="100%" height={chartHeight}>
               <BarChart
+                aria-label={chartLabel(
+                  title,
+                  isHorizontal ? "horizontal bar chart" : "bar chart",
+                  countOf(data.length, "bar"),
+                )}
                 data={data}
                 layout={isHorizontal ? "vertical" : "horizontal"}
                 margin={{
@@ -400,7 +407,10 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   onClick={(_, i) => toggleMute(i)}
                   // Recharts 3 deprecates <Cell>; per-bar fill/opacity render
                   // through a custom shape instead.
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // Recharts hands the shape its own computed bar geometry and
+                  // this spreads it straight back into <Rectangle>. Narrowing
+                  // the parameter only moves the cast to the spread.
+                  // biome-ignore lint/suspicious/noExplicitAny: spread straight back into Recharts' own component
                   shape={(props: any) => {
                     const i: number =
                       typeof props.index === "number"

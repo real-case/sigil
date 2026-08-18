@@ -9,6 +9,8 @@ import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { ColorScaleLegend, intensityAlpha } from "../shared/color-scale.js";
+import { useRovingFocus } from "../shared/roving-focus.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 import { scopeGeo, regionName, type RegionFeature, type ScopeGeo } from "./geo.js";
 
@@ -193,6 +195,23 @@ export function MapView({ payload }: { payload: MapPayload }) {
     return { placed, max };
   }, [isBubble, geoMemo, payload.points]);
 
+  // The keyboard walks only the regions that carry a value. Unlike a heatmap's
+  // matrix there is no grid to leave holes in, and stepping through 150-odd
+  // blank countries to reach the dozen with data would not be navigation.
+  const dataRegions = useMemo(
+    () => (isBubble ? [] : geo.features.filter((f) => resolved.byFeature.has(f))),
+    [isBubble, geo.features, resolved.byFeature],
+  );
+  const roving = useRovingFocus<SVGGraphicsElement>({
+    count: isBubble ? (bubbles?.placed.length ?? 0) : dataRegions.length,
+    onActivate: (index) => {
+      // Bubbles are read-only markers — there is nothing for Enter to toggle.
+      if (isBubble) return;
+      const f = dataRegions[index];
+      if (f) setSelected((prev) => (prev === f ? null : f));
+    },
+  });
+
   // ----- Empty states (width-independent) -----
   if (isBubble ? (payload.points ?? []).length === 0 : data.length === 0 || resolved.byFeature.size === 0) {
     const description = isBubble
@@ -266,6 +285,12 @@ export function MapView({ payload }: { payload: MapPayload }) {
       prev ? { ...prev, pageX: ev.clientX, pageY: ev.clientY } : prev,
     );
   const hideTooltip = () => setTooltip(null);
+  // Keyboard focus has no pointer to anchor to, so the tooltip hangs off the
+  // focused mark itself — the same readout a hovering mouse gets.
+  const showTooltipAt = (name: string, value: number, el: SVGGraphicsElement) => {
+    const box = el.getBoundingClientRect();
+    setTooltip({ name, value, pageX: box.left + box.width / 2, pageY: box.bottom });
+  };
 
   const toggleSelection = (f: RegionFeature) =>
     setSelected((prev) => (prev === f ? null : f));
@@ -286,26 +311,59 @@ export function MapView({ payload }: { payload: MapPayload }) {
             height={height}
             viewBox={`0 0 ${width} ${height}`}
             style={{ display: "block", maxWidth: "100%" }}
+            // A bare aria-label rather than role="img": role="img" would prune
+            // the regions below out of the accessibility tree, and they are the
+            // part worth reaching.
+            aria-label={
+              isBubble
+                ? chartLabel(
+                    title,
+                    "bubble map",
+                    countOf(bubbles?.placed.length ?? 0, "point"),
+                  )
+                : chartLabel(
+                    title,
+                    "choropleth map",
+                    `${countOf(
+                      dataRegions.length,
+                      geo.regionLabel.toLowerCase(),
+                      geo.regionLabelPlural.toLowerCase(),
+                    )} with data`,
+                  )
+            }
           >
-            {isBubble
-              ? geo.features.map((f, i) => (
-                  <path
-                    key={i}
-                    d={geoMemo.drawPath(f)}
-                    fill={land}
-                    stroke={ocean}
-                    strokeWidth={0.6}
-                    strokeLinejoin="round"
-                  />
-                ))
-              : geo.features.map((f, i) => {
-                  const value = resolved.byFeature.get(f);
-                  const hasData = value !== undefined;
+            {/* Land with nothing to say: painted first, inert, out of the
+                listbox below so the keyboard sequence stays meaningful. */}
+            {(isBubble
+              ? geo.features
+              : geo.features.filter((f) => !resolved.byFeature.has(f))
+            ).map((f, i) => (
+              <path
+                key={i}
+                d={geoMemo.drawPath(f)}
+                fill={isBubble ? land : fillFor(f)}
+                stroke={ocean}
+                strokeWidth={0.6}
+                strokeLinejoin="round"
+              />
+            ))}
+
+            {!isBubble && (
+              <g role="listbox" aria-label={`${geo.regionLabelPlural} with data`}>
+                {dataRegions.map((f, i) => {
+                  const value = resolved.byFeature.get(f)!;
                   const isSelected = selected === f;
                   const dimmed = selected !== null && !isSelected;
+                  const { ref, tabIndex, onFocus, onKeyDown } = roving.itemProps(i);
                   return (
                     <path
                       key={i}
+                      ref={ref}
+                      className="sigil-mark"
+                      role="option"
+                      tabIndex={tabIndex}
+                      aria-selected={isSelected}
+                      aria-label={`${regionName(f)}: ${NUMBER_FMT.format(value)}`}
                       d={geoMemo.drawPath(f)}
                       fill={fillFor(f)}
                       fillOpacity={dimmed ? 0.28 : 1}
@@ -313,45 +371,61 @@ export function MapView({ payload }: { payload: MapPayload }) {
                       strokeWidth={isSelected ? 1.2 : 0.6}
                       strokeLinejoin="round"
                       style={{
-                        cursor: hasData ? "pointer" : "default",
+                        cursor: "pointer",
                         transition:
                           "fill-opacity var(--sigil-duration-fast) var(--sigil-easing-standard)",
                       }}
-                      onMouseEnter={
-                        hasData
-                          ? (e) => showTooltip(regionName(f), value, e)
-                          : undefined
-                      }
-                      onMouseMove={hasData ? moveTooltip : undefined}
-                      onMouseLeave={hasData ? hideTooltip : undefined}
-                      onClick={hasData ? () => toggleSelection(f) : undefined}
+                      onKeyDown={onKeyDown}
+                      onFocus={(e) => {
+                        onFocus();
+                        showTooltipAt(regionName(f), value, e.currentTarget);
+                      }}
+                      onBlur={hideTooltip}
+                      onMouseEnter={(e) => showTooltip(regionName(f), value, e)}
+                      onMouseMove={moveTooltip}
+                      onMouseLeave={hideTooltip}
+                      onClick={() => toggleSelection(f)}
                     />
                   );
                 })}
+              </g>
+            )}
 
-            {isBubble &&
-              bubbles?.placed.map(({ p, x, y }, i) => (
-                <circle
-                  key={i}
-                  cx={x}
-                  cy={y}
-                  r={radiusFor(p.value)}
-                  fill={seriesHue}
-                  fillOpacity={0.5}
-                  stroke={seriesHue}
-                  strokeWidth={1}
-                  style={{ cursor: "pointer" }}
-                  onMouseEnter={(e) =>
-                    showTooltip(
-                      p.label ?? `${p.lat.toFixed(2)}, ${p.lon.toFixed(2)}`,
-                      p.value,
-                      e,
-                    )
-                  }
-                  onMouseMove={moveTooltip}
-                  onMouseLeave={hideTooltip}
-                />
-              ))}
+            {isBubble && bubbles && bubbles.placed.length > 0 && (
+              <g role="listbox" aria-label="Plotted points">
+                {bubbles.placed.map(({ p, x, y }, i) => {
+                  const name = p.label ?? `${p.lat.toFixed(2)}, ${p.lon.toFixed(2)}`;
+                  const { ref, tabIndex, onFocus, onKeyDown } = roving.itemProps(i);
+                  return (
+                    <circle
+                      key={i}
+                      ref={ref}
+                      className="sigil-mark"
+                      role="option"
+                      tabIndex={tabIndex}
+                      aria-label={`${name}: ${NUMBER_FMT.format(p.value)}`}
+                      cx={x}
+                      cy={y}
+                      r={radiusFor(p.value)}
+                      fill={seriesHue}
+                      fillOpacity={0.5}
+                      stroke={seriesHue}
+                      strokeWidth={1}
+                      style={{ cursor: "pointer" }}
+                      onKeyDown={onKeyDown}
+                      onFocus={(e) => {
+                        onFocus();
+                        showTooltipAt(name, p.value, e.currentTarget);
+                      }}
+                      onBlur={hideTooltip}
+                      onMouseEnter={(e) => showTooltip(name, p.value, e)}
+                      onMouseMove={moveTooltip}
+                      onMouseLeave={hideTooltip}
+                    />
+                  );
+                })}
+              </g>
+            )}
           </svg>
         )}
 

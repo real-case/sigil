@@ -1,36 +1,12 @@
 // Payload guard, kept out of App.tsx so it is importable without side effects:
 // App.tsx calls mountWidget on import, which the dashboard must not trigger.
-import type {
-  LineChartPayload,
-  LineSeries,
-  LineDatum,
-} from "../../shared/payloads.js";
-
-function isLineDatum(value: unknown): value is LineDatum {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    (typeof v["x"] === "string" || typeof v["x"] === "number") &&
-    typeof v["y"] === "number"
-  );
-}
-
-function isLineSeries(value: unknown): value is LineSeries {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v["name"] === "string" &&
-    Array.isArray(v["data"]) &&
-    v["data"].every(isLineDatum)
-  );
-}
+//
+// The schema is the definition — see src/shared/schemas.ts. A dashboard tile
+// never reaches the tool's zod validation, so for a tile this call IS the
+// contract; running the same schema is what keeps the two paths honest.
+import type { LineChartPayload } from "../../shared/payloads.js";
+import { lineChartSchema } from "../../shared/schemas.js";
 
 export function isLineChartPayload(value: unknown): value is LineChartPayload {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v["title"] === "string" &&
-    Array.isArray(v["series"]) &&
-    v["series"].every(isLineSeries)
-  );
+  return lineChartSchema.safeParse(value).success;
 }

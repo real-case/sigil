@@ -1,10 +1,12 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
 import type { TreemapPayload, TreemapNode } from "../../shared/payloads.js";
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { useRovingFocus, type RovingFocus } from "../shared/roving-focus.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
 import { EmptyState } from "../shared/EmptyState.js";
+import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
 const MIN_NAME_WIDTH = 40;
@@ -67,6 +69,35 @@ function flattenLeaves(
   return out;
 }
 
+/**
+ * Internal nodes below the invisible root — the group blocks a viewer sees but
+ * cannot select. They are drawn, so a name that counts only leaves understates
+ * what is on screen; they are not in the keyboard sequence, so they cannot be
+ * folded into the leaf count either.
+ */
+export function countGroups(nodes: TreemapNode[]): number {
+  let n = 0;
+  for (const node of nodes) {
+    if (node.children?.length) n += 1 + countGroups(node.children);
+  }
+  return n;
+}
+
+/**
+ * Detail half of the treemap's accessible name. Exported because the Recharts
+ * `<svg>` never reaches the server renderer — `renderToString` of this view
+ * emits no `aria-label` at all — so the assembled string is only testable here,
+ * not through the rendered output.
+ *
+ * "in N groups" rather than a comma clause, matching the line chart's
+ * "N series over M points".
+ */
+export function treemapDetail(tiles: number, groups: number): string {
+  return groups > 0
+    ? `${countOf(tiles, "tile")} in ${countOf(groups, "group")}`
+    : countOf(tiles, "tile");
+}
+
 interface NodeContentProps {
   x?: number;
   y?: number;
@@ -80,6 +111,11 @@ interface NodeContentProps {
   selectedName: string | null;
   onToggle: (name: string) => void;
   tokens: ChartDesignTokens;
+  /** Leaf name → position in the keyboard sequence. */
+  leafOrder: Map<string, number>;
+  /** Leaf name → full breadcrumb, so the tile announces what the tooltip says. */
+  leafPaths: Map<string, string>;
+  roving: RovingFocus<SVGGElement>;
 }
 
 function NodeContent({
@@ -95,6 +131,9 @@ function NodeContent({
   selectedName,
   onToggle,
   tokens,
+  leafOrder,
+  leafPaths,
+  roving,
 }: NodeContentProps) {
   if (width <= 0 || height <= 0) return null;
   // A leaf is any node without children — robust to irregular nesting depth
@@ -107,16 +146,8 @@ function NodeContent({
   const opacity =
     selectedName === null || selectedName === name ? 1 : DIMMED_OPACITY;
 
-  return (
-    <g
-      style={{
-        cursor: isLeaf ? "pointer" : "default",
-        transition:
-          "opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
-      }}
-      opacity={opacity}
-      onClick={() => isLeaf && onToggle(name)}
-    >
+  const body = (
+    <>
       <rect
         x={x + (isLeaf ? 1.5 : 0)}
         y={y + (isLeaf ? 1.5 : 0)}
@@ -162,6 +193,40 @@ function NodeContent({
           {value}
         </text>
       )}
+    </>
+  );
+
+  const transition =
+    "opacity var(--sigil-duration-base) var(--sigil-easing-standard)";
+
+  // Groups are scaffolding — they have no selection of their own, so they stay
+  // out of the keyboard sequence and out of the accessibility tree.
+  if (!isLeaf) {
+    return (
+      <g style={{ transition }} opacity={opacity}>
+        {body}
+      </g>
+    );
+  }
+
+  const index = leafOrder.get(name);
+  const item = roving.itemProps(index ?? 0);
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: a <button> cannot exist inside an <svg>; role="button" is the only way to say "toggle" on a tile.
+    <g
+      className="sigil-mark"
+      role="button"
+      aria-pressed={selectedName === name}
+      aria-label={`${leafPaths.get(name) ?? name}${value === undefined ? "" : `: ${value}`}`}
+      ref={item.ref}
+      tabIndex={index === undefined ? -1 : item.tabIndex}
+      onFocus={item.onFocus}
+      onKeyDown={item.onKeyDown}
+      style={{ cursor: "pointer", transition }}
+      opacity={opacity}
+      onClick={() => onToggle(name)}
+    >
+      {body}
     </g>
   );
 }
@@ -172,17 +237,9 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { title, data } = payload;
 
-  if (data.length === 0) {
-    return (
-      <div className="sigil-root">
-        <div className="sigil-header">
-          <h2 className="sigil-title">{title}</h2>
-        </div>
-        <EmptyState title="No data to display" description="The payload was empty." />
-      </div>
-    );
-  }
-
+  // Every hook stays above the empty-payload return: a payload that arrives
+  // empty and is then replaced by a full one would otherwise change the hook
+  // count between renders.
   const tree = useMemo(() => toRechartsTree(data, tokens), [data, tokens]);
   const leaves = useMemo(() => flattenLeaves(data), [data]);
   // Parent groups can't carry an on-canvas header (Recharts lays children over
@@ -196,6 +253,43 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
     return m;
   }, [leaves]);
 
+  // Tiles are one composite widget: a single tab stop, then the arrow keys step
+  // through the leaves in the order the payload lists them.
+  const leafOrder = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of leaves) {
+      const leaf = l.path.split(" / ").pop()!;
+      if (!m.has(leaf)) m.set(leaf, m.size);
+    }
+    return m;
+  }, [leaves]);
+  const leafNames = useMemo(() => Array.from(leafOrder.keys()), [leafOrder]);
+  const groupCount = useMemo(() => countGroups(data), [data]);
+
+  const toggleSelection = useCallback(
+    (name: string) => setSelectedName((prev) => (prev === name ? null : name)),
+    [],
+  );
+
+  const roving = useRovingFocus<SVGGElement>({
+    count: leafNames.length,
+    onActivate: (index) => {
+      const name = leafNames[index];
+      if (name) toggleSelection(name);
+    },
+  });
+
+  if (data.length === 0) {
+    return (
+      <div className="sigil-root">
+        <div className="sigil-header">
+          <h2 className="sigil-title">{title}</h2>
+        </div>
+        <EmptyState title="No data to display" description="The payload was empty." />
+      </div>
+    );
+  }
+
   const copyCsv = () => {
     const body: CsvCell[][] = leaves.map((l) => [l.path, l.value]);
     return copyText(toCsv(["path", "value"], body));
@@ -206,9 +300,6 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
     if (!svg) throw new Error("Chart SVG not found");
     await copySvgAsPng(svg as SVGSVGElement, "treemap", tokens.surfaces.bg);
   };
-
-  const toggleSelection = (name: string) =>
-    setSelectedName((prev) => (prev === name ? null : name));
 
   return (
     <div className="sigil-root">
@@ -222,6 +313,11 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
       <div className="sigil-canvas" ref={canvasRef}>
         <ResponsiveContainer width="100%" height={360}>
           <Treemap
+            aria-label={chartLabel(
+              title,
+              "treemap",
+              treemapDetail(leafNames.length, groupCount),
+            )}
             data={tree}
             dataKey="value"
             nameKey="name"
@@ -232,6 +328,9 @@ export function TreemapView({ payload }: { payload: TreemapPayload }) {
                 selectedName={selectedName}
                 onToggle={toggleSelection}
                 tokens={tokens}
+                leafOrder={leafOrder}
+                leafPaths={pathByLeaf}
+                roving={roving}
               />
             }
           >

@@ -1,28 +1,12 @@
 // Payload guard, kept out of App.tsx so it is importable without side effects:
 // App.tsx calls mountWidget on import, which the dashboard must not trigger.
-import type { PieChartPayload, PieDatum } from "../../shared/payloads.js";
-
-function isPieDatum(value: unknown): value is PieDatum {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v["label"] === "string" &&
-    typeof v["value"] === "number" &&
-    (v["color"] === undefined || typeof v["color"] === "string")
-  );
-}
+//
+// The schema is the definition — see src/shared/schemas.ts. A dashboard tile
+// never reaches the tool's zod validation, so for a tile this call IS the
+// contract; running the same schema is what keeps the two paths honest.
+import type { PieChartPayload } from "../../shared/payloads.js";
+import { pieChartSchema } from "../../shared/schemas.js";
 
 export function isPieChartPayload(value: unknown): value is PieChartPayload {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v["title"] === "string" &&
-    Array.isArray(v["data"]) &&
-    v["data"].every(isPieDatum) &&
-    (v["variant"] === "pie" || v["variant"] === "donut") &&
-    (v["maxSegments"] === undefined ||
-      (typeof v["maxSegments"] === "number" &&
-        Number.isInteger(v["maxSegments"]) &&
-        v["maxSegments"] >= 2))
-  );
+  return pieChartSchema.safeParse(value).success;
 }
