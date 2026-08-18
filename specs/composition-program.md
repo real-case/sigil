@@ -63,34 +63,44 @@ Rules that apply to every item; a spec that breaks one must say so explicitly.
 
 ## 2. Registry-derived widget lists
 
-> ⏳ Open
+> ✅ Shipped — PRs [#54](https://github.com/real-case/sigil/pull/54), [#57](https://github.com/real-case/sigil/pull/57), [#58](https://github.com/real-case/sigil/pull/58), [#63](https://github.com/real-case/sigil/pull/63)
+>
+> **As-shipped deltas versus this sketch:**
+> - Delivered without a spec of its own, in pieces, as fallout from a repo-wide audit rather than as one task. Item 1 took the first bite (see its own deltas); the rest arrived while fixing unrelated findings that turned out to share this cause.
+> - `DashboardTileType` is **not** derived from `WIDGETS`, as this sketch asks. It derives from a const tuple `DASHBOARD_TILE_TYPES` in [`src/shared/schemas.ts`](../src/shared/schemas.ts), pinned to the registry by a test instead. Importing `WIDGETS` here is not available: the registry imports every tool module, and this file is reachable from widget code, so the import would drag the server into all eleven single-file bundles. Verified the constant stays out of them.
+> - The mirror count moved underneath the sketch. #54 deleted the guard's own copy outright; #63 collapsed `DashboardTileType` and the tile-type zod enum into that one tuple, so two of the five listed mirrors are now a single list.
+> - The zod-enum pin goes past what the sketch asked for. [`registration.test.ts`](../src/__tests__/registration.test.ts) parses the schema the tool *actually registered*, not the constant — so re-hardcoding the enum later goes red even while the constant still matches the registry. "The constant matches the registry" and "the tool offers that set" are only the same statement while the derivation holds.
+> - Two mirrors this sketch does not list were found and pinned on the way: the guard-case table in [`payloads.test.ts`](../src/__tests__/payloads.test.ts) and the corpus in [`tile-parity.test.ts`](../src/__tests__/tile-parity.test.ts). Both were hand-written lists nothing read but their own loop, so a twelfth widget could have shipped with no payload coverage at all.
+> - One mirror is deliberately left **unpinned**: the sandbox dataset registry ([`src/widgets/sandbox/datasets/index.ts`](../src/widgets/sandbox/datasets/index.ts) — its `WidgetKey` union and `WIDGET_ENTRIES`). It is a dev-only tool; a gap there costs a preview, not correctness. Recorded in `CLAUDE.md` as a manual step rather than closed.
+> - Suite 372 → 473 tests across the arc.
 
 **Task slug:** `widget-registry-derivation` · risk: low · breaking: no · stack: typescript
 
-**Current behavior:** the widget set is mirrored by hand in five places, of which only two are pinned:
+**Current behavior (as delivered):** the widget set is mirrored in eight places. Seven are pinned against `WIDGETS`; the eighth is left manual on purpose.
 
 | Mirror | Pinned against `WIDGETS`? |
 |---|---|
-| [`WIDGET_VIEWS`](../src/widgets/shared/widget-views.ts) | **no** |
-| [`DashboardTileType`](../src/shared/payloads.ts) | **no** |
-| tile-type zod enum in [`tools/dashboard.ts`](../src/tools/dashboard.ts) | **no** |
+| [`WIDGET_VIEWS`](../src/widgets/shared/widget-views.ts) | yes — `widget-views.test.ts`, both directions, plus `tsc` via `Record<DashboardTileType, …>` |
+| `DASHBOARD_TILE_TYPES` in [`schemas.ts`](../src/shared/schemas.ts), from which `DashboardTileType` **and** the tile-type zod enum derive | yes — `registry.test.ts`, plus `registration.test.ts` on the registered schema |
+| tool-call corpus in `e2e.test.ts` | yes — its coverage guard |
+| guard-case table in `payloads.test.ts` | yes — "covers every registered widget" |
+| parity corpus in `tile-parity.test.ts` | yes — "covers every registered widget" |
 | `.design-sync/entry.tsx` exports + `config.json` titleMap | yes — `design-sync-config.test.ts` (PR #53) |
 | hardcoded name array in `registry.test.ts` | it *is* the pin |
+| sandbox dataset registry (`WidgetKey` + `WIDGET_ENTRIES`) | **no — deliberate**, dev-only; a gap costs a preview |
 
-This program adds four to six widgets. Each addition currently walks five lists, and three of them fail silently — the exact shape recorded three times in the Marvin lessons (`dtsPropsFor` without `entry.tsx`; the tile-type enum without a dashboard preset).
-
-Separately, [`CLAUDE.md`](../CLAUDE.md) claims *"When adding a new widget, only create new files; the registry pattern means no enumeration list needs editing."* That is false today — at minimum `registry.ts` and the three unpinned mirrors need edits.
+This program adds four to six widgets. Adding one still walks several lists — the registry pattern shrinks that set, it does not empty it — but the walk is now guided: add the widget to `src/registry.ts`, run `npm test`, and each pin fails naming what is missing. Only the sandbox registry stays silent, and `CLAUDE.md` says so.
 
 **Desired behavior:** derive what can be derived and pin the rest.
 
-- `DashboardTileType` derived from `WIDGETS` rather than re-listed, with `dashboard` excluded structurally (no dashboard-in-dashboard).
-- The `render_dashboard` tile-type zod enum built from the same source instead of a literal array.
-- A test asserting `WIDGET_VIEWS` keys ≡ registry names minus `dashboard`, in both directions.
-- `CLAUDE.md` corrected to state what adding a widget actually touches.
+- ~~`DashboardTileType` derived from `WIDGETS`~~ — delivered as a const tuple pinned to the registry instead; see the deltas above for why deriving from `WIDGETS` is not available here.
+- ~~The `render_dashboard` tile-type zod enum built from the same source instead of a literal array.~~ Done in #58, and #63 made the enum and the type the same list.
+- ~~A test asserting `WIDGET_VIEWS` keys ≡ registry names minus `dashboard`, in both directions.~~ Done in #54.
+- ~~`CLAUDE.md` corrected to state what adding a widget actually touches.~~ Done in #58, and it now also names the two manual exceptions.
 
-**Test coverage:** one new pin per mirror; each must be verified to fail against the current tree before the fix (rule 4).
+**Test coverage:** one new pin per mirror, each verified to fail against the tree before its fix (rule 4). Done, including two mirrors this sketch had not counted.
 
-**Depends on:** none — but land it *before* the new chart types so they benefit. **Blocks:** items 11–15 in practice.
+**Depends on:** none. **Blocks:** nothing any more — items 11–15 were waiting on this and are now free to start.
 
 ---
 
@@ -339,6 +349,8 @@ Sigil can show a joint distribution (scatter) but not a marginal one: no spread,
 | 14 | `distribution-chart` | chart types | 2, 4 |
 | 15 | `heatmap-calendar-variant` | chart types | — |
 
+**State:** items 1 and 2 are shipped; 3–15 are open. Items 3 and 4 are the remaining foundations and are independent of each other and of everything else.
+
 Items 1–4 are genuinely independent of each other and can run in any order or in parallel. After them, the three tracks (5–7, 8–9, 10–11) are independent; stage 5 draws on stage 2's output.
 
 **Minimum viable slice**, if the whole program is too much: items 4, 5, 6 — legend-state consolidation, multi-series and stacked bars, and the reference layer. That trio closes the most conspicuous expressiveness gap and makes waterfall and bullet nearly free later.
@@ -360,7 +372,7 @@ Conventions this repo already enforces, which every spec inherits:
 
 - Spec numbers are allocated at `task-start` time in start order; specs 001–006 exist, so the first item started here becomes 007. This document deliberately carries slugs only.
 - Specs are immutable once sealed (`contract_sha`); the file allowlist in the spec contract is the scope gate.
-- Gates: `npm run typecheck`, `npm test`, `npm run build`. CI runs CodeQL and CodeRabbit only — **it does not run the test suite**, so gates must pass locally before merge.
+- Gates: `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` — and **CI runs all four**, in that order, on every PR to `dev` and `main` (`.github/workflows/ci.yml`). The older claim here that CI ran CodeQL and CodeRabbit only predates the workflow file; it was already stale when this document inherited it. Build precedes test on purpose: the e2e suite serves widget bundles out of `dist/`, and on an unbuilt tree it used to downgrade to a weaker assertion silently.
 - Branch `task/<slug>` off `dev`; PRs target `dev`; `main` is release-only.
 - All Markdown in English (CLAUDE.md documentation-language rule).
 - On delivery, flip that item's `⏳ Open` banner here to `✅ Shipped` with the spec link, PR link, and as-shipped deltas versus the sketch — the pattern the design-system follow-ups doc uses.
