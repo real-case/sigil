@@ -6,6 +6,7 @@ import { ValueText } from "../shared/ValueText.js";
 import { Toolbar, ToolbarButton, CsvIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { toCsv, copyText, type CsvCell } from "../shared/export-utils.js";
+import { sparkPoints, type SparkBox } from "../shared/sparkline-geometry.js";
 
 const NUMBER_FMT = new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 });
 const DELTA_FMT = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
@@ -52,6 +53,15 @@ function badgeStyle(status: StatStatus | undefined): {
   };
 }
 
+const W = 100;
+const H = 28;
+
+// Symmetric 2px inset, and `flat: "floor"` — a series with no range draws along
+// the bottom, which is what this component's old `range = max - min || 1` worked
+// out to. Preserved exactly by the consolidation; see the note on SparkBox.flat
+// for why it is worth a second look.
+const SPARK_BOX: SparkBox = { width: W, height: H, padX: 2, padY: 2, flat: "floor" };
+
 // Compact area+line sparkline. The viewBox is stretched to the card width
 // (preserveAspectRatio="none"); a non-scaling stroke keeps the line crisp and
 // the end marker is omitted so the horizontal stretch can't distort it.
@@ -66,18 +76,17 @@ function Sparkline({
   gradientId: string;
   label: string;
 }) {
-  const W = 100;
-  const H = 28;
-  const pad = 2;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
   const n = values.length;
-  const x = (i: number) => pad + (i / (n - 1)) * (W - pad * 2);
-  const y = (v: number) => pad + (1 - (v - min) / range) * (H - pad * 2);
-  const pts = values.map((v, i) => `${x(i).toFixed(2)},${y(v).toFixed(2)}`);
+  const points = sparkPoints(values, SPARK_BOX);
+  const first = points[0];
+  const last = points[points.length - 1];
+  // Only reachable if the caller's `trend.length > 1` check ever moves: one
+  // point is a dot, not a line, and the geometry declines to guess.
+  if (!first || !last) return null;
+
+  const pts = points.map((p) => `${p.x},${p.y}`);
   const line = `M ${pts.join(" L ")}`;
-  const area = `M ${x(0).toFixed(2)},${H} L ${pts.join(" L ")} L ${x(n - 1).toFixed(2)},${H} Z`;
+  const area = `M ${first.x},${H} L ${pts.join(" L ")} L ${last.x},${H} Z`;
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}

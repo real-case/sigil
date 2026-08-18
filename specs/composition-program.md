@@ -106,7 +106,15 @@ This program adds four to six widgets. Adding one still walks several lists — 
 
 ## 3. Shared sparkline geometry
 
-> ⏳ Open
+> ✅ Shipped — PR [#66](https://github.com/real-case/sigil/pull/66)
+>
+> **As-shipped deltas versus this sketch:**
+> - The sketch reads as though one geometry was written twice. It was not: the copies had **three** substantive differences — asymmetric vs symmetric padding, a rangeless series drawn on the midline vs on the floor, and an empty-string vs `NaN` answer below two points. Byte-identity was the harder requirement, so [`sparkline-geometry.ts`](../src/widgets/shared/sparkline-geometry.ts) carries the differences as options (`padX`/`padY`, `flat: "middle" | "floor"`) rather than resolving them. Consolidating the *behaviour* is a redesign and is still open.
+> - **Likely bug, preserved deliberately:** the stat panel's `range = max - min || 1` puts a flat series on the bottom inset, so a metric that did not move draws along the floor as though pinned at its minimum. The table puts the same series on the midline. Both are pinned by test, so unifying them later is a deliberate act with a failing test attached rather than a silent visual change.
+> - `table-cells.test.ts`'s assertions did **not** move onto the shared module as the sketch suggests. `sparkPoints` stays in [`cells.ts`](../src/widgets/table/cells.ts) as the table's wrapper, so all 15 existing assertions — written against the old implementation — now exercise the new one unchanged. That is better evidence than relocating them would have been.
+> - Byte-identity is pinned against output **captured from the old implementations before they were replaced**, for eight series each, not against what the new code happens to emit. Verified by three deliberate breaks: unifying `flat` fails 4 tests, symmetric padding fails 9, dropping the 2dp formatting fails 21.
+> - The shared module refuses fewer than two points instead of emitting `NaN`; the stat panel was relying on its caller's `trend.length > 1` check for that.
+> - Suite 473 → 497 tests.
 
 **Task slug:** `shared-sparkline-geometry` · risk: low · breaking: no · stack: typescript, react
 
@@ -349,7 +357,7 @@ Sigil can show a joint distribution (scatter) but not a marginal one: no spread,
 | 14 | `distribution-chart` | chart types | 2, 4 |
 | 15 | `heatmap-calendar-variant` | chart types | — |
 
-**State:** items 1 and 2 are shipped; 3–15 are open. Items 3 and 4 are the remaining foundations and are independent of each other and of everything else.
+**State:** items 1, 2 and 3 are shipped; 4–15 are open. Item 4 is the last of the foundations.
 
 Items 1–4 are genuinely independent of each other and can run in any order or in parallel. After them, the three tracks (5–7, 8–9, 10–11) are independent; stage 5 draws on stage 2's output.
 
