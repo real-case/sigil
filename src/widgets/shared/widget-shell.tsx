@@ -20,22 +20,47 @@ export interface MountWidgetOptions<P> {
   loadingVariant?: LoadingVariant;
 }
 
-function extractPayload<P>(
+/**
+ * A guard is a widget's own code, handed a value nothing has vetted:
+ * `structuredContent` is whatever the host passed along, and the text branch
+ * below offers up free text that JSON.parse merely happened to accept. Guards
+ * can therefore fail to answer rather than answer no — `isTreemapNode` recurses
+ * on `children` with no depth bound, so a deep enough payload arrives as a
+ * RangeError. Tile.tsx wraps its own guard call for this reason and spends one
+ * tile on it; up here an escaping throw leaves `ontoolresult`, so the widget
+ * unmounts whole instead of showing its parse-error state.
+ */
+function accepts<P>(
+  isPayload: (value: unknown) => value is P,
+  value: unknown,
+): value is P {
+  try {
+    return isPayload(value);
+  } catch {
+    return false;
+  }
+}
+
+export function extractPayload<P>(
   result: { structuredContent?: unknown; content?: unknown },
   isPayload: (value: unknown) => value is P,
 ): P | null {
-  if (isPayload(result.structuredContent)) {
+  if (accepts(isPayload, result.structuredContent)) {
     return result.structuredContent;
   }
   if (Array.isArray(result.content) && result.content.length > 0) {
     const first = result.content[0] as { type?: string; text?: string };
     if (first?.type === "text" && typeof first.text === "string") {
+      // Scoped to JSON.parse alone: while this catch also covered the guard
+      // call, the text branch survived a throwing guard only by accident, and
+      // would have lost that the moment the parse moved or narrowed.
+      let parsed: unknown;
       try {
-        const parsed: unknown = JSON.parse(first.text);
-        if (isPayload(parsed)) return parsed;
+        parsed = JSON.parse(first.text);
       } catch {
-        // fallthrough
+        return null;
       }
+      if (accepts(isPayload, parsed)) return parsed;
     }
   }
   return null;
