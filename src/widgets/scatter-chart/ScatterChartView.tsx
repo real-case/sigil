@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import {
   ScatterChart,
   Scatter,
@@ -27,9 +27,8 @@ import {
 } from "../shared/chart-text.js";
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
+import { useLegendState } from "../shared/legend-state.js";
 
-const MUTED_OPACITY = 0.18;
-const UNFOCUSED_OPACITY = 0.2;
 const BASE_FILL_OPACITY = 0.7;
 const POINT_RANGE: [number, number] = [40, 320];
 
@@ -43,8 +42,8 @@ function hasSizeEncoding(series: ScatterSeries[]): boolean {
 
 export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) {
   const tokens = useTheme();
-  const [focused, setFocused] = useState<number | null>(null);
-  const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
+  const { focused, muted, setFocused, toggleMute, opacityFor } =
+    useLegendState({ unfocusedOpacity: 0.2 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const { title, series, xlabel, ylabel } = payload;
 
@@ -90,21 +89,6 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
     if (!svg) throw new Error("Chart SVG not found");
     await copySvgAsPng(svg as SVGSVGElement, "scatter-chart", tokens.surfaces.bg);
   };
-
-  const toggleMute = (i: number) =>
-    setMuted((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
-      return next;
-    });
-
-  const opacityFor = (i: number) =>
-    muted.has(i)
-      ? MUTED_OPACITY
-      : focused !== null && focused !== i
-        ? UNFOCUSED_OPACITY
-        : 1;
 
   const globalMin = Math.min(...stats.map((s) => s.min));
   const globalMax = Math.max(...stats.map((s) => s.max));

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   BarChart,
   Bar,
@@ -28,9 +28,8 @@ import {
 } from "../shared/chart-text.js";
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
+import { useLegendState } from "../shared/legend-state.js";
 
-const MUTED_OPACITY = 0.18;
-const UNFOCUSED_OPACITY = 0.32;
 const BAR_RADIUS = 7;
 const BAR_SIZE = 26;
 const ROW_HEIGHT = 62;
@@ -96,8 +95,8 @@ function ActiveBandBridge({
 
 export function BarChartView({ payload }: { payload: BarChartPayload }) {
   const tokens = useTheme();
-  const [focused, setFocused] = useState<number | null>(null);
-  const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
+  const { focused, muted, setFocused, toggleMute, opacityFor } =
+    useLegendState({ unfocusedOpacity: 0.32 });
   const canvasRef = useRef<HTMLDivElement>(null);
   // Defaults mirror the render_bar_chart handler, for the tile path where no
   // handler ran. See the note atop shared/payloads.ts.
@@ -117,21 +116,6 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
     if (!svg) throw new Error("Chart SVG not found");
     await copySvgAsPng(svg as SVGSVGElement, "bar-chart", tokens.surfaces.bg);
   };
-
-  const toggleMute = (i: number) =>
-    setMuted((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
-      return next;
-    });
-
-  const opacityFor = (i: number) =>
-    muted.has(i)
-      ? MUTED_OPACITY
-      : focused !== null && focused !== i
-        ? UNFOCUSED_OPACITY
-        : 1;
 
   const {
     total,
