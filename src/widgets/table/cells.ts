@@ -1,8 +1,10 @@
 // Pure, kind-aware cell helpers for the table widget. Node-testable — no DOM,
-// no React. `sparkPoints` is geometry-only so a future shared-sparkline
-// consolidation can lift it without touching the table.
+// no React. The sparkline geometry it once carried now lives in
+// `shared/sparkline-geometry.ts`; `sparkPoints` stays as the table's thin
+// wrapper over it, keeping this module's callers and tests unchanged.
 
 import type { ColumnKind, TableCell } from "../../shared/payloads.js";
+import { sparkPolyline, type SparkBox } from "../shared/sparkline-geometry.js";
 
 export const SPARK_WIDTH = 56;
 export const SPARK_HEIGHT = 16;
@@ -14,28 +16,31 @@ export const SPARK_PAD_X = 2;
 export const SPARK_PAD_Y = 1;
 
 /**
+ * The table's box: an asymmetric inset, because 2px horizontal keeps the
+ * single-value dot (r=1.5) inside the viewport while 1px vertical is enough
+ * for the 1px stroke — a symmetric 2px pad would spend a quarter of the 16px
+ * height on padding. A flat series draws at the midline, so "no change" looks
+ * like no change.
+ */
+const box = (width: number, height: number): SparkBox => ({
+  width,
+  height,
+  padX: SPARK_PAD_X,
+  padY: SPARK_PAD_Y,
+  flat: "middle",
+});
+
+/**
  * Map a numeric series (oldest → newest) onto an SVG polyline `points` string
- * inside a `width`×`height` box. Min/max normalized, y inverted so the max is
- * up; a constant series draws at the vertical midline. Coordinates carry fixed
- * two-decimal precision so the output is stable across engines. Fewer than 2
- * values yields an empty string (a single value renders as a dot, not a line).
+ * inside a `width`×`height` box. Fewer than 2 values yields an empty string
+ * (a single value renders as a dot, not a line).
  */
 export function sparkPoints(
   values: readonly number[],
   width: number = SPARK_WIDTH,
   height: number = SPARK_HEIGHT,
 ): string {
-  if (values.length < 2) return "";
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min;
-  const n = values.length;
-  const x = (i: number) => SPARK_PAD_X + (i / (n - 1)) * (width - SPARK_PAD_X * 2);
-  const y = (v: number) =>
-    range === 0
-      ? height / 2
-      : SPARK_PAD_Y + (1 - (v - min) / range) * (height - SPARK_PAD_Y * 2);
-  return values.map((v, i) => `${x(i).toFixed(2)},${y(v).toFixed(2)}`).join(" ");
+  return sparkPolyline(values, box(width, height));
 }
 
 /**
