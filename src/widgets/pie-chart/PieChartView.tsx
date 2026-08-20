@@ -21,9 +21,8 @@ import { EmptyState } from "../shared/EmptyState.js";
 import { fmtNumber, fmtCompact, fmtShare } from "../shared/chart-text.js";
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
+import { useLegendState } from "../shared/legend-state.js";
 
-const MUTED_OPACITY = 0.18;
-const UNFOCUSED_OPACITY = 0.32;
 // Fat ring per the redesign: inner/outer ≈ 0.67 leaves room for the center KPI.
 const OUTER_RADIUS = "80%";
 const DONUT_INNER_RADIUS = "54%";
@@ -62,8 +61,8 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
   const tokens = useTheme();
   // focused/muted key on origIndex into payload.data (-1 = the synthetic
   // Other), so they stay meaningful across collapse/expand.
-  const [focused, setFocused] = useState<number | null>(null);
-  const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
+  const { focused, muted, setFocused, toggleMute, opacityFor, reset } =
+    useLegendState({ unfocusedOpacity: 0.32 });
   const [expanded, setExpanded] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   // "donut", not "pie": the schema's documented default, applied here for the
@@ -76,8 +75,10 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
   // UI state would leak across payload swaps — reset it when the data changes.
   useEffect(() => {
     setExpanded(false);
-    setMuted((prev) => (prev.size ? new Set() : prev));
-    setFocused(null);
+    reset();
+    // `reset` is a fresh closure each render and listing it would re-run this
+    // on every one; `data` is the trigger, as before the hook existed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   const full = useMemo<PieDisplaySlice[]>(
@@ -124,21 +125,6 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
   };
 
   const isDonut = variant === "donut";
-
-  const toggleMute = (orig: number) =>
-    setMuted((prev) => {
-      const next = new Set(prev);
-      if (next.has(orig)) next.delete(orig);
-      else next.add(orig);
-      return next;
-    });
-
-  const opacityFor = (orig: number) =>
-    muted.has(orig)
-      ? MUTED_OPACITY
-      : focused !== null && focused !== orig
-        ? UNFOCUSED_OPACITY
-        : 1;
 
   // The synthetic Other renders in the neutral muted tone; kept slices take
   // their palette colour from origIndex so hues stay stable across

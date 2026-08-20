@@ -130,7 +130,15 @@ Parked consolidation, already recorded in [design-system-followups](./design-sys
 
 ## 4. Shared legend state
 
-> ⏳ Open
+> ✅ Shipped — PR [#67](https://github.com/real-case/sigil/pull/67)
+>
+> **As-shipped deltas versus this sketch:**
+> - The hook is a thin `useState` wrapper over two **exported pure functions**, `legendOpacity` and `toggleMuted`, rather than holding the rules itself. This suite runs under `environment: "node"`: there is no DOM to render a hook into and `renderToString` cannot drive the state one produces, so rules kept inside the hook would have been untestable. Same shape as item 3 — pure core, thin wrapper.
+> - The sketch's return shape gained `reset()`. Only the pie chart needs it (it clears focus and mute when the payload changes, since `mountWidget` and the sandbox render the view without a key), and it preserves the original's nuance of keeping the existing set when it is already empty rather than handing consumers a new reference.
+> - **A source pin, beyond the sketch's "hook unit tests":** unit tests cannot see *which* opacity a widget passes, and swapping 0.2 for 0.32 compiles, passes everything else, and shows up only to the eye. `legend-state.test.ts` reads the four sources and asserts both the value each one passes and that none has kept a state machine of its own.
+> - Behaviour preservation was checked by capturing all four views' rendered output **before** the change and diffing after — byte-identical. Verified the pins fail three ways: focus winning over muting, the bar chart's opacity swapped, and the mute set mutated in place.
+> - Swept up a stray `TreemapNode` import left behind by #63. It had been sitting on `dev` as a lint **warning**, and `biome lint` exits 0 on warnings — so the gate reports that class without failing on it. Worth deciding whether CI should use `--error-on-warnings`.
+> - 82 lines removed from the four views for 20 added. Suite 497 → 511.
 
 **Task slug:** `use-legend-state` · risk: low · breaking: no · stack: typescript, react
 
@@ -357,7 +365,7 @@ Sigil can show a joint distribution (scatter) but not a marginal one: no spread,
 | 14 | `distribution-chart` | chart types | 2, 4 |
 | 15 | `heatmap-calendar-variant` | chart types | — |
 
-**State:** items 1, 2 and 3 are shipped; 4–15 are open. Item 4 is the last of the foundations.
+**State:** the four foundations (items 1–4) are shipped; 5–15 are open. The three tracks — 5–7, 8–9, 10–11 — are independent of each other and can start in any order.
 
 Items 1–4 are genuinely independent of each other and can run in any order or in parallel. After them, the three tracks (5–7, 8–9, 10–11) are independent; stage 5 draws on stage 2's output.
 

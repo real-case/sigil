@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState, type Key } from "react";
+import { useId, useMemo, useRef, type Key } from "react";
 import {
   AreaChart,
   Area,
@@ -24,9 +24,8 @@ import {
 } from "../shared/chart-text.js";
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
+import { useLegendState } from "../shared/legend-state.js";
 
-const MUTED_OPACITY = 0.18;
-const UNFOCUSED_OPACITY = 0.2;
 const STROKE_WIDTH = 2.4;
 const AREA_TOP_OPACITY = 0.18;
 // Gradient fills read cleanly for a couple of series; beyond that the
@@ -75,8 +74,8 @@ interface SeriesStats {
 
 export function LineChartView({ payload }: { payload: LineChartPayload }) {
   const tokens = useTheme();
-  const [focused, setFocused] = useState<number | null>(null);
-  const [muted, setMuted] = useState<ReadonlySet<number>>(new Set());
+  const { focused, muted, setFocused, toggleMute, opacityFor } =
+    useLegendState({ unfocusedOpacity: 0.2 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const gradientUid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const { title, series, xlabel, ylabel } = payload;
@@ -132,21 +131,6 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
     if (!svg) throw new Error("Chart SVG not found");
     await copySvgAsPng(svg as SVGSVGElement, "line-chart", tokens.surfaces.bg);
   };
-
-  const toggleMute = (i: number) =>
-    setMuted((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
-      return next;
-    });
-
-  const opacityFor = (i: number) =>
-    muted.has(i)
-      ? MUTED_OPACITY
-      : focused !== null && focused !== i
-        ? UNFOCUSED_OPACITY
-        : 1;
 
   // Legend range positions, relative to the plotted floor (0 for all-positive
   // data, dataMin otherwise) → max across every series.

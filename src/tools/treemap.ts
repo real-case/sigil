@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
 import { treemapSchema } from "../shared/schemas.js";
-import type { TreemapPayload, TreemapNode } from "../shared/payloads.js";
+import type { TreemapPayload } from "../shared/payloads.js";
 
 export const TREEMAP_UI_URI = "ui://sigil/treemap";
 
