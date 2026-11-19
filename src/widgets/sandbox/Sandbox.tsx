@@ -1,6 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { setForcedTheme, type ThemeName } from "../shared/theme.js";
+import { createFollowUp, FollowUpProvider, type FollowUpHost } from "../shared/follow-up.js";
 import { WIDGET_ENTRIES, type WidgetKey } from "./datasets/index.js";
+
+interface HostLogEntry {
+  kind: "message" | "context";
+  text: string;
+}
+
+/**
+ * A stand-in host that declares `message` and `updateModelContext` and records
+ * what the widget sends, so drill-down can be tried without Claude. The 600 ms
+ * delay keeps a message "in flight" long enough to see that a second pick is
+ * dropped.
+ */
+function fakeHost(log: (entry: HostLogEntry) => void): FollowUpHost {
+  return {
+    getHostCapabilities: () => ({ message: {}, updateModelContext: {} }),
+    sendMessage: async ({ content }) => {
+      log({ kind: "message", text: content.map((c) => c.text).join("\n") });
+      await new Promise((r) => setTimeout(r, 600));
+      return {};
+    },
+    updateModelContext: async ({ content }) => {
+      log({ kind: "context", text: content.map((c) => c.text).join("\n") });
+      return {};
+    },
+  };
+}
 
 const VIEWPORT_PRESETS = [
   { id: "320", label: "320 — mobile", width: 320 },
@@ -50,6 +77,17 @@ export function Sandbox() {
   const viewportWidth = VIEWPORT_PRESETS.find((v) => v.id === viewport)?.width ?? null;
 
   const [debug, setDebug] = useState(false);
+
+  // Drill-down: off behaves like a host without `message` (no menu at all).
+  const [hostMessage, setHostMessage] = useState(false);
+  const [hostLog, setHostLog] = useState<HostLogEntry[]>([]);
+  const followUp = useMemo(
+    () =>
+      hostMessage
+        ? createFollowUp(fakeHost((entry) => setHostLog((prev) => [entry, ...prev].slice(0, 8))))
+        : null,
+    [hostMessage],
+  );
 
   const View = entry.View;
 
@@ -129,6 +167,18 @@ export function Sandbox() {
             {debug ? "on" : "off"}
           </button>
         </div>
+
+        <div className="group">
+          <span className="label">Host message</span>
+          <button
+            type="button"
+            data-active={hostMessage}
+            onClick={() => setHostMessage((v) => !v)}
+            title="Pretend the host declares hostCapabilities.message (drill-down menu on marks)"
+          >
+            {hostMessage ? "on" : "off"}
+          </button>
+        </div>
       </header>
 
       <div className="sandbox-stage-wrap">
@@ -147,11 +197,26 @@ export function Sandbox() {
           </div>
           <div className="sandbox-stage-frame" data-debug={debug}>
             {dataset ? (
-              <View payload={dataset.payload} />
+              <FollowUpProvider value={followUp}>
+                <View payload={dataset.payload} />
+              </FollowUpProvider>
             ) : (
               <div className="sandbox-empty">No dataset selected.</div>
             )}
           </div>
+          {hostMessage && (
+            <ol className="sandbox-host-log" aria-label="Messages sent to the host">
+              {hostLog.length === 0 ? (
+                <li>Click a mark to open its drill-down menu.</li>
+              ) : (
+                hostLog.map((e, i) => (
+                  <li key={i} data-kind={e.kind}>
+                    <b>{e.kind === "message" ? "sendMessage" : "updateModelContext"}</b> {e.text}
+                  </li>
+                ))
+              )}
+            </ol>
+          )}
         </div>
       </div>
     </div>

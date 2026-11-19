@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import {
   applyDocumentTheme,
@@ -8,6 +8,7 @@ import {
 import { installThemeStyles, type ThemeName } from "./theme.js";
 import { LoadingSkeleton, type LoadingVariant } from "./LoadingSkeleton.js";
 import { EmptyState } from "./EmptyState.js";
+import { createFollowUp, FollowUpProvider } from "./follow-up.js";
 import "./styles.css";
 
 // Injected by Vite `define` from package.json at build time; absent when the
@@ -137,6 +138,14 @@ export function mountWidget<P>(opts: MountWidgetOptions<P>): void {
       if (isConnected && app) syncHostTheme(app.getHostContext());
     }, [app, isConnected]);
 
+    // Drill-down needs the host's capabilities, which arrive with the same
+    // handshake; null until then, and null for good on a host without
+    // `message` — views then keep their pre-drill-down click behaviour.
+    const followUp = useMemo(
+      () => (isConnected && app ? createFollowUp(app) : null),
+      [app, isConnected],
+    );
+
     if (error) {
       return (
         <ShellFrame>
@@ -166,7 +175,11 @@ export function mountWidget<P>(opts: MountWidgetOptions<P>): void {
         </ShellFrame>
       );
     }
-    return <View payload={payload} />;
+    return (
+      <FollowUpProvider value={followUp}>
+        <View payload={payload} />
+      </FollowUpProvider>
+    );
   }
 
   const root = document.getElementById("root");

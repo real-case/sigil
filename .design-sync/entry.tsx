@@ -41,3 +41,4 @@ export { StatPanelView } from "../src/widgets/stat-panel/StatPanelView.js";
 export { SankeyView } from "../src/widgets/sankey/SankeyView.js";
 export { DashboardView } from "../src/widgets/dashboard/DashboardView.js";
 export { MapView } from "../src/widgets/map/MapView.js";
+export { FunnelView } from "../src/widgets/funnel/FunnelView.js";

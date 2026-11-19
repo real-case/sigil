@@ -571,3 +571,62 @@ body,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ----- drill-down menu (MarkMenu.tsx) ------------------------------------ */
+
+.sigil-mark-menu {
+  position: fixed;
+  /* Above the Recharts tooltip wrapper (z-index 1000), which keeps following
+     the pointer while the menu is open. */
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--sigil-surface-elevated);
+  border: 1px solid var(--sigil-border-default);
+  border-radius: var(--sigil-radius-md);
+  box-shadow: var(--sigil-shadow-mid);
+  font-family: var(--sigil-font-tooltip-family);
+  font-size: var(--sigil-font-tooltip-size);
+  color: var(--sigil-text);
+  animation: sigil-tooltip-enter var(--sigil-duration-base) var(--sigil-easing-standard);
+}
+
+.sigil-mark-menu-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px 6px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--sigil-border-subtle);
+  color: var(--sigil-text-secondary);
+}
+
+.sigil-mark-menu-head > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sigil-mark-menu-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--sigil-text-muted);
+}
+
+.sigil-mark-menu-item {
+  all: unset;
+  box-sizing: border-box;
+  padding: 7px 8px;
+  border-radius: var(--sigil-radius-sm);
+  cursor: pointer;
+}
+
+.sigil-mark-menu-item:hover,
+.sigil-mark-menu-item:focus-visible {
+  background: var(--sigil-surface-sunken);
+}
+
+.sigil-mark-menu-item:focus-visible {
+  outline: var(--sigil-focus-ring-width) solid var(--sigil-focus-ring);
+  outline-offset: -2px;
+}

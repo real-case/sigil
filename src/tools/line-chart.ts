@@ -28,6 +28,7 @@ export function registerLineChartTool(server: McpServer) {
     async (args) => {
       const payload: LineChartPayload = {
         title: args.title,
+        followUps: args.followUps,
         series: args.series,
         xlabel: args.xlabel,
         ylabel: args.ylabel,

@@ -406,7 +406,9 @@ Each item above is deliberately a *seed*, not a spec: it states the current beha
 ## Out of scope (for this program)
 
 - **Cross-tile interactivity** — synced crosshair, shared filters, click-through between tiles. It needs a cross-tile state bus and, for anything server-backed, `app.callServerTool` drill-down, which is deferred pending a live GUI host. Revisit as its own program once drill-down lands.
+  - *Update (phase 2 of the November 2026 update plan, PR stacked on [#77](https://github.com/real-case/sigil/pull/77)):* single-chart drill-down has landed in a different form — a click on a mark offers follow-up questions and sends the picked one to the model with `app.sendMessage`, on hosts that declare `hostCapabilities.message` (`src/widgets/shared/follow-up.ts`, `MarkMenu.tsx`). No server round-trip and no cross-tile state, so the rest of this bullet still stands.
 - **Dashboard tabs.** Sections (item 9) cover most of the density problem without a view-state machine.
-- **Radar and funnel charts.** Already assessed as near-duplicates of grouped bar and bar-by-stage respectively; reconsider only after item 5 ships and the overlap can be judged against a real grouped bar.
+- **Radar charts.** Already assessed as a near-duplicate of grouped bar; reconsider only after item 5 ships and the overlap can be judged against a real grouped bar.
+  - *Funnel moved out of this list:* the November 2026 update plan (decision R1) ships it as its own `render_funnel` — users say "funnel", the model looks for that word in the tool list, and the payload carries stage-to-stage conversion that a bar chart does not compute.
 - **Network / force-directed graphs, candlestick, chord, sunburst.** Either a new runtime dependency against the single-file bundle constraint, or an audience too narrow to justify a slot in the tool list.
 - **Bundle-size work.** Standing repo rule: widgets ship self-contained; portability beats kilobytes.

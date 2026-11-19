@@ -8,7 +8,7 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 
 🌐 [sigil.live](https://sigil.live) · [TESTING.md](./TESTING.md) · [INCANTATIONS.md](./INCANTATIONS.md) · [SPEC.md](./SPEC.md)
 
-> **Status:** v0.2.0 — 11 widgets + payload-guard / registry / registration test harness.
+> **Status:** v0.2.0 — 12 widgets + payload-guard / registry / registration test harness.
 
 ## Demo
 
@@ -29,8 +29,11 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 | [`render_sankey`](#render_sankey) | source-to-destination flows: budgets, user journeys, traffic | flow ribbons between stages, width ∝ value, hover-highlighting of connected flows |
 | [`render_dashboard`](#render_dashboard) | several related views at once | grid of tiles, each tile any other widget rendered from its own payload |
 | [`render_map`](#render_map) | country- or state-level metrics, geographic intensity | world / US-state choropleth — regions shaded by value, hover tooltip, click-to-focus |
+| [`render_funnel`](#render_funnel) | conversion funnels, drop-off, pipeline stages | ordered stage bars with conversion from first and previous stage, largest drop called out |
 
 All chart widgets expose **Copy CSV** and **Copy PNG** buttons; the table and stat panel expose **Copy CSV**. The dashboard composes other widgets, so each tile keeps its own controls.
+
+**Drill-down.** On a host that accepts messages from a widget (MCP Apps `hostCapabilities.message`), clicking a bar, point, slice, funnel step, heatmap cell or table row opens a small menu of follow-up questions — "Break down…", "Why is it like this?", "Show rows" — and the one picked is sent to the model as your next message, naming the mark and the chart. Bar, line, pie, funnel, heatmap and table accept an optional `followUps: string[]` to replace those defaults with questions about the data's real dimensions. On other hosts there is no menu and a click behaves as before.
 
 ### Optional: Ritual Mode
 
@@ -282,7 +285,7 @@ Render a multi-widget dashboard: a grid of tiles where each tile is one of the o
 | `title` | `string` | yes | Dashboard title |
 | `columns` | `number` | no | Grid column count (1–4); defaults to `2` |
 | `tiles` | `Array<{ type, payload, colSpan? }>` | yes | Ordered tiles, laid out left-to-right, top-to-bottom |
-| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel" \| "sankey" \| "map"` | yes | Which widget to render |
+| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel" \| "sankey" \| "map" \| "funnel"` | yes | Which widget to render |
 | `tiles[].payload` | `object` | yes | That widget's own payload — the same object its `render_<type>` tool accepts |
 | `tiles[].colSpan` | `number` | no | How many columns the tile spans (1..`columns`); defaults to `1` |
 
@@ -311,6 +314,24 @@ Geometry is the bundled [world-atlas](https://github.com/topojson/world-atlas) /
 
 ---
 
+### `render_funnel`
+
+Render a conversion funnel: ordered stages as left-aligned bars sized by how many reached each one. Every stage shows its conversion from the first stage and from the previous one, and the largest drop between two stages is called out in words as well as colour.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Chart title |
+| `steps` | `Array<{ label, value, conversionTime? }>` | yes | Stages first to last, 1–20 |
+| `steps[].label` | `string` | yes | Stage name |
+| `steps[].value` | `number` | yes | Non-negative count that reached the stage |
+| `steps[].conversionTime` | `string` | no | Typical time from the previous stage, as display text (`"2.4 days"`) |
+| `orientation` | `"horizontal" \| "vertical"` | no | Default `"horizontal"` (one row per stage); `"vertical"` puts stages left to right |
+| `showDropOff` | `boolean` | no | Default `true`: loss between stages and the largest-drop callout |
+| `valueLabel` | `string` | no | What the values count, e.g. `"users"` |
+| `followUps` | `string[]` | no | Drill-down menu items — see **Drill-down** above |
+
+The header KPI is overall conversion, first stage to last. A stage of 0 prints `0%` and the stages after it a dash, never `NaN`; a stage larger than the one before it is drawn at its real size and marked "grew" rather than capped.
+
 ## Development
 
 ```bash
@@ -320,7 +341,7 @@ npm run dev:stdio           # stdio server (for Claude Desktop / VS Code)
 npm run dev:sandbox         # in-browser widget sandbox — pick any widget + preset, toggle theme / viewport / debug overlay
 npm run typecheck           # tsc --noEmit
 npm test                    # vitest: payloads, registry, registration, theme, e2e
-npm run build               # bundle 11 widgets + compile server
+npm run build               # bundle 12 widgets + compile server
 npm start                   # run compiled HTTP server
 npm run start:stdio         # run compiled stdio server
 ```
@@ -357,7 +378,8 @@ src/
 │   ├── stat-panel.ts
 │   ├── sankey.ts
 │   ├── dashboard.ts
-│   └── map.ts
+│   ├── map.ts
+│   └── funnel.ts
 ├── resources/            # ui:// resource serving for bundled widget HTMLs
 ├── registry.ts           # single source of truth — server tools, resources, build
 ├── shared/payloads.ts    # contract types between server and widgets
@@ -374,7 +396,8 @@ src/
     ├── stat-panel/       # KPI / scorecard cards
     ├── sankey/           # flow ribbons between stages (Recharts Sankey)
     ├── dashboard/        # grid of tiles composing the other widgets
-    └── map/              # d3-geo + TopoJSON choropleth / bubbles (no Recharts)
+    ├── map/              # d3-geo + TopoJSON choropleth / bubbles (no Recharts)
+    └── funnel/           # conversion funnel, hand-rolled SVG (no Recharts)
 ```
 
 Each widget bundles to a standalone single-file HTML via Vite + `vite-plugin-singlefile`, then gets served as a `ui://sigil/<widget>` resource by the MCP server. The host renders it in a sandboxed iframe and communicates with it via `postMessage` per the MCP Apps spec.

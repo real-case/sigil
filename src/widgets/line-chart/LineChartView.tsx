@@ -38,6 +38,8 @@ import {
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 import { useLegendState } from "../shared/legend-state.js";
+import { useMarkMenu } from "../shared/MarkMenu.js";
+import { ActiveDatumProbe, useChartKeyActivation, type ActiveDatum } from "../shared/chart-activation.js";
 
 const STROKE_WIDTH = 2.4;
 const AREA_TOP_OPACITY = 0.18;
@@ -73,6 +75,11 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
   const { focused, muted, setFocused, toggleMute, opacityFor } =
     useLegendState({ unfocusedOpacity: 0.2 });
   const canvasRef = useRef<HTMLDivElement>(null);
+  const probe = useRef<ActiveDatum | null>(null);
+  const menu = useMarkMenu(payload.title, payload.followUps);
+  // Set below, after the early return; the key handler reads it at key time.
+  const openRowRef = useRef<((datum: unknown, at: { x: number; y: number }) => void) | null>(null);
+  useChartKeyActivation(canvasRef, probe, menu.open && ((d, at) => openRowRef.current?.(d, at)));
   const gradientUid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const { title, series, xlabel, ylabel, reference, annotations, partialFrom } = payload;
 
@@ -264,6 +271,26 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
       "stroke-opacity var(--sigil-duration-base) var(--sigil-easing-standard), fill-opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
   };
 
+  // Drill-down on a line chart is per x value: a click anywhere on the plot,
+  // or Enter on the focused chart, asks about the point the tooltip is on.
+  const openRow = menu.open
+    ? (datum: unknown, at: { x: number; y: number }) => {
+        const row = datum as LineRow;
+        const values = series.flatMap((s, i) => {
+          const v = muted.has(i) ? undefined : valueAt(row, s.name);
+          return v === undefined ? [] : [series.length > 1 ? `${s.name} ${fmtNumber(v)}` : fmtNumber(v)];
+        });
+        menu.open?.(
+          {
+            label: xlabel !== undefined ? `${xlabel} ${String(row.x)}` : String(row.x),
+            value: values.length > 0 ? values.join("; ") : undefined,
+          },
+          at,
+        );
+      }
+    : null;
+  openRowRef.current = openRow;
+
   const lastRow = rows.length - 1;
   const showFill = series.length <= AREA_FILL_MAX_SERIES;
 
@@ -364,6 +391,16 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
           <AreaChart
             aria-label={chartLabel(title, "line chart", detail)}
             data={plotRows}
+            style={openRow ? { cursor: "pointer" } : undefined}
+            onClick={
+              openRow
+                ? (_state, e) => {
+                    const active = probe.current;
+                    const { clientX, clientY } = e as unknown as MouseEvent;
+                    if (active) openRow(active.datum, { x: clientX, y: clientY });
+                  }
+                : undefined
+            }
             margin={{
               // Annotation labels sit inside the plot's top edge, two rows deep.
               top: annotations?.length ? 30 : 12 + referenceHeadroom(reference),
@@ -464,6 +501,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
             {annotationMarks(annotations, tokens)}
             {ghosts}
             {lines}
+            <ActiveDatumProbe into={probe} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -475,6 +513,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
         onFocus={setFocused}
         onToggleMute={toggleMute}
       />
+      {menu.element}
     </div>
   );
 }

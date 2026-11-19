@@ -10,8 +10,9 @@
 //   is negative); line marks are excluded, being a different measure.
 // - Percent values use the pie chart's share format (fmtShare).
 // - A series' `color` beats the palette; otherwise series i takes slot i.
-// - Bars are not clickable: the legend mutes and focuses series, which keeps
-//   the plot out of the keyboard sequence instead of adding a second one.
+// - The legend mutes and focuses series. A bar is clickable only for
+//   drill-down (a host that takes follow-up messages): a click opens the menu
+//   for that segment, Enter on the focused chart for the whole category.
 
 import { useMemo, useRef } from "react";
 import {
@@ -45,6 +46,8 @@ import {
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 import { useLegendState } from "../shared/legend-state.js";
+import { useMarkMenu } from "../shared/MarkMenu.js";
+import { ActiveDatumProbe, useChartKeyActivation, type ActiveDatum } from "../shared/chart-activation.js";
 import { percentDomain, seriesTotal, stackLayout, type StackRow } from "./stack-layout.js";
 
 const GROUPED_BAR_SIZE = 22;
@@ -82,6 +85,8 @@ export function SeriesBarView({
   const { focused, muted, setFocused, toggleMute, opacityFor } =
     useLegendState({ unfocusedOpacity: 0.32 });
   const canvasRef = useRef<HTMLDivElement>(null);
+  const probe = useRef<ActiveDatum | null>(null);
+  const menu = useMarkMenu(payload.title, payload.followUps);
   // Defaults mirror the render_bar_chart handler, for the tile path.
   const {
     title,
@@ -95,6 +100,16 @@ export function SeriesBarView({
   const isHorizontal = orientation === "horizontal";
   const stacked = stack !== "none";
   const percent = stack === "percent";
+  useChartKeyActivation(
+    canvasRef,
+    probe,
+    menu.open &&
+      ((datum, at) => {
+        const row = datum as StackRow;
+        const total = row.positive + row.negative;
+        menu.open?.({ label: row.label, value: stacked ? fmtNumber(total) : undefined }, at);
+      }),
+  );
 
   const { rows, categories } = useMemo(
     () => stackLayout(series, stack, muted),
@@ -238,6 +253,7 @@ export function SeriesBarView({
                 barCategoryGap={stacked ? "28%" : "18%"}
                 barGap={2}
               >
+                <ActiveDatumProbe into={probe} />
                 <CartesianGrid
                   strokeDasharray="2 5"
                   stroke={tokens.chartLines.grid}
@@ -370,6 +386,20 @@ export function SeriesBarView({
                       radius={stacked ? 0 : GROUPED_RADIUS}
                       maxBarSize={stacked ? STACKED_BAR_SIZE : GROUPED_BAR_SIZE}
                       isAnimationActive={false}
+                      style={menu.open ? { cursor: "pointer" } : undefined}
+                      onClick={
+                        menu.open
+                          ? (_, ri, e) => {
+                              const row = rows[ri];
+                              const raw = row?.raw[i];
+                              if (!row || raw === undefined) return;
+                              menu.open?.(
+                                { label: `${row.label}, ${s.name}`, value: fmtNumber(raw) },
+                                { x: e.clientX, y: e.clientY },
+                              );
+                            }
+                          : undefined
+                      }
                     />
                   );
                 })}
@@ -386,6 +416,7 @@ export function SeriesBarView({
           onToggleMute={toggleMute}
         />
       </div>
+      {menu.element}
     </div>
   );
 }

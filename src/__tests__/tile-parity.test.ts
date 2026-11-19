@@ -31,6 +31,7 @@ import { isTreemapPayload } from "../widgets/treemap/guard.js";
 import { isHeatmapPayload } from "../widgets/heatmap/guard.js";
 import { isStatPanelPayload } from "../widgets/stat-panel/guard.js";
 import { isSankeyPayload } from "../widgets/sankey/guard.js";
+import { isFunnelPayload } from "../widgets/funnel/guard.js";
 import { isMapPayload } from "../widgets/map/guard.js";
 import { isDashboardPayload } from "../widgets/dashboard/guard.js";
 import type {
@@ -43,6 +44,7 @@ import type {
   HeatmapPayload,
   StatPanelPayload,
   SankeyPayload,
+  FunnelPayload,
   MapPayload,
   DashboardPayload,
 } from "../shared/payloads.js";
@@ -220,6 +222,21 @@ const CASES: Record<string, ErasedCase> = {
       nodes: [{ name: "a", color: "#6366F1" }, { name: "b" }],
       links: [{ source: "a", target: "b", value: 1 }],
       valueLabel: "users",
+    },
+  }),
+  funnel: parity<FunnelPayload>({
+    guard: isFunnelPayload,
+    minimal: { title: "T", steps: [{ label: "a", value: 1 }] },
+    maximal: {
+      title: "T",
+      steps: [
+        { label: "a", value: 10 },
+        { label: "b", value: 4, conversionTime: "1 day" },
+      ],
+      orientation: "vertical",
+      showDropOff: false,
+      valueLabel: "users",
+      followUps: ["Break down by channel"],
     },
   }),
   map: parity<MapPayload>({

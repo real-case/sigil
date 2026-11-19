@@ -8,6 +8,7 @@ import { isScatterChartPayload } from "../widgets/scatter-chart/guard.js";
 import { isTreemapPayload } from "../widgets/treemap/guard.js";
 import { isHeatmapPayload } from "../widgets/heatmap/guard.js";
 import { isSankeyPayload } from "../widgets/sankey/guard.js";
+import { isFunnelPayload } from "../widgets/funnel/guard.js";
 import { isMapPayload } from "../widgets/map/guard.js";
 import { isStatPanelPayload } from "../widgets/stat-panel/guard.js";
 import { isDashboardPayload } from "../widgets/dashboard/guard.js";
@@ -381,6 +382,29 @@ const cases: GuardCase[] = [
     },
   },
   {
+    name: "funnel",
+    guard: isFunnelPayload,
+    valid: {
+      title: "T",
+      steps: [
+        { label: "a", value: 10 },
+        { label: "b", value: 0, conversionTime: "2 days" },
+      ],
+      followUps: ["Break down by channel"],
+    },
+    rejects: {
+      "missing title": omit("title"),
+      "missing steps": omit("steps"),
+      "empty steps": set("steps", []),
+      "step missing label": set("steps", [{ value: 1 }]),
+      "step negative value": set("steps", [{ label: "a", value: -1 }]),
+      "step non-numeric value": set("steps", [{ label: "a", value: "10" }]),
+      "unknown orientation": set("orientation", "diagonal"),
+      "empty followUps": set("followUps", []),
+      "empty-string followUp": set("followUps", [""]),
+    },
+  },
+  {
     name: "sankey",
     guard: isSankeyPayload,
     valid: {
@@ -558,6 +582,7 @@ const cases: GuardCase[] = [
       }),
       "stat-panel tile": tile("stat-panel", { title: "T", items: [{ label: "A", value: 1 }] }),
       "sankey tile": tile("sankey", { title: "T", links: [] }),
+      "funnel tile": tile("funnel", { title: "T", steps: [] }),
       "map tile": tile("map", {
         title: "T",
         scope: "world",

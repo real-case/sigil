@@ -58,6 +58,7 @@ describe("every chart canvas keeps an accessible name", () => {
     ["treemap/TreemapView.tsx", "Treemap"],
     ["heatmap/HeatmapView.tsx", "svg"],
     ["map/MapView.tsx", "svg"],
+    ["funnel/FunnelView.tsx", "svg"],
   ];
 
   const sourceOf = (file: string) =>

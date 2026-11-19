@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type {
   ColumnAlign,
   ColumnKind,
@@ -11,6 +11,8 @@ import { Toolbar, ToolbarButton, CsvIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { useEmbedded } from "../shared/embedded.js";
 import { toCsv, copyText, type CsvCell } from "../shared/export-utils.js";
+import { useMarkMenu } from "../shared/MarkMenu.js";
+import { useRovingFocus } from "../shared/roving-focus.js";
 import {
   sparkPoints,
   cellSortValue,
@@ -183,6 +185,31 @@ export function TableView({ payload }: { payload: TablePayload }) {
     });
   };
 
+  // Drill-down on a table is per row. Only on a host that takes follow-ups do
+  // rows become focusable — one tab stop, Up/Down between rows, Enter opens
+  // the menu — so a plain table stays out of the keyboard sequence.
+  const menu = useMarkMenu(title, payload.followUps);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  const rowMark = (row: TableRow) => {
+    const [first, ...rest] = columns;
+    const text = (c: TableColumn) => String(cellCsvValue(row[c.key], c.kind ?? "text"));
+    return {
+      label: first ? `${first.label} ${text(first)}` : "row",
+      value: rest
+        .slice(0, 3)
+        .map((c) => `${c.label} ${text(c)}`)
+        .join(", ") || undefined,
+    };
+  };
+  const openRow = (ri: number, anchor: Element | null | undefined) => {
+    const row = sorted[ri];
+    if (menu.open && row && anchor) menu.open(rowMark(row), anchor);
+  };
+  const roving = useRovingFocus<HTMLTableRowElement>({
+    count: sorted.length,
+    onActivate: (ri) => openRow(ri, tbodyRef.current?.rows[ri]),
+  });
+
   const copyCsv = () => {
     const header = columns.map((c) => c.label);
     const body: CsvCell[][] = sorted.map((row) =>
@@ -257,9 +284,19 @@ export function TableView({ payload }: { payload: TablePayload }) {
                 })}
               </tr>
             </thead>
-            <tbody>
+            <tbody ref={tbodyRef}>
               {sorted.map((row, ri) => (
-                <tr key={ri}>
+                <tr
+                  key={ri}
+                  {...(menu.open
+                    ? {
+                        ...roving.itemProps(ri),
+                        className: "sigil-table-row--action",
+                        "aria-haspopup": "menu" as const,
+                        onClick: (e: React.MouseEvent<HTMLTableRowElement>) => openRow(ri, e.currentTarget),
+                      }
+                    : {})}
+                >
                   {columns.map((col) => {
                     const align = alignFor(col, numericByKey[col.key] ?? false);
                     const isNumeric = numericByKey[col.key] ?? false;
@@ -286,6 +323,7 @@ export function TableView({ payload }: { payload: TablePayload }) {
         )}
       </div>
       <TableStyles />
+      {menu.element}
     </div>
   );
 }
@@ -360,6 +398,10 @@ function TableStyles() {
 }
 .sigil-table-scroll--embedded .sigil-table thead th { background: var(--sigil-surface-sunken); }
 .sigil-table-scroll--embedded .sigil-table tbody tr:hover td { background: var(--sigil-surface); }
+.sigil-table-row--action { cursor: pointer; }
+.sigil-table-row--action:focus { outline: none; }
+.sigil-table-row--action:focus-visible td { background: var(--sigil-surface-sunken); }
+.sigil-table-row--action:focus-visible td:first-child { box-shadow: inset var(--sigil-focus-ring-width) 0 0 var(--sigil-focus-ring); }
 .sigil-spark-cell { display: inline-flex; align-items: center; gap: 6px; }
 .sigil-spark-last {
   font-family: var(--sigil-font-mono);

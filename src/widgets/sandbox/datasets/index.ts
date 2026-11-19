@@ -10,6 +10,7 @@ import { StatPanelView } from "../../stat-panel/StatPanelView.js";
 import { SankeyView } from "../../sankey/SankeyView.js";
 import { DashboardView } from "../../dashboard/DashboardView.js";
 import { MapView } from "../../map/MapView.js";
+import { FunnelView } from "../../funnel/FunnelView.js";
 import type { Dataset } from "./types.js";
 import { barDatasets } from "./bar.js";
 import { lineDatasets } from "./line.js";
@@ -22,6 +23,7 @@ import { statPanelDatasets } from "./stat-panel.js";
 import { sankeyDatasets } from "./sankey.js";
 import { dashboardDatasets } from "./dashboard.js";
 import { mapDatasets } from "./map.js";
+import { funnelDatasets } from "./funnel.js";
 
 export type WidgetKey =
   | "bar-chart"
@@ -34,7 +36,8 @@ export type WidgetKey =
   | "stat-panel"
   | "sankey"
   | "dashboard"
-  | "map";
+  | "map"
+  | "funnel";
 
 // `View` and `datasets` are linked by the same payload type `P` at
 // construction (via `defineEntry` below), but the registry array stores
@@ -67,5 +70,6 @@ export const WIDGET_ENTRIES: WidgetEntry[] = [
   defineEntry({ key: "sankey", label: "Sankey", View: SankeyView, datasets: sankeyDatasets }),
   defineEntry({ key: "dashboard", label: "Dashboard", View: DashboardView, datasets: dashboardDatasets }),
   defineEntry({ key: "map", label: "Map", View: MapView, datasets: mapDatasets }),
+  defineEntry({ key: "funnel", label: "Funnel", View: FunnelView, datasets: funnelDatasets }),
 ];
 

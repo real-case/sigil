@@ -27,6 +27,7 @@ export function registerPieChartTool(server: McpServer) {
     async (args) => {
       const payload: PieChartPayload = {
         title: args.title,
+        followUps: args.followUps,
         data: args.data,
         variant: args.variant ?? "donut",
         maxSegments: args.maxSegments,
