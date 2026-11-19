@@ -143,6 +143,49 @@ describe("MCP Apps pipeline (in-process client↔server)", () => {
     expect(failure).toMatch(/maxSegments/i);
   });
 
+  it("render_bar_chart: round-trips a stacked multi-series payload", async () => {
+    const args = {
+      title: "E2E stacked",
+      stack: "normal",
+      series: [
+        { name: "New", data: [{ label: "Jan", value: 10 }, { label: "Feb", value: 12 }] },
+        { name: "Churn", data: [{ label: "Jan", value: -3 }, { label: "Feb", value: -4 }] },
+        { name: "Net", mark: "line", data: [{ label: "Jan", value: 7 }, { label: "Feb", value: 8 }] },
+      ],
+      reference: [{ axis: "y", kind: "line", value: 10, label: "Target" }],
+    };
+    const res = await client.callTool({ name: "render_bar_chart", arguments: args });
+    expect(res.isError).toBeFalsy();
+    const structured = res.structuredContent as Record<string, unknown>;
+    expect(structured["series"]).toEqual(args.series);
+    expect(structured["stack"]).toBe("normal");
+    expect(structured["reference"]).toEqual(args.reference);
+    expect(structured["data"]).toBeUndefined();
+    expect(structured["orientation"]).toBe("vertical");
+  });
+
+  it("render_bar_chart: rejects the cross-field rules `.shape` cannot express", async () => {
+    const reject = (args: Record<string, unknown>) =>
+      client.callTool({ name: "render_bar_chart", arguments: args }).then(
+        (r) =>
+          (r as { isError?: boolean }).isError
+            ? JSON.stringify((r as { content?: unknown }).content)
+            : "unexpected success",
+        (e: unknown) => String(e),
+      );
+    const series = [{ name: "s", data: [{ label: "a", value: 1 }] }];
+    expect(
+      await reject({ title: "both", data: [{ label: "a", value: 1 }], series }),
+    ).toMatch(/mutually exclusive/);
+    expect(await reject({ title: "neither" })).toMatch(/Provide `data` or `series`/);
+    expect(
+      await reject({
+        title: "right",
+        series: [...series, { name: "m", mark: "line", axis: "right", data: series[0]!.data }],
+      }),
+    ).toMatch(/ylabelRight/);
+  });
+
   it("render_table: round-trips sparkline arrays and rejects a non-numeric entry", async () => {
     const args = TOOL_ARGS["render_table"]!;
     const res = await client.callTool({ name: "render_table", arguments: args });

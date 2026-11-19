@@ -28,6 +28,7 @@ import {
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 import { useLegendState } from "../shared/legend-state.js";
+import { referenceHeadroom, referenceMarks } from "../shared/ReferenceLayer.js";
 
 const BASE_FILL_OPACITY = 0.7;
 const POINT_RANGE: [number, number] = [40, 320];
@@ -41,7 +42,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
   const { focused, muted, setFocused, toggleMute, opacityFor } =
     useLegendState({ unfocusedOpacity: 0.2 });
   const canvasRef = useRef<HTMLDivElement>(null);
-  const { title, series, xlabel, ylabel } = payload;
+  const { title, series, xlabel, ylabel, reference } = payload;
 
   const totalPoints = useMemo(
     () => series.reduce((n, s) => n + s.data.length, 0),
@@ -130,7 +131,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
               `${countOf(series.length, "series", "series")}, ${countOf(totalPoints, "point")}`,
             )}
             margin={{
-              top: 12,
+              top: 12 + referenceHeadroom(reference),
               right: 16,
               bottom: 8,
               left: ylabel ? 8 : 0,
@@ -201,6 +202,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
                 />
               )}
             />
+            {referenceMarks(reference, tokens)}
             {series.map((s, i) => (
               <Scatter
                 key={s.name}

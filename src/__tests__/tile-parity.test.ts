@@ -80,6 +80,26 @@ const CASES: Record<string, ErasedCase> = {
       orientation: "horizontal",
       xlabel: "x",
       ylabel: "y",
+      reference: [{ axis: "y", kind: "line", value: 1, label: "Target", tone: "success" }],
+    },
+  }),
+  // `data` and `series` are mutually exclusive, so the multi-series surface
+  // needs its own pair: one payload cannot carry every optional at once.
+  "bar-chart (series)": parity<BarChartPayload>({
+    guard: isBarChartPayload,
+    minimal: { title: "T", series: [{ name: "s", data: [{ label: "a", value: 1 }] }] },
+    maximal: {
+      title: "T",
+      series: [
+        { name: "s", data: [{ label: "a", value: -1 }], color: "#6366F1", mark: "bar", axis: "left" },
+        { name: "m", data: [{ label: "a", value: 40 }], mark: "line", axis: "right" },
+      ],
+      stack: "normal",
+      orientation: "vertical",
+      xlabel: "x",
+      ylabel: "y",
+      ylabelRight: "%",
+      reference: [{ axis: "x", kind: "band", from: "a", to: "a", label: "Band", tone: "neutral" }],
     },
   }),
   "line-chart": parity<LineChartPayload>({
@@ -87,9 +107,18 @@ const CASES: Record<string, ErasedCase> = {
     minimal: { title: "T", series: [{ name: "s", data: [{ x: "Jan", y: 1 }] }] },
     maximal: {
       title: "T",
-      series: [{ name: "s", data: [{ x: 1, y: 2 }] }],
+      series: [
+        {
+          name: "s",
+          data: [{ x: 1, y: 2 }],
+          compare: { label: "Last month", data: [{ x: 1, y: 1 }] },
+        },
+      ],
       xlabel: "x",
       ylabel: "y",
+      reference: [{ axis: "y", kind: "band", from: 0, to: 1, label: "Low", tone: "warning" }],
+      annotations: [{ x: 1, label: "Launch", x2: 2 }],
+      partialFrom: 1,
     },
   }),
   "pie-chart": parity<PieChartPayload>({
@@ -124,6 +153,7 @@ const CASES: Record<string, ErasedCase> = {
       series: [{ name: "s", data: [{ x: 1, y: 2, size: 3 }] }],
       xlabel: "x",
       ylabel: "y",
+      reference: [{ axis: "x", kind: "line", value: 1, label: "Threshold", tone: "danger" }],
     },
   }),
   treemap: parity<TreemapPayload>({
@@ -243,7 +273,10 @@ afterAll(async () => {
 
 describe("a tile payload is what the tool accepts", () => {
   it("covers every registered widget", () => {
-    expect(Object.keys(CASES).sort()).toEqual(WIDGETS.map((w) => w.name).sort());
+    // Suffixed cases ("bar-chart (series)") are a second shape of a widget
+    // already covered, as in payloads.test.ts.
+    const covered = new Set(Object.keys(CASES).map((k) => k.replace(/\s*\(.*\)$/, "")));
+    expect([...covered].sort()).toEqual(WIDGETS.map((w) => w.name).sort());
   });
 
   for (const [widget, c] of Object.entries(CASES)) {
@@ -253,7 +286,10 @@ describe("a tile payload is what the tool accepts", () => {
 
         // Establish that the arguments really are valid, or everything below is
         // vacuous: a typo here would otherwise read as a passing parity check.
-        const res = await client.callTool({ name: toolName(widget), arguments: args });
+        const res = await client.callTool({
+          name: toolName(widget.replace(/\s*\(.*\)$/, "")),
+          arguments: args,
+        });
         expect(res.isError, `render_${widget} rejected its own ${shape} arguments`).toBeFalsy();
 
         // What a dashboard tile carries: the arguments, untouched by any

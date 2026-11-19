@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, type Key } from "react";
+import { useId, useMemo, useRef, type Key, type ReactElement } from "react";
 import {
   AreaChart,
   Area,
@@ -10,13 +10,25 @@ import {
 } from "recharts";
 import type { LineChartPayload, LineSeries } from "../../shared/payloads.js";
 import { seriesEndIndices, dotRole } from "./end-indices.js";
+import {
+  compareDelta,
+  fmtDelta,
+  fmtDeltaPct,
+  isAllNumeric,
+  mergeSeries,
+  partialStartIndex,
+  splitPartial,
+  valueAt,
+  type LineRow,
+} from "./line-layout.js";
 import { useTheme, seriesColor } from "../shared/theme.js";
 import { seriesDash, useMediaQuery } from "../shared/use-media-query.js";
 import { ChartHeader } from "../shared/ChartHeader.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
-import { SigilTooltip } from "../shared/SigilTooltip.js";
+import { SigilTooltip, type TooltipRow } from "../shared/SigilTooltip.js";
 import { ValueLegend } from "../shared/ValueLegend.js";
 import { EmptyState } from "../shared/EmptyState.js";
+import { annotationMarks, referenceHeadroom, referenceMarks } from "../shared/ReferenceLayer.js";
 import {
   tickTextStyle,
   axisCapTextStyle,
@@ -36,38 +48,22 @@ const AREA_FILL_MAX_SERIES = 3;
 // cleanly without them, but a sparse series (especially a single point, which
 // forms no line segment at all) would otherwise render invisibly.
 const SPARSE_DOT_THRESHOLD = 12;
-
-type MergedRow = { x: string | number } & Record<string, unknown>;
-
-function isAllNumeric(series: LineSeries[]): boolean {
-  return series.every((s) => s.data.every((d) => typeof d.x === "number"));
-}
-
-function mergeSeries(series: LineSeries[]): MergedRow[] {
-  const byX = new Map<string | number, MergedRow>();
-  for (const s of series) {
-    for (const { x, y } of s.data) {
-      const existing = byX.get(x);
-      if (existing) {
-        existing[s.name] = y;
-      } else {
-        byX.set(x, { x, [s.name]: y });
-      }
-    }
-  }
-  const rows = Array.from(byX.values());
-  const numeric = series.length > 0 && isAllNumeric(series);
-  if (numeric) {
-    rows.sort((a, b) => (a.x as number) - (b.x as number));
-  }
-  return rows;
-}
+// The comparison baseline is context: quieter than its series, drawn in its
+// series' colour (so it never takes a palette slot), and never dotted.
+const GHOST_OPACITY = 0.5;
+const GHOST_STROKE_WIDTH = 1.6;
+const GHOST_DASH = "5 4";
+// The incomplete-period tail: the series' own colour and weight, dashed.
+const PARTIAL_DASH = "3 4";
+const PARTIAL_FILL_FACTOR = 0.45;
 
 interface SeriesStats {
   avg: number;
   min: number;
   max: number;
 }
+
+const compareLabel = (s: LineSeries) => s.compare?.label ?? "Previous";
 
 export function LineChartView({ payload }: { payload: LineChartPayload }) {
   const tokens = useTheme();
@@ -78,7 +74,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
     useLegendState({ unfocusedOpacity: 0.2 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const gradientUid = useId().replace(/[^a-zA-Z0-9]/g, "");
-  const { title, series, xlabel, ylabel } = payload;
+  const { title, series, xlabel, ylabel, reference, annotations, partialFrom } = payload;
 
   const totalPoints = useMemo(
     () => series.reduce((n, s) => n + s.data.length, 0),
@@ -86,9 +82,19 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
   );
   const rows = useMemo(() => mergeSeries(series), [series]);
   const numericX = useMemo(() => isAllNumeric(series), [series]);
+  const partialStart = useMemo(
+    () => partialStartIndex(rows, partialFrom, numericX),
+    [rows, partialFrom, numericX],
+  );
+  // What Recharts plots: the same rows with the incomplete tail moved aside.
+  const plotRows = useMemo(
+    () => splitPartial(rows, series.map((s) => s.name), partialStart),
+    [rows, series, partialStart],
+  );
 
   // First/last merged-row index at which each series has a value → the
-  // start-cap / end-cap anchors.
+  // start-cap / end-cap anchors. Taken before the split, so the end cap stays
+  // on the series' real last point even when that point is incomplete.
   const endIndices = useMemo(
     () => seriesEndIndices(rows, series.map((s) => s.name)),
     [rows, series],
@@ -117,11 +123,18 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
     );
   }
 
+  const compared = series.filter((s) => s.compare);
+
   const copyCsv = () => {
-    const header = [xlabel ?? "x", ...series.map((s) => s.name)];
+    const header = [
+      xlabel ?? "x",
+      ...series.map((s) => s.name),
+      ...compared.map((s) => `${s.name} (${compareLabel(s)})`),
+    ];
     const body: CsvCell[][] = rows.map((row) => [
       row.x as CsvCell,
       ...series.map((s) => (row[s.name] as CsvCell) ?? ""),
+      ...compared.map((s) => row.__cmp?.[s.name] ?? ""),
     ]);
     return copyText(toCsv(header, body));
   };
@@ -156,6 +169,181 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
   }));
 
   const primaryStats = stats[0]!;
+  const primary = series[0]!;
+  // With a baseline on the primary series, the header answers "compared with
+  // what": the change in average over the x values both lines share.
+  const primaryDelta = (() => {
+    if (!primary.compare) return "";
+    let cur = 0;
+    let base = 0;
+    let n = 0;
+    for (const row of rows) {
+      const v = row[primary.name];
+      const b = row.__cmp?.[primary.name];
+      if (typeof v === "number" && b !== undefined) {
+        cur += v;
+        base += b;
+        n += 1;
+      }
+    }
+    if (n === 0) return "";
+    const pct = fmtDeltaPct(compareDelta(cur / n, base / n));
+    return pct ? ` · ${pct} vs ${compareLabel(primary)}` : "";
+  })();
+
+  const tooltipRows = (row: LineRow): TooltipRow[] => {
+    const out: TooltipRow[] = [];
+    series.forEach((s, i) => {
+      if (muted.has(i)) return;
+      const color = seriesColor(tokens, i);
+      const v = valueAt(row, s.name);
+      if (v !== undefined) {
+        out.push({ color, name: s.name, dataKey: `${i}:value`, value: fmtNumber(v) });
+      }
+      const b = row.__cmp?.[s.name];
+      if (b === undefined) return;
+      out.push({ color, name: compareLabel(s), dataKey: `${i}:base`, value: fmtNumber(b) });
+      if (v !== undefined) {
+        out.push({
+          color,
+          name: `Change vs ${compareLabel(s)}`,
+          dataKey: `${i}:delta`,
+          value: fmtDelta(compareDelta(v, b)),
+        });
+      }
+    });
+    return out;
+  };
+
+  const detail = [
+    `${countOf(series.length, "series", "series")} over ${countOf(rows.length, "point")}`,
+    ...(compared.length > 0
+      ? [`compared with ${compared.map(compareLabel).filter((l, i, a) => a.indexOf(l) === i).join(", ")}`]
+      : []),
+  ].join(", ");
+
+  /** The dot renderer for one series, limited to rows `from`..`to`. */
+  const dotsFor = (i: number, color: string, from: number, to: number) => {
+    const s = series[i]!;
+    const sparse = s.data.length <= SPARSE_DOT_THRESHOLD;
+    const { first, last } = endIndices[i]!;
+    const opacity = opacityFor(i);
+    return (dotProps: { key?: Key | null; index?: number; cx?: number; cy?: number }) => {
+      // Recharts passes `value` as a [baseValue, rawValue] tuple for a
+      // non-stacked Area — never nullish, so gap rows are caught by the cy
+      // check alone.
+      const { key, index, cx, cy } = dotProps;
+      const dotKey = key ?? `${s.name}-dot-${index}`;
+      const idx = index ?? -1;
+      if (cx == null || cy == null || Number.isNaN(cx) || Number.isNaN(cy) || idx < from || idx > to) {
+        return <g key={dotKey} />;
+      }
+      const role = dotRole({ index: idx, first, last, sparse });
+      if (role === "none") return <g key={dotKey} />;
+      const isEnd = role === "end";
+      return (
+        <circle
+          key={dotKey}
+          cx={cx}
+          cy={cy}
+          r={isEnd ? 4 : 3}
+          fill={color}
+          stroke={tokens.surfaces.surface}
+          strokeWidth={isEnd ? 2 : 1.5}
+          opacity={opacity}
+          style={{
+            transition: "opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
+          }}
+        />
+      );
+    };
+  };
+
+  const opacityTransition = {
+    transition:
+      "stroke-opacity var(--sigil-duration-base) var(--sigil-easing-standard), fill-opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
+  };
+
+  const lastRow = rows.length - 1;
+  const showFill = series.length <= AREA_FILL_MAX_SERIES;
+
+  // Baselines first, so every series draws over its own ghost.
+  const ghosts: ReactElement[] = series.flatMap((s, i) =>
+    s.compare
+      ? [
+          <Area
+            key={`${s.name}-baseline`}
+            type="monotone"
+            name={compareLabel(s)}
+            dataKey={(row: LineRow) => row.__cmp?.[s.name]}
+            stroke={seriesColor(tokens, i)}
+            strokeWidth={GHOST_STROKE_WIDTH}
+            strokeDasharray={GHOST_DASH}
+            strokeLinecap="round"
+            strokeOpacity={muted.has(i) ? 0 : GHOST_OPACITY * opacityFor(i)}
+            fill="transparent"
+            fillOpacity={0}
+            dot={false}
+            activeDot={false}
+            isAnimationActive={false}
+            style={opacityTransition}
+            connectNulls
+          />,
+        ]
+      : [],
+  );
+
+  const lines: ReactElement[] = series.flatMap((s, i) => {
+    const color = seriesColor(tokens, i);
+    const isMuted = muted.has(i);
+    const opacity = opacityFor(i);
+    const solidTo = partialStart >= 0 ? partialStart - 1 : lastRow;
+    const activeDot = isMuted
+      ? false
+      : { r: 4.5, fill: color, strokeWidth: 2, stroke: tokens.surfaces.surface };
+    const solid = (
+      <Area
+        key={s.name}
+        type="monotone"
+        dataKey={s.name}
+        stroke={color}
+        strokeWidth={STROKE_WIDTH}
+        strokeDasharray={forcedColors ? seriesDash(i) : undefined}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeOpacity={opacity}
+        fill={showFill ? `url(#${gradientUid}-${i})` : "transparent"}
+        fillOpacity={showFill ? opacity : 0}
+        dot={dotsFor(i, color, 0, solidTo)}
+        activeDot={activeDot}
+        isAnimationActive={false}
+        style={opacityTransition}
+        connectNulls
+      />
+    );
+    if (partialStart < 0) return [solid];
+    return [
+      solid,
+      <Area
+        key={`${s.name}-incomplete`}
+        type="monotone"
+        name={`${s.name} (incomplete)`}
+        dataKey={(row: LineRow) => row.__part?.[s.name]}
+        stroke={color}
+        strokeWidth={STROKE_WIDTH}
+        strokeDasharray={PARTIAL_DASH}
+        strokeLinecap="round"
+        strokeOpacity={opacity}
+        fill={showFill ? `url(#${gradientUid}-${i})` : "transparent"}
+        fillOpacity={showFill ? opacity * PARTIAL_FILL_FACTOR : 0}
+        dot={dotsFor(i, color, partialStart, lastRow)}
+        activeDot={activeDot}
+        isAnimationActive={false}
+        style={opacityTransition}
+        connectNulls
+      />,
+    ];
+  });
 
   return (
     <div className="sigil-root">
@@ -163,7 +351,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
         title={title}
         kpi={{
           value: fmtStat(primaryStats.avg),
-          caption: `${series[0]!.name} avg`,
+          caption: `${primary.name} avg${primaryDelta}`,
         }}
       >
         <Toolbar>
@@ -174,14 +362,11 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
       <div className="sigil-canvas" ref={canvasRef}>
         <ResponsiveContainer width="100%" height={340}>
           <AreaChart
-            aria-label={chartLabel(
-              title,
-              "line chart",
-              `${countOf(series.length, "series", "series")} over ${countOf(rows.length, "point")}`,
-            )}
-            data={rows}
+            aria-label={chartLabel(title, "line chart", detail)}
+            data={plotRows}
             margin={{
-              top: 12,
+              // Annotation labels sit inside the plot's top edge, two rows deep.
+              top: annotations?.length ? 30 : 12 + referenceHeadroom(reference),
               right: 16,
               bottom: 8,
               left: ylabel ? 8 : 0,
@@ -259,109 +444,26 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
                 strokeDasharray: "2 3",
                 strokeOpacity: 0.7,
               }}
-              content={(props) => (
-                <SigilTooltip
-                  active={props.active}
-                  label={
-                    xlabel !== undefined
-                      ? `${xlabel} ${String(props.label)}`
-                      : (props.label as string | number | undefined)
-                  }
-                  payload={props.payload
-                    ?.filter((p) => {
-                      const idx = series.findIndex((s) => s.name === p.name);
-                      return idx === -1 || !muted.has(idx);
-                    })
-                    .map((p) => ({
-                      color: typeof p.color === "string" ? p.color : undefined,
-                      name: typeof p.name === "string" ? p.name : undefined,
-                      dataKey: p.dataKey as string | number | undefined,
-                      value:
-                        typeof p.value === "number"
-                          ? fmtNumber(p.value)
-                          : (p.value as number | string | undefined),
-                    }))}
-                />
-              )}
+              content={(props) => {
+                const row = props.payload?.[0]?.payload as LineRow | undefined;
+                if (!props.active || !row) return <SigilTooltip active={false} />;
+                const incomplete =
+                  partialStart >= 0 && plotRows.indexOf(row) >= partialStart;
+                const x =
+                  xlabel !== undefined ? `${xlabel} ${String(row.x)}` : String(row.x);
+                return (
+                  <SigilTooltip
+                    active
+                    label={incomplete ? `${x} · incomplete` : x}
+                    payload={tooltipRows(row)}
+                  />
+                );
+              }}
             />
-            {series.map((s, i) => {
-              const color = seriesColor(tokens, i);
-              const isMuted = muted.has(i);
-              const sparse = s.data.length <= SPARSE_DOT_THRESHOLD;
-              const { first, last } = endIndices[i]!;
-              const opacity = opacityFor(i);
-              const showFill = series.length <= AREA_FILL_MAX_SERIES;
-              return (
-                <Area
-                  key={s.name}
-                  type="monotone"
-                  dataKey={s.name}
-                  stroke={color}
-                  strokeWidth={STROKE_WIDTH}
-                  strokeDasharray={forcedColors ? seriesDash(i) : undefined}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeOpacity={opacity}
-                  fill={showFill ? `url(#${gradientUid}-${i})` : "transparent"}
-                  fillOpacity={showFill ? opacity : 0}
-                  dot={(dotProps: {
-                    key?: Key | null;
-                    index?: number;
-                    cx?: number;
-                    cy?: number;
-                  }) => {
-                    // Recharts passes `value` as a [baseValue, rawValue]
-                    // tuple for a non-stacked Area — never nullish, so gap
-                    // rows are caught by the cy check alone.
-                    const { key, index, cx, cy } = dotProps;
-                    const dotKey = key ?? `${s.name}-dot-${index}`;
-                    if (
-                      cx == null ||
-                      cy == null ||
-                      Number.isNaN(cx) ||
-                      Number.isNaN(cy)
-                    ) {
-                      return <g key={dotKey} />;
-                    }
-                    const role = dotRole({ index: index ?? -1, first, last, sparse });
-                    if (role === "none") return <g key={dotKey} />;
-                    const isEnd = role === "end";
-                    return (
-                      <circle
-                        key={dotKey}
-                        cx={cx}
-                        cy={cy}
-                        r={isEnd ? 4 : 3}
-                        fill={color}
-                        stroke={tokens.surfaces.surface}
-                        strokeWidth={isEnd ? 2 : 1.5}
-                        opacity={opacity}
-                        style={{
-                          transition:
-                            "opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
-                        }}
-                      />
-                    );
-                  }}
-                  activeDot={
-                    isMuted
-                      ? false
-                      : {
-                          r: 4.5,
-                          fill: color,
-                          strokeWidth: 2,
-                          stroke: tokens.surfaces.surface,
-                        }
-                  }
-                  isAnimationActive={false}
-                  style={{
-                    transition:
-                      "stroke-opacity var(--sigil-duration-base) var(--sigil-easing-standard), fill-opacity var(--sigil-duration-base) var(--sigil-easing-standard)",
-                  }}
-                  connectNulls
-                />
-              );
-            })}
+            {referenceMarks(reference, tokens)}
+            {annotationMarks(annotations, tokens)}
+            {ghosts}
+            {lines}
           </AreaChart>
         </ResponsiveContainer>
       </div>

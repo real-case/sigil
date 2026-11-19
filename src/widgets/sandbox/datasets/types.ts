@@ -15,6 +15,9 @@ export type DatasetCategory =
   | "negatives"
   | "multiSeries"
   | "nested"
+  // Authored context on top of the data: reference lines and bands, event
+  // annotations, comparison baselines, incomplete periods.
+  | "annotated"
   // Payloads that are deliberately WRONG, to exercise a widget's failure states
   // rather than its rendering — e.g. the dashboard's per-tile error cards.
   | "degraded";
@@ -28,6 +31,7 @@ export const CATEGORY_ORDER: readonly DatasetCategory[] = [
   "negatives",
   "multiSeries",
   "nested",
+  "annotated",
   "degraded",
 ] as const;
 

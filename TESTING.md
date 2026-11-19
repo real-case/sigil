@@ -118,6 +118,9 @@ Now test **without** naming the tool. Each prompt should pick the listed tool:
 | "Tabulate this so I can sort by revenue: US/1200, EU/950, APAC/670" | `render_table` |
 | "Visualize the top 10 frameworks by GitHub stars" | `render_bar_chart` (ranking) |
 | "Show CO₂ levels measured every hour today" | `render_line_chart` (time series) |
+| "Compare this month's daily revenue with last month" | `render_line_chart` with `series[].compare` |
+| "Revenue by region and quarter" | `render_bar_chart` with `series` + `stack: "normal"` |
+| "MAU by month against our 55K goal" | `render_line_chart` (or bar) with a `reference` line |
 
 **If Claude picks the wrong tool**, that's a description-tuning problem in `src/tools/<name>.ts`. The fix is to:
 - sharpen the **Use when …** clause (give concrete example domains)

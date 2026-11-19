@@ -20,3 +20,5 @@ export const LargeNumeric: Story = { args: { payload: payloadById(lineDatasets, 
 export const EdgeLongLabels: Story = { args: { payload: payloadById(lineDatasets, "line-edge-labels") } };
 export const Negatives: Story = { args: { payload: payloadById(lineDatasets, "line-negatives") } };
 export const MultiSeries: Story = { args: { payload: payloadById(lineDatasets, "line-multi-series") } };
+export const ComparePrevious: Story = { args: { payload: payloadById(lineDatasets, "line-compare-previous") } };
+export const ReferenceAnnotations: Story = { args: { payload: payloadById(lineDatasets, "line-reference-annotations") } };

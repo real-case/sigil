@@ -1,7 +1,9 @@
-import type { BarChartPayload } from "../../../shared/payloads.js";
+import type { BarChartPayload, BarSeries } from "../../../shared/payloads.js";
 import { CATEGORY_COUNT, type Dataset } from "./types.js";
 
 const QUARTERS = ["Q1 '23", "Q2 '23", "Q3 '23", "Q4 '23", "Q1 '24"];
+const REGIONS = ["North America", "Europe", "Asia-Pacific"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
 
 function range(n: number): number[] {
   return Array.from({ length: n }, (_, i) => i);
@@ -118,6 +120,155 @@ export const barDatasets: Dataset<BarChartPayload>[] = [
         { label: "Subscriptions", value: 8_700 },
         { label: "One-time", value: -6_500 },
         { label: "Other", value: 0 },
+      ],
+    },
+  },
+  {
+    id: "bar-reference-target",
+    label: "Annotated — target line + goal band",
+    category: "annotated",
+    payload: {
+      title: "Weekly signups vs target",
+      orientation: "vertical",
+      xlabel: "Week",
+      ylabel: "Signups",
+      data: [
+        { label: "W1", value: 410 },
+        { label: "W2", value: 455 },
+        { label: "W3", value: 388 },
+        { label: "W4", value: 520 },
+        { label: "W5", value: 610 },
+        { label: "W6", value: 575 },
+      ],
+      reference: [
+        { axis: "y", kind: "line", value: 500, label: "Target 500", tone: "success" },
+        { axis: "y", kind: "band", from: 0, to: 400, label: "Below plan", tone: "warning" },
+      ],
+    },
+  },
+  {
+    id: "bar-series-grouped",
+    label: "Multi-series — grouped (region × quarter)",
+    category: "multiSeries",
+    payload: {
+      title: "Revenue by region and quarter",
+      xlabel: "Quarter",
+      ylabel: "USD",
+      stack: "none",
+      series: REGIONS.map((name, s) => ({
+        name,
+        data: QUARTERS.slice(0, 4).map((label, i) => ({
+          label,
+          value: Math.round(4000 + s * 1800 + i * 900 + deterministicWiggle(s + 1, i) * 1500),
+        })),
+      })),
+    },
+  },
+  {
+    id: "bar-series-stacked",
+    label: "Multi-series — stacked",
+    category: "multiSeries",
+    payload: {
+      title: "Revenue by region and quarter",
+      xlabel: "Quarter",
+      ylabel: "USD",
+      stack: "normal",
+      series: REGIONS.map((name, s) => ({
+        name,
+        data: QUARTERS.map((label, i) => ({
+          label,
+          value: Math.round(4000 + s * 1800 + i * 900 + deterministicWiggle(s + 1, i) * 1500),
+        })),
+      })),
+      reference: [{ axis: "y", kind: "line", value: 30_000, label: "Plan", tone: "neutral" }],
+    },
+  },
+  {
+    id: "bar-series-percent",
+    label: "Multi-series — 100% stacked",
+    category: "multiSeries",
+    payload: {
+      title: "Traffic mix by channel",
+      xlabel: "Month",
+      stack: "percent",
+      series: ["Organic", "Paid", "Referral", "Email"].map((name, s) => ({
+        name,
+        data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"].map((label, i) => ({
+          label,
+          value: Math.round((4 - s) * 1000 + deterministicWiggle(s + 7, i) * 1600),
+        })),
+      })),
+    },
+  },
+  {
+    id: "bar-series-horizontal-stacked",
+    label: "Multi-series — horizontal stacked",
+    category: "multiSeries",
+    payload: {
+      title: "Tickets by team and priority",
+      orientation: "horizontal",
+      stack: "normal",
+      xlabel: "Tickets",
+      series: ["P1", "P2", "P3"].map((name, s) => ({
+        name,
+        data: ["Platform", "Billing", "Mobile", "Web", "Data"].map((label, i) => ({
+          label,
+          value: Math.round(4 + s * 9 + deterministicWiggle(s + 3, i) * 14),
+        })),
+      })),
+    },
+  },
+  {
+    id: "bar-series-diverging",
+    label: "Negatives — MRR movements (diverging stack + net line)",
+    category: "negatives",
+    payload: {
+      title: "MRR movements",
+      xlabel: "Month",
+      ylabel: "USD",
+      stack: "normal",
+      series: [
+        { name: "New", values: [18_200, 21_400, 19_800, 24_100, 22_600, 26_300] },
+        { name: "Expansion", values: [6_400, 7_100, 8_200, 7_700, 9_300, 10_100] },
+        { name: "Contraction", values: [-3_100, -2_800, -4_200, -3_600, -3_900, -4_400] },
+        { name: "Churn", values: [-8_900, -7_600, -11_200, -9_800, -8_400, -9_100] },
+      ]
+        .map(({ name, values }): BarSeries => ({
+          name,
+          data: values.map((value, i) => ({ label: MONTHS[i]!, value })),
+        }))
+        .concat([
+          {
+            name: "Net new MRR",
+            mark: "line" as const,
+            data: MONTHS.map((label, i) => ({
+              label,
+              value: [12_600, 18_100, 12_600, 18_400, 19_600, 22_900][i]!,
+            })),
+          },
+        ]),
+    },
+  },
+  {
+    id: "bar-series-combo",
+    label: "Multi-series — bars + line on a right axis",
+    category: "multiSeries",
+    payload: {
+      title: "Revenue and gross margin",
+      xlabel: "Quarter",
+      ylabel: "Revenue (USD)",
+      ylabelRight: "Margin %",
+      series: [
+        {
+          name: "Revenue",
+          data: QUARTERS.map((label, i) => ({ label, value: 52_000 + i * 6_500 })),
+        },
+        {
+          name: "Gross margin %",
+          mark: "line",
+          axis: "right",
+          data: QUARTERS.map((label, i) => ({ label, value: [61, 63, 62, 66, 68][i]! })),
+        },
       ],
     },
   },

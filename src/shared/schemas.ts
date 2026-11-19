@@ -35,36 +35,199 @@ const colorOverride = z
 const axisLabel = (axis: "x" | "y") =>
   z.string().optional().describe(`Label for the ${axis}-axis.`);
 
+// ----- reference layer (bar, line, scatter) ----------------------------------
+//
+// One authored-context field shared by the three cartesian charts: targets,
+// thresholds, averages, goal bands. The rendering lives in one place too
+// (widgets/shared/ReferenceLayer.tsx), so a tone means the same colour
+// everywhere and a band never relies on colour alone — it always carries its
+// label.
+
+const axisValue = z.union([z.string(), z.number()]);
+
+const referenceItem = (numeric: boolean) => {
+  const value = numeric ? z.number() : axisValue;
+  return z
+    .object({
+      axis: z
+        .enum(["x", "y"])
+        .describe(
+          numeric
+            ? "Which axis the value sits on. 'y' draws a horizontal line or band, 'x' a vertical one."
+            : "Which axis the value sits on. 'y' is the value axis (a target, threshold or average); 'x' is the category / x axis (a launch date, a marked category). On a horizontal bar chart 'y' still means the value axis.",
+        ),
+      kind: z
+        .enum(["line", "band"])
+        .describe("'line' marks one value (needs `value`); 'band' shades a range (needs `from` and `to`)."),
+      value: value
+        .optional()
+        .describe("Line only: where the line sits. A number on the value axis, or an x value / category label on the x axis."),
+      from: value.optional().describe("Band only: start of the range."),
+      to: value.optional().describe("Band only: end of the range."),
+      label: z
+        .string()
+        .optional()
+        .describe("Short text drawn next to the line or band, e.g. 'Target', 'SLA 99.9%', 'Q3 plan'. Strongly recommended: it is what tells the reader what the line means."),
+      tone: z
+        .enum(["neutral", "success", "warning", "danger"])
+        .optional()
+        .describe("Meaning of the mark. 'neutral' (default) for averages and plans, 'success' for a goal, 'warning' / 'danger' for thresholds and limits."),
+    })
+    .superRefine((ref, ctx) => {
+      if (ref.kind === "line" && ref.value === undefined) {
+        ctx.addIssue({ code: "custom", path: ["value"], message: "A reference line needs `value`." });
+      }
+      if (ref.kind === "band" && (ref.from === undefined || ref.to === undefined)) {
+        // Template literals on purpose: the import scan in server-deps.test.ts
+        // reads the word before a double-quoted string as a module specifier.
+        ctx.addIssue({
+          code: "custom",
+          path: [ref.from === undefined ? `from` : `to`],
+          message: "A reference band needs both `from` and `to`.",
+        });
+      }
+    });
+};
+
+const referenceField = (numeric = false) =>
+  z
+    .array(referenceItem(numeric))
+    .optional()
+    .describe(
+      "Optional reference marks: target / goal lines, thresholds, averages, acceptable ranges. Use whenever the user mentions a target, plan, limit, SLA or 'compared with the goal'. Each line or band should carry a `label`.",
+    );
+
+export type ReferenceMark = z.infer<ReturnType<typeof referenceItem>>;
+export type ReferenceTone = NonNullable<ReferenceMark["tone"]>;
+
 // ----- bar chart -------------------------------------------------------------
 
-export const barChartSchema = z.object({
-  title: chartTitle("Chart title shown above the bars."),
+const barDatumSchema = z.object({
+  label: z
+    .string()
+    .min(1)
+    .describe("Category label (x-axis for vertical, y-axis for horizontal)."),
+  value: z.number().describe("Numeric value controlling bar length."),
+  color: colorOverride,
+});
+
+const barSeriesSchema = z.object({
+  name: z.string().min(1).describe("Series name. Appears in the legend and tooltip."),
   data: z
     .array(
       z.object({
         label: z
           .string()
           .min(1)
-          .describe("Category label (x-axis for vertical, y-axis for horizontal)."),
-        value: z.number().describe("Numeric value controlling bar length."),
-        color: colorOverride,
+          .describe("Category label. Series share categories by label; a category a series lacks is simply empty for it."),
+        value: z.number().describe("Value of this series in this category. May be negative."),
       }),
     )
     .min(1)
-    .describe("Array of bars. Provide at least one data point."),
-  orientation: z
-    .enum(["vertical", "horizontal"])
+    .describe("One value per category for this series."),
+  color: z
+    .string()
     .optional()
-    .describe("Bar orientation. Defaults to 'vertical'."),
-  xlabel: axisLabel("x"),
-  ylabel: axisLabel("y"),
+    .describe("Optional CSS color for the whole series. If omitted, uses the theme palette."),
+  mark: z
+    .enum(["bar", "line"])
+    .optional()
+    .describe(
+      "How the series is drawn. 'bar' (default) or 'line' — a line over the bars, e.g. a target, an average or a rate across the same categories. Line series are never stacked.",
+    ),
+  axis: z
+    .enum(["left", "right"])
+    .optional()
+    .describe(
+      "Value axis for this series. Defaults to 'left' (shared axis). Use 'right' ONLY when the series has a different unit (e.g. margin % over revenue $); it requires `ylabelRight`. Two axes with the same unit mislead — keep them on one axis.",
+    ),
 });
 
+export const barChartSchema = z
+  .object({
+    title: chartTitle("Chart title shown above the bars."),
+    data: z
+      .array(barDatumSchema)
+      .min(1)
+      .optional()
+      .describe(
+        "Single-series bars: one entry per category. Provide either `data` or `series`, not both.",
+      ),
+    series: z
+      .array(barSeriesSchema)
+      .min(1)
+      .optional()
+      .describe(
+        "Multi-series bars: several values per category (e.g. revenue by region AND quarter). Categories are the union of every series' labels, in first-seen order. Provide either `data` or `series`, not both.",
+      ),
+    stack: z
+      .enum(["none", "normal", "percent"])
+      .optional()
+      .describe(
+        "Multi-series only. 'none' (default): bars side by side, for comparing series within a category. 'normal': stacked, for parts that add up to a total (negative parts go below zero — e.g. MRR new / expansion / churn). 'percent': stacked to 100%, for comparing composition across categories.",
+      ),
+    orientation: z
+      .enum(["vertical", "horizontal"])
+      .optional()
+      .describe("Bar orientation. Defaults to 'vertical'. Line marks and a right axis need 'vertical'."),
+    xlabel: axisLabel("x"),
+    ylabel: axisLabel("y"),
+    ylabelRight: z
+      .string()
+      .optional()
+      .describe("Label for the right value axis. Required when any series uses `axis: 'right'`."),
+    reference: referenceField(),
+  })
+  .superRefine((p, ctx) => {
+    if (p.data === undefined && p.series === undefined) {
+      ctx.addIssue({ code: "custom", path: ["data"], message: "Provide `data` or `series`." });
+    }
+    if (p.data !== undefined && p.series !== undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["series"],
+        message: "`data` and `series` are mutually exclusive — use one.",
+      });
+    }
+    for (const [i, s] of (p.series ?? []).entries()) {
+      if (s.axis === "right" && !p.ylabelRight) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["series", i, "axis"],
+          message: "`axis: 'right'` requires `ylabelRight` — a second axis must say what it measures.",
+        });
+      }
+      if (p.orientation === "horizontal" && (s.mark === "line" || s.axis === "right")) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["series", i, s.mark === "line" ? "mark" : "axis"],
+          message: "Line marks and a right axis are only supported on vertical bar charts.",
+        });
+      }
+      if (s.mark === "line" && p.stack === "percent" && s.axis !== "right") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["series", i, "axis"],
+          message: "A line over a percent stack must use `axis: 'right'` — its values are not percentages.",
+        });
+      }
+    }
+  });
+
 export type BarChartPayload = z.infer<typeof barChartSchema>;
-export type BarDatum = BarChartPayload["data"][number];
+export type BarDatum = z.infer<typeof barDatumSchema>;
+export type BarSeries = z.infer<typeof barSeriesSchema>;
+export type BarStack = NonNullable<BarChartPayload["stack"]>;
 export type Orientation = NonNullable<BarChartPayload["orientation"]>;
 
 // ----- line chart ------------------------------------------------------------
+
+const linePointSchema = z.object({
+  x: axisValue.describe(
+    "X-axis value. Strings form category axis; numbers form numeric axis.",
+  ),
+  y: z.number().describe("Y-axis value for this point."),
+});
 
 export const lineChartSchema = z.object({
   title: chartTitle("Chart title shown above the lines."),
@@ -76,29 +239,59 @@ export const lineChartSchema = z.object({
           .min(1)
           .describe("Series name. Appears in the legend and tooltip."),
         data: z
-          .array(
-            z.object({
-              x: z
-                .union([z.string(), z.number()])
-                .describe(
-                  "X-axis value. Strings form category axis; numbers form numeric axis.",
-                ),
-              y: z.number().describe("Y-axis value for this point."),
-            }),
-          )
+          .array(linePointSchema)
           .min(1)
           .describe("Ordered points for this series. Provide at least one."),
+        compare: z
+          .object({
+            label: z
+              .string()
+              .min(1)
+              .optional()
+              .describe("What the baseline is, e.g. 'Last month', 'Last year', 'Plan'. Defaults to 'Previous'."),
+            data: z
+              .array(linePointSchema)
+              .min(1)
+              .describe(
+                "Baseline points on the SAME x values as the series (e.g. last month's revenue re-keyed to this month's days). Points are matched by x.",
+              ),
+          })
+          .optional()
+          .describe(
+            "Optional comparison baseline for this series — previous period, last year, plan. Drawn as a faint dashed line in the series' colour; the tooltip shows the value, the baseline and the change in % and absolute. Use when the user asks to compare with a previous period.",
+          ),
       }),
     )
     .min(1)
     .describe("One or more series to overlay. Provide at least one."),
   xlabel: axisLabel("x"),
   ylabel: axisLabel("y"),
+  reference: referenceField(),
+  annotations: z
+    .array(
+      z.object({
+        x: axisValue.describe("Where the event happened, on the x axis."),
+        label: z.string().min(1).describe("Short event name, e.g. 'Release 2.0', 'Outage', 'Price change'."),
+        x2: axisValue
+          .optional()
+          .describe("Optional end of the event; when given the annotation shades the region from `x` to `x2`."),
+      }),
+    )
+    .optional()
+    .describe(
+      "Optional event markers: releases, incidents, campaigns. A vertical marker at `x`, or a shaded region `x`..`x2`, labelled. Use to explain 'what happened here'.",
+    ),
+  partialFrom: axisValue
+    .optional()
+    .describe(
+      "Optional x value from which data is incomplete (the current, unfinished period). The line is dashed from this point on and the tooltip marks those values as incomplete, so a partial month is not read as a drop.",
+    ),
 });
 
 export type LineChartPayload = z.infer<typeof lineChartSchema>;
 export type LineSeries = LineChartPayload["series"][number];
 export type LineDatum = LineSeries["data"][number];
+export type LineAnnotation = NonNullable<LineChartPayload["annotations"]>[number];
 
 // ----- pie chart -------------------------------------------------------------
 
@@ -165,6 +358,7 @@ export const scatterChartSchema = z.object({
     .describe("One or more series. Each renders in a distinct color from the palette."),
   xlabel: axisLabel("x"),
   ylabel: axisLabel("y"),
+  reference: referenceField(true),
 });
 
 export type ScatterChartPayload = z.infer<typeof scatterChartSchema>;
