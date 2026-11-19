@@ -10,7 +10,8 @@ import {
 } from "recharts";
 import type { LineChartPayload, LineSeries } from "../../shared/payloads.js";
 import { seriesEndIndices, dotRole } from "./end-indices.js";
-import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { useTheme, seriesColor } from "../shared/theme.js";
+import { seriesDash, useMediaQuery } from "../shared/use-media-query.js";
 import { ChartHeader } from "../shared/ChartHeader.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
@@ -62,10 +63,6 @@ function mergeSeries(series: LineSeries[]): MergedRow[] {
   return rows;
 }
 
-function seriesColor(index: number, tokens: ChartDesignTokens): string {
-  return tokens.series[index % tokens.series.length]!;
-}
-
 interface SeriesStats {
   avg: number;
   min: number;
@@ -74,6 +71,9 @@ interface SeriesStats {
 
 export function LineChartView({ payload }: { payload: LineChartPayload }) {
   const tokens = useTheme();
+  // Windows High Contrast paints every line in one system colour; dashes keep
+  // the series apart (WCAG 1.4.1).
+  const forcedColors = useMediaQuery("(forced-colors: active)");
   const { focused, muted, setFocused, toggleMute, opacityFor } =
     useLegendState({ unfocusedOpacity: 0.2 });
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -145,7 +145,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
 
   const legendItems = series.map((s, i) => ({
     name: s.name,
-    color: seriesColor(i, tokens),
+    color: seriesColor(tokens, i),
     value: fmtStat(stats[i]!.avg),
     suffix: "avg",
     range: {
@@ -189,7 +189,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
           >
             <defs>
               {series.map((s, i) => {
-                const color = seriesColor(i, tokens);
+                const color = seriesColor(tokens, i);
                 return (
                   <linearGradient
                     key={s.name}
@@ -285,7 +285,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
               )}
             />
             {series.map((s, i) => {
-              const color = seriesColor(i, tokens);
+              const color = seriesColor(tokens, i);
               const isMuted = muted.has(i);
               const sparse = s.data.length <= SPARSE_DOT_THRESHOLD;
               const { first, last } = endIndices[i]!;
@@ -298,6 +298,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
                   dataKey={s.name}
                   stroke={color}
                   strokeWidth={STROKE_WIDTH}
+                  strokeDasharray={forcedColors ? seriesDash(i) : undefined}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeOpacity={opacity}

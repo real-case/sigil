@@ -1,5 +1,8 @@
 // Design tokens — derived from specs/design-system-tokens.json.
-// Applied via CSS variables; dark/light selected by `prefers-color-scheme`.
+// Applied via CSS variables. Dark/light is chosen, in priority order, by the
+// sandbox/Storybook override (`setForcedTheme` + `data-sigil-theme`), then the
+// host's theme (`data-theme`, set by `applyDocumentTheme` in widget-shell),
+// then `prefers-color-scheme`.
 // Both the flat legacy fields and the structured fields below describe the
 // same theme; legacy names remain so existing widget code keeps working.
 
@@ -122,7 +125,11 @@ export interface ChartDesignTokens {
   chartLines: { grid: string; axis: string };
   tooltip: { background: string; border: string; text: string };
   semantic: SemanticTokens;
-  series: string[]; // OKLCH per theme
+  series: string[]; // OKLCH per theme; categorical slots are [0, SERIES_CYCLE)
+  /** Sequential ramp, low → high (7 steps). */
+  sequential: string[];
+  /** Diverging ramp, −4 … +4; index 4 is the neutral midpoint. */
+  diverging: string[];
   focus: FocusRingTokens;
   spacing: SpacingTokens;
   radius: RadiusTokens;
@@ -227,30 +234,58 @@ const typography: TypographyTokens = {
 
 // ----- Per-theme tokens ------------------------------------------------------
 
+// Categorical series palettes. The order is load-bearing: neighbouring slots
+// are what bar/line/stack charts put side by side, and this order keeps every
+// adjacent pair ≥ 15 ΔE (OKLab ×100) under protanopia and deuteranopia in both
+// themes. `src/__tests__/palette.test.ts` pins that — re-run it after any
+// edit here. Only the first `SERIES_CYCLE` slots are categorical; slots 8–9
+// stay for the `--sigil-series-8/9` CSS variables external styles may use, but
+// `seriesColor()` never hands them out (navy reads as magenta under protanopia,
+// olive reads as grey).
 const lightSeries = [
-  "oklch(58% 0.16 250)",
-  "oklch(60% 0.14 150)",
-  "oklch(68% 0.16 65)",
-  "oklch(58% 0.20 25)",
-  "oklch(54% 0.19 295)",
-  "oklch(62% 0.12 200)",
-  "oklch(64% 0.18 40)",
-  "oklch(58% 0.18 325)",
-  "oklch(48% 0.13 240)",
-  "oklch(56% 0.10 110)",
+  "oklch(58% 0.16 250)", // blue
+  "oklch(60% 0.14 150)", // green
+  "oklch(54% 0.19 295)", // violet
+  "oklch(64% 0.16 65)", // amber (L 64%, not 68%: ≥ 3:1 on white)
+  "oklch(62% 0.12 200)", // teal
+  "oklch(64% 0.18 40)", // orange
+  "oklch(58% 0.18 325)", // magenta
+  "oklch(58% 0.20 25)", // red
+  "oklch(48% 0.13 240)", // navy (not cycled)
+  "oklch(56% 0.10 110)", // olive (not cycled)
 ];
 
 const darkSeries = [
-  "oklch(72% 0.14 250)",
-  "oklch(74% 0.13 150)",
-  "oklch(80% 0.15 70)",
-  "oklch(70% 0.17 25)",
-  "oklch(68% 0.18 295)",
-  "oklch(74% 0.11 200)",
-  "oklch(74% 0.16 40)",
-  "oklch(70% 0.16 325)",
-  "oklch(62% 0.12 240)",
-  "oklch(70% 0.10 110)",
+  "oklch(72% 0.14 250)", // blue
+  "oklch(74% 0.13 150)", // green
+  "oklch(68% 0.18 295)", // violet
+  "oklch(80% 0.15 70)", // amber
+  "oklch(74% 0.11 200)", // teal
+  "oklch(74% 0.16 40)", // orange
+  "oklch(70% 0.16 325)", // magenta
+  "oklch(70% 0.17 25)", // red
+  "oklch(62% 0.12 240)", // navy (not cycled)
+  "oklch(70% 0.10 110)", // olive (not cycled)
+];
+
+/** Number of categorical slots `seriesColor()` cycles through. */
+export const SERIES_CYCLE = 8;
+
+// Sequential single-hue scale (blue, h ≈ 250), low → high, 7 explicit steps.
+// Lightness is monotonic; the dark theme inverts the anchor so small values
+// sink into the dark surface and large ones come forward.
+const lightSequential = ["#E3F4FF", "#BDDFFF", "#8CC3FC", "#5AA3EC", "#2784D5", "#0065B4", "#00488A"];
+const darkSequential = ["#142A41", "#173F65", "#1A588F", "#2A75BA", "#4393E1", "#70B3F7", "#A6D2FF"];
+
+// Diverging scale, −4 … +4 (index 4 is the neutral midpoint). Blue ↔ orange
+// rather than red ↔ green so both arms survive red–green CVD. Arms are
+// symmetric in lightness; the dark theme inverts the anchor like the
+// sequential scale does.
+const lightDiverging = [
+  "#004E95", "#0F74C5", "#67A3E0", "#B1D2F4", "#EEEEEE", "#EFC3AB", "#D5895E", "#B45000", "#852C00",
+];
+const darkDiverging = [
+  "#86C3FF", "#499AE7", "#286CAB", "#1D456B", "#2E2E2E", "#633416", "#9E511E", "#D8783D", "#F7A97C",
 ];
 
 const lightElevation: ElevationTokens = {
@@ -272,7 +307,7 @@ export const light: ChartDesignTokens = {
   surfaceBackground: "#FFFFFF",
   textPrimary: "#1A1B1F",
   textSecondary: "#4D4E55",
-  textMuted: "#888A92",
+  textMuted: "#6E7079",
   gridLine: "#EBEBED",
   axisLine: "#C6C6CB",
   tooltipBackground: "#FFFFFF",
@@ -290,7 +325,7 @@ export const light: ChartDesignTokens = {
     surfaceSunken: "#F2F2F4",
   },
   borders: { subtle: "#ECECEE", default: "#DDDDE0", strong: "#B8B8BD" },
-  texts: { primary: "#1A1B1F", secondary: "#4D4E55", muted: "#888A92" },
+  texts: { primary: "#1A1B1F", secondary: "#4D4E55", muted: "#6E7079" },
   chartLines: { grid: "#EBEBED", axis: "#C6C6CB" },
   tooltip: { background: "#FFFFFF", border: "#DDDDE0", text: "#1A1B1F" },
   semantic: {
@@ -300,6 +335,8 @@ export const light: ChartDesignTokens = {
     info: { surface: "#E9EFFA", border: "#BFCDE5", text: "#2D4D8F" },
   },
   series: lightSeries,
+  sequential: lightSequential,
+  diverging: lightDiverging,
   focus: { color: "oklch(58% 0.16 250 / 0.45)", width: 2, offset: 1 },
   spacing,
   radius,
@@ -315,7 +352,7 @@ export const dark: ChartDesignTokens = {
   surfaceBackground: "#1B1C21",
   textPrimary: "#F2F3F5",
   textSecondary: "#AEB0B8",
-  textMuted: "#7B7D86",
+  textMuted: "#8A8C95",
   gridLine: "#25272D",
   axisLine: "#3D3F47",
   tooltipBackground: "#23252B",
@@ -333,7 +370,7 @@ export const dark: ChartDesignTokens = {
     surfaceSunken: "#0E0F12",
   },
   borders: { subtle: "#26282E", default: "#34363D", strong: "#545761" },
-  texts: { primary: "#F2F3F5", secondary: "#AEB0B8", muted: "#7B7D86" },
+  texts: { primary: "#F2F3F5", secondary: "#AEB0B8", muted: "#8A8C95" },
   chartLines: { grid: "#25272D", axis: "#3D3F47" },
   tooltip: { background: "#23252B", border: "#34363D", text: "#F2F3F5" },
   semantic: {
@@ -343,6 +380,8 @@ export const dark: ChartDesignTokens = {
     info: { surface: "#15203A", border: "#2C3F6E", text: "#88A8E8" },
   },
   series: darkSeries,
+  sequential: darkSequential,
+  diverging: darkDiverging,
   focus: { color: "oklch(72% 0.14 250 / 0.55)", width: 2, offset: 1 },
   spacing,
   radius,
@@ -351,6 +390,30 @@ export const dark: ChartDesignTokens = {
   typography,
 };
 
+// ----- Series colour assignment ---------------------------------------------
+
+/**
+ * How a widget runs out of categorical colours.
+ * - `"overflow-neutral"` (bar, line, scatter): slot 9 onward is the neutral
+ *   "other" colour. Past eight series no hue stays distinguishable from its
+ *   neighbours, so the honest answer is to stop pretending to encode identity.
+ * - `"cycle"` (pie, treemap, sankey): repeat the eight slots. These forms
+ *   separate their marks by area and gaps, and pie additionally tints each
+ *   pass of the cycle.
+ */
+export type SeriesColorPolicy = "overflow-neutral" | "cycle";
+
+/** The categorical colour for series / category `index` (0-based). */
+export function seriesColor(
+  tokens: ChartDesignTokens,
+  index: number,
+  policy: SeriesColorPolicy = "overflow-neutral",
+): string {
+  if (index < SERIES_CYCLE) return tokens.series[index]!;
+  if (policy === "overflow-neutral") return tokens.texts.muted;
+  return tokens.series[index % SERIES_CYCLE]!;
+}
+
 // ----- Active theme + React hook ---------------------------------------------
 
 export type ThemeName = "light" | "dark";
@@ -358,8 +421,9 @@ export type ThemeName = "light" | "dark";
 let forcedTheme: ThemeName | null = null;
 const forcedThemeListeners = new Set<() => void>();
 
-// Dev-only override (used by the sandbox). When null, the hook follows
-// prefers-color-scheme as before; production widget code never calls this.
+// Dev-only override (used by the sandbox and Storybook). When null, the hook
+// follows the host theme, then prefers-color-scheme; production widget code
+// never calls this.
 export function setForcedTheme(theme: ThemeName | null): void {
   if (forcedTheme === theme) return;
   forcedTheme = theme;
@@ -372,12 +436,25 @@ export function getForcedTheme(): ThemeName | null {
   return forcedTheme;
 }
 
-export function activeTheme(): ChartDesignTokens {
-  if (forcedTheme) return forcedTheme === "dark" ? dark : light;
+/** The theme the host asked for via `data-theme` on `<html>`, if any. */
+export function hostTheme(): ThemeName | null {
+  if (typeof document === "undefined") return null;
+  const attr = document.documentElement.getAttribute("data-theme");
+  return attr === "dark" || attr === "light" ? attr : null;
+}
+
+export function activeThemeName(): ThemeName {
+  if (forcedTheme) return forcedTheme;
+  const host = hostTheme();
+  if (host) return host;
   const prefersDark =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-  return prefersDark ? dark : light;
+  return prefersDark ? "dark" : "light";
+}
+
+export function activeTheme(): ChartDesignTokens {
+  return activeThemeName() === "dark" ? dark : light;
 }
 
 export function useTheme(): ChartDesignTokens {
@@ -385,13 +462,22 @@ export function useTheme(): ChartDesignTokens {
 
   useEffect(() => {
     const update = () => setTokens(activeTheme());
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const mq = window.matchMedia?.("(prefers-color-scheme: dark)");
     update();
-    mq.addEventListener("change", update);
+    mq?.addEventListener("change", update);
     forcedThemeListeners.add(update);
+    // The host theme lands as a `data-theme` attribute (applyDocumentTheme),
+    // possibly after first render and again on every host theme switch.
+    const observer =
+      typeof MutationObserver === "undefined" ? null : new MutationObserver(update);
+    observer?.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
     return () => {
-      mq.removeEventListener("change", update);
+      mq?.removeEventListener("change", update);
       forcedThemeListeners.delete(update);
+      observer?.disconnect();
     };
   }, []);
 
@@ -424,6 +510,15 @@ function tokensToDeclarations(t: ChartDesignTokens): string {
   // Series (legacy names)
   t.seriesColors.forEach((c, i) => {
     lines.push(`--sigil-series-${i}: ${c};`);
+  });
+
+  // Sequential + diverging scales
+  t.sequential.forEach((c, i) => {
+    lines.push(`--sigil-seq-${i}: ${c};`);
+  });
+  // --sigil-div-0 … -8: −4 … +4, so --sigil-div-4 is the neutral midpoint.
+  t.diverging.forEach((c, i) => {
+    lines.push(`--sigil-div-${i}: ${c};`);
   });
 
   // Surfaces
@@ -513,19 +608,27 @@ function tokensToDeclarations(t: ChartDesignTokens): string {
 }
 
 export function renderThemeCss(): string {
+  const lightDecls = tokensToDeclarations(light);
+  const darkDecls = tokensToDeclarations(dark);
   return [
-    `:root {\n  ${tokensToDeclarations(light)}\n}`,
-    `@media (prefers-color-scheme: dark) {\n  :root {\n    ${tokensToDeclarations(dark)}\n  }\n}`,
+    `:root {\n  ${lightDecls}\n}`,
+    `@media (prefers-color-scheme: dark) {\n  :root {\n    ${darkDecls}\n  }\n}`,
+    // The host's theme (data-theme, set by applyDocumentTheme) beats the OS
+    // preference: (0,2,0) outranks the bare :root inside the media query.
+    `:root[data-theme="light"] {\n  ${lightDecls}\n}`,
+    `:root[data-theme="dark"] {\n  ${darkDecls}\n}`,
   ].join("\n\n");
 }
 
 // Dev-only: emit CSS that lets a `data-sigil-theme` attribute on `<html>`
-// override the prefers-color-scheme defaults. Used by the sandbox; not
-// referenced by any production widget bundle.
+// override both the host theme and the prefers-color-scheme default. Used by
+// the sandbox and Storybook; not referenced by any production widget bundle.
+// `html:root` lifts specificity to (0,2,1) so it outranks `:root[data-theme]`
+// regardless of stylesheet order.
 export function renderForcedThemeCss(): string {
   return [
-    `:root[data-sigil-theme="light"] {\n  ${tokensToDeclarations(light)}\n}`,
-    `:root[data-sigil-theme="dark"] {\n  ${tokensToDeclarations(dark)}\n}`,
+    `html:root[data-sigil-theme="light"] {\n  ${tokensToDeclarations(light)}\n}`,
+    `html:root[data-sigil-theme="dark"] {\n  ${tokensToDeclarations(dark)}\n}`,
   ].join("\n\n");
 }
 

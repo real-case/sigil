@@ -12,7 +12,7 @@ import {
   normalizeMaxSegments,
   type PieDisplaySlice,
 } from "./collapse.js";
-import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { useTheme, type ChartDesignTokens, seriesColor, SERIES_CYCLE } from "../shared/theme.js";
 import { ChartHeader } from "../shared/ChartHeader.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
@@ -47,9 +47,8 @@ function colorFor(
   tokens: ChartDesignTokens,
 ): string {
   if (datum.color) return datum.color;
-  const palette = tokens.series;
-  const base = palette[index % palette.length]!;
-  const cycle = Math.floor(index / palette.length);
+  const base = seriesColor(tokens, index, "cycle");
+  const cycle = Math.floor(index / SERIES_CYCLE);
   const shift = PALETTE_CYCLE_SHIFTS[cycle % PALETTE_CYCLE_SHIFTS.length];
   return shift ? `color-mix(in oklab, ${base}, ${shift.mix} ${shift.pct}%)` : base;
 }

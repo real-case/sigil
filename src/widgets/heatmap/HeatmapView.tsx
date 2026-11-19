@@ -3,7 +3,7 @@ import type { HeatmapPayload, HeatmapCell } from "../../shared/payloads.js";
 import { useTheme } from "../shared/theme.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
-import { ColorScaleLegend, intensityAlpha } from "../shared/color-scale.js";
+import { ColorScaleLegend, colorScale } from "../shared/color-scale.js";
 import { useRovingFocus } from "../shared/roving-focus.js";
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
@@ -137,7 +137,12 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
   const totalHeight = matrixTop + cellHeight * yLabels.length + BOTTOM_MARGIN + xAxisOffset;
   const totalWidth = Math.max(matrixLeft + cellWidth * xLabels.length + rightPad, 1);
 
-  const seriesHue = tokens.series[0]!;
+  const colorAt = colorScale(tokens, {
+    kind: payload.scale,
+    min: lookup.min,
+    max: lookup.max,
+    midpoint: payload.midpoint,
+  });
 
   const copyCsv = () => {
     const header = ["", ...xLabels];
@@ -268,9 +273,6 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
                     const index = y * columns + x;
                     const cell = lookup.values.get(index);
                     const key = cellKey(x, y);
-                    const alpha = cell
-                      ? intensityAlpha(cell.value, lookup.min, lookup.max)
-                      : 0;
                     const drawWidth = Math.max(0, cellWidth - CELL_GAP);
                     const drawHeight = Math.max(0, cellHeight - CELL_GAP);
                     const { ref, tabIndex, onFocus, onKeyDown } = roving.itemProps(index);
@@ -294,8 +296,8 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
                         height={drawHeight}
                         rx={CELL_RADIUS}
                         ry={CELL_RADIUS}
-                        fill={cell ? seriesHue : tokens.surfaces.surfaceSunken}
-                        fillOpacity={cell ? alpha * opacityFor(key) : 1}
+                        fill={cell ? colorAt(cell.value) : tokens.surfaces.surfaceSunken}
+                        fillOpacity={cell ? opacityFor(key) : 1}
                         style={{
                           cursor: cell ? "pointer" : "default",
                           transition:
@@ -335,7 +337,8 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
           <ColorScaleLegend
             min={lookup.min}
             max={lookup.max}
-            hue={seriesHue}
+            colorAt={colorAt}
+            midpoint={payload.scale === "diverging" ? (payload.midpoint ?? 0) : undefined}
             tokens={tokens}
           />
         )}

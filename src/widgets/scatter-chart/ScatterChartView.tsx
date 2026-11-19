@@ -13,7 +13,7 @@ import type {
   ScatterChartPayload,
   ScatterSeries,
 } from "../../shared/payloads.js";
-import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { useTheme, seriesColor } from "../shared/theme.js";
 import { ChartHeader } from "../shared/ChartHeader.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
@@ -31,10 +31,6 @@ import { useLegendState } from "../shared/legend-state.js";
 
 const BASE_FILL_OPACITY = 0.7;
 const POINT_RANGE: [number, number] = [40, 320];
-
-function seriesColor(index: number, tokens: ChartDesignTokens): string {
-  return tokens.series[index % tokens.series.length]!;
-}
 
 function hasSizeEncoding(series: ScatterSeries[]): boolean {
   return series.some((s) => s.data.some((d) => typeof d.size === "number"));
@@ -101,7 +97,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
 
   const legendItems = series.map((s, i) => ({
     name: s.name,
-    color: seriesColor(i, tokens),
+    color: seriesColor(tokens, i),
     value: fmtStat(stats[i]!.avg),
     suffix: "avg",
     range: {
@@ -210,7 +206,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
                 key={s.name}
                 name={s.name}
                 data={s.data}
-                fill={seriesColor(i, tokens)}
+                fill={seriesColor(tokens, i)}
                 fillOpacity={opacityFor(i) * BASE_FILL_OPACITY}
                 isAnimationActive={false}
                 onMouseEnter={() => setFocused(i)}

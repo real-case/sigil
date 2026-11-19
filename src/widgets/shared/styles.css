@@ -496,6 +496,73 @@ body,
   }
 }
 
+/* Raised contrast (prefers-contrast: more): chart scaffolding steps up one
+   notch — grid to the strong border, axes and ticks to secondary text. These
+   lines are decorative by default (≈1.2–1.7:1), which is exactly what a user
+   asking for more contrast does not want. CSS outranks the presentation
+   attributes Recharts writes from the JS tokens. */
+@media (prefers-contrast: more) {
+  .recharts-cartesian-grid line {
+    stroke: var(--sigil-border-strong);
+  }
+  .recharts-cartesian-axis-line,
+  .recharts-cartesian-axis-tick-line {
+    stroke: var(--sigil-text-secondary);
+  }
+  .recharts-cartesian-axis-tick-value,
+  .recharts-cartesian-axis-tick text {
+    fill: var(--sigil-text-secondary);
+  }
+  .sigil-root {
+    --sigil-text-muted: var(--sigil-text-secondary);
+    --sigil-grid: var(--sigil-border-strong);
+    --sigil-axis: var(--sigil-text-secondary);
+  }
+}
+
+/* Forced colours (Windows High Contrast). The browser swaps author colours
+   for a few system ones, so categorical marks are drawn in CanvasText and the
+   active one in Highlight; identity then rests on labels, legends and — for
+   lines — the dash pattern LineChartView adds under this same query.
+   Marks whose colour *is* the value (heatmap cells, choropleth regions, the
+   scale legend) opt out of forcing: flattening them would erase the data, and
+   their legend still explains them. */
+@media (forced-colors: active) {
+  .recharts-bar-rectangle path,
+  .recharts-scatter-symbol path,
+  .recharts-dot,
+  .recharts-area-dots circle,
+  .recharts-active-dot circle {
+    fill: CanvasText;
+    stroke: Canvas;
+  }
+  .recharts-pie-sector path {
+    fill: CanvasText;
+    stroke: Canvas;
+    stroke-width: 2px;
+  }
+  .recharts-area-curve,
+  .recharts-line-curve {
+    stroke: CanvasText;
+  }
+  .recharts-area-area {
+    fill: none;
+  }
+  .recharts-bar-rectangle:hover path,
+  .recharts-pie-sector:hover path,
+  .recharts-wrapper :focus-visible path {
+    fill: Highlight;
+  }
+  .recharts-wrapper :focus-visible,
+  .sigil-mark:focus-visible {
+    outline-color: Highlight;
+  }
+  .sigil-mark,
+  .sigil-scale-bar {
+    forced-color-adjust: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

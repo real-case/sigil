@@ -11,6 +11,7 @@ const description = [
   "variant 'bubble' plots sized markers at coordinates — provide `points` with lat/lon.",
   "Set scope to 'world' for a country map (default) or 'us-states' for a United States map.",
   "Choropleth is for per-region intensity (population, GDP, counts by country/state); bubble is for point data (cities, offices, events by location).",
+  "For a choropleth of values with a meaningful centre (growth rate, change vs plan), set scale 'diverging'.",
   "World regions: ISO 3166-1 alpha-3 (preferred, e.g. 'USA', 'DEU'), alpha-2, numeric, or common English name. US states: 2-letter USPS code (preferred, e.g. 'CA', 'TX'), full name, or FIPS.",
   "For non-geographic categorical comparison use render_bar_chart; for a category × category matrix use render_heatmap.",
 ].join(" ");
@@ -33,6 +34,8 @@ export function registerMapTool(server: McpServer) {
         data: args.data ?? [],
         points: args.points,
         valueLabel: args.valueLabel,
+        scale: args.scale,
+        midpoint: args.midpoint,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],
