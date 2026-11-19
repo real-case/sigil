@@ -102,4 +102,27 @@ export const scatterDatasets: Dataset<ScatterChartPayload>[] = [
       })),
     },
   },
+  {
+    id: "scatter-reference",
+    label: "Annotated — SLA thresholds",
+    category: "annotated",
+    payload: {
+      title: "Latency vs load",
+      xlabel: "Requests / s",
+      ylabel: "p95 latency (ms)",
+      series: [
+        {
+          name: "api",
+          data: range(40).map((i) => ({
+            x: 50 + i * 12,
+            y: Math.round(80 + i * 4 + det(77, i) * 90),
+          })),
+        },
+      ],
+      reference: [
+        { axis: "y", kind: "line", value: 250, label: "SLA 250 ms", tone: "danger" },
+        { axis: "x", kind: "band", from: 400, to: 530, label: "Peak hours", tone: "neutral" },
+      ],
+    },
+  },
 ];

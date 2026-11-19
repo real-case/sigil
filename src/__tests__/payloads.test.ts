@@ -96,6 +96,124 @@ const cases: GuardCase[] = [
     },
   },
   {
+    name: "bar-chart (series)",
+    guard: isBarChartPayload,
+    valid: {
+      title: "T",
+      stack: "normal",
+      series: [
+        { name: "New", data: [{ label: "Jan", value: 5 }] },
+        { name: "Churn", data: [{ label: "Jan", value: -2 }] },
+      ],
+    },
+    rejects: {
+      // The schema's cross-field rules: none of these is visible to `.shape`,
+      // so the guard (and the tool handler) are where they hold.
+      "both data and series": set("data", [{ label: "a", value: 1 }]),
+      "neither data nor series": omit("series"),
+      "empty series": set("series", []),
+      "series with empty data": set("series", [{ name: "s", data: [] }]),
+      "series datum missing label": set("series", [{ name: "s", data: [{ value: 1 }] }]),
+      "invalid stack": set("stack", "stacked"),
+      "invalid mark": set("series", [{ name: "s", mark: "area", data: [{ label: "a", value: 1 }] }]),
+      "right axis without ylabelRight": set("series", [
+        { name: "s", data: [{ label: "a", value: 1 }] },
+        { name: "m", mark: "line", axis: "right", data: [{ label: "a", value: 1 }] },
+      ]),
+      "line mark on a horizontal chart": (v) => ({
+        ...v,
+        orientation: "horizontal",
+        series: [{ name: "m", mark: "line", data: [{ label: "a", value: 1 }] }],
+      }),
+      "line on the left axis of a percent stack": (v) => ({
+        ...v,
+        stack: "percent",
+        series: [
+          { name: "s", data: [{ label: "a", value: 1 }] },
+          { name: "m", mark: "line", data: [{ label: "a", value: 1 }] },
+        ],
+      }),
+      "reference band without to": set("reference", [{ axis: "y", kind: "band", from: 1 }]),
+      "reference line without value": set("reference", [{ axis: "y", kind: "line" }]),
+      "reference with an unknown tone": set("reference", [
+        { axis: "y", kind: "line", value: 1, tone: "info" },
+      ]),
+    },
+    accepts: {
+      "grouped (no stack)": omit("stack"),
+      "percent stack": set("stack", "percent"),
+      "line on a right axis with its label": (v) => ({
+        ...v,
+        ylabelRight: "Margin %",
+        series: [
+          { name: "Revenue", data: [{ label: "Q1", value: 10 }] },
+          { name: "Margin", mark: "line", axis: "right", data: [{ label: "Q1", value: 40 }] },
+        ],
+      }),
+      "line on the shared axis": set("series", [
+        { name: "Revenue", data: [{ label: "Q1", value: 10 }] },
+        { name: "Target", mark: "line", data: [{ label: "Q1", value: 12 }] },
+      ]),
+      "series colour override": set("series", [
+        { name: "s", color: "#123456", data: [{ label: "a", value: 1 }] },
+      ]),
+      "reference line and band": set("reference", [
+        { axis: "y", kind: "line", value: 4, label: "Target", tone: "success" },
+        { axis: "x", kind: "band", from: "Jan", to: "Feb" },
+      ]),
+    },
+  },
+  {
+    name: "line-chart (context)",
+    guard: isLineChartPayload,
+    valid: {
+      title: "T",
+      series: [
+        {
+          name: "Revenue",
+          data: [{ x: "Jan", y: 2 }],
+          compare: { label: "Last year", data: [{ x: "Jan", y: 1 }] },
+        },
+      ],
+      reference: [{ axis: "y", kind: "line", value: 3, label: "Goal" }],
+      annotations: [{ x: "Jan", label: "Launch" }],
+      partialFrom: "Jan",
+    },
+    rejects: {
+      "compare with empty data": set("series", [
+        { name: "s", data: [{ x: 1, y: 1 }], compare: { data: [] } },
+      ]),
+      "compare datum non-numeric y": set("series", [
+        { name: "s", data: [{ x: 1, y: 1 }], compare: { data: [{ x: 1, y: "1" }] } },
+      ]),
+      "annotation without label": set("annotations", [{ x: "Jan" }]),
+      "annotation with empty label": set("annotations", [{ x: "Jan", label: "" }]),
+      "reference band without from": set("reference", [{ axis: "x", kind: "band", to: "Feb" }]),
+      "partialFrom that is not an x value": set("partialFrom", true),
+    },
+    accepts: {
+      "compare without label": set("series", [
+        { name: "s", data: [{ x: 1, y: 1 }], compare: { data: [{ x: 1, y: 0 }] } },
+      ]),
+      "annotation region": set("annotations", [{ x: "Jan", x2: "Mar", label: "Campaign" }]),
+      "numeric partialFrom": set("partialFrom", 12),
+    },
+  },
+  {
+    name: "scatter-chart (reference)",
+    guard: isScatterChartPayload,
+    valid: {
+      title: "T",
+      series: [{ name: "s", data: [{ x: 1, y: 2 }] }],
+      reference: [{ axis: "y", kind: "line", value: 250, label: "SLA", tone: "danger" }],
+    },
+    rejects: {
+      // Both scatter axes are numeric, so a category-style value is an error.
+      "string reference value": set("reference", [{ axis: "y", kind: "line", value: "high" }]),
+      "band missing to": set("reference", [{ axis: "x", kind: "band", from: 1 }]),
+    },
+  },
+  {
     name: "pie-chart",
     guard: isPieChartPayload,
     valid: {

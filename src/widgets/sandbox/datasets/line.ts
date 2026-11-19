@@ -141,6 +141,54 @@ export const lineDatasets: Dataset<LineChartPayload>[] = [
       })),
     },
   },
+  {
+    id: "line-compare-previous",
+    label: "Annotated — vs previous month (compare baseline)",
+    category: "annotated",
+    payload: {
+      title: "Daily revenue vs last month",
+      xlabel: "Day",
+      ylabel: "USD",
+      series: [
+        {
+          name: "Revenue",
+          data: ramp(41, 30, 12_000, 5_000).map((d, i) => ({ x: d.x, y: Math.round(d.y + i * 90) })),
+          compare: {
+            label: "Last month",
+            data: ramp(42, 30, 11_000, 4_500).map((d) => ({ x: d.x, y: Math.round(d.y) })),
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "line-reference-annotations",
+    label: "Annotated — target, threshold band, events, incomplete month",
+    category: "annotated",
+    payload: {
+      title: "Monthly active users",
+      xlabel: "Month",
+      ylabel: "Users",
+      series: [
+        {
+          name: "MAU",
+          data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"].map((x, i) => ({
+            x,
+            y: [41_200, 43_900, 45_100, 44_300, 49_800, 53_200, 55_900, 58_400, 31_700][i]!,
+          })),
+        },
+      ],
+      reference: [
+        { axis: "y", kind: "line", value: 55_000, label: "Q3 goal", tone: "success" },
+        { axis: "y", kind: "band", from: 0, to: 40_000, label: "Churn risk", tone: "danger" },
+      ],
+      annotations: [
+        { x: "Mar", label: "Pricing change" },
+        { x: "May", x2: "Jun", label: "Campaign" },
+      ],
+      partialFrom: "Sep",
+    },
+  },
 ];
 
 function range(n: number): number[] {

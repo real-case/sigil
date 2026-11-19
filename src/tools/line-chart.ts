@@ -9,6 +9,8 @@ const description = [
   "Render an interactive line chart with one or more series.",
   "Use for time-series, trends, progress tracking, or any continuous numeric data across an ordered x-axis.",
   "Supports multiple series overlay with a shared crosshair tooltip that reveals all values at the hovered x.",
+  "To compare with a previous period (last month, last year, plan), give the series a `compare` baseline instead of a second series: it draws as a faint dashed line and the tooltip shows the change.",
+  "Add `reference` for targets and thresholds, `annotations` to mark events (releases, incidents), and `partialFrom` when the latest period is still incomplete.",
   "For discrete category comparison, use render_bar_chart.",
   "For part-of-whole proportions, use render_pie_chart.",
 ].join(" ");
@@ -29,6 +31,9 @@ export function registerLineChartTool(server: McpServer) {
         series: args.series,
         xlabel: args.xlabel,
         ylabel: args.ylabel,
+        reference: args.reference,
+        annotations: args.annotations,
+        partialFrom: args.partialFrom,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],

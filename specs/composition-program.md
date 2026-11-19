@@ -156,7 +156,9 @@ Parked consolidation, recorded as the honest residual of follow-up item 5: [`Val
 
 ## 5. Multi-series and stacked bars
 
-> ⏳ Open
+> 🔍 In review — PR __PR__ (phase 1 of the November 2026 update plan)
+>
+> As built: `series` items are `{ name, data: { label, value }[], color?, mark?, axis? }` — colour is per series, not per datum. `data` and `series` are mutually exclusive, enforced by the schema's cross-field check (run by the guard and by the tool handler, since `.shape` cannot carry it). Resolved interactions: the header KPI is the sum of every bar value (`net total` once any is negative); multi-series mode drops pill-mode lanes and end labels for a numeric axis and a tooltip listing every series plus the stack total; `percent` reuses the pie chart's `fmtShare`; a series' `color` wins over the palette. `percent` divides by the sum of absolute values, so negative parts stay below zero; negative parts of a `normal` stack go below zero too (`stackOffset="sign"`). Layout lives in the pure `bar-chart/stack-layout.ts`. Segments are not clickable — the legend mutes and focuses — so the plot adds no keyboard sequence.
 
 **Task slug:** `bar-multi-series` · risk: medium · breaking: no · stack: typescript, react
 
@@ -176,7 +178,9 @@ Interactions to resolve in the spec, not left to the implementer: which mode the
 
 ## 6. Reference lines and bands
 
-> ⏳ Open
+> 🔍 In review — PR __PR__ (phase 1 of the November 2026 update plan)
+>
+> As built: the field shape above, shared by bar, line and scatter (scatter accepts numbers only). `axis: "y"` always means the value axis, including on a horizontal bar chart. Rendering is `widgets/shared/ReferenceLayer.tsx` over the pure `reference-layer.ts` (tone → status tokens, label placement), which a test pins for ≥ 4.5:1 label and ≥ 3:1 line contrast in both themes. Value-axis marks extend the domain. The line chart additionally gained `annotations` (event markers and regions), `partialFrom` (dashed incomplete tail) and `series[].compare` (a dashed baseline in the series' colour with change in the tooltip) — not in this program; they come from the update plan.
 
 **Task slug:** `chart-reference-layer` · risk: low · breaking: no · stack: typescript, react
 
@@ -206,7 +210,9 @@ Rendered by one shared component so tone → token mapping, label placement, and
 
 ## 7. Combo chart with a secondary axis
 
-> ⏳ Open
+> 🔀 Replaced — folded into `render_bar_chart` (PR __PR__)
+>
+> The November 2026 update plan took the other road from the one argued below: instead of a twelfth tool, `render_bar_chart` series take `mark: "bar" | "line"` and `axis: "left" | "right"`, sharing one axis by default. A right axis is opt-in, requires `ylabelRight`, and its `.describe()` tells the model it is for a different unit only — the dataviz research advises against dual axes otherwise. `area` marks were not added. It saves a slot in the tool list, which is the scarcer resource (design rule 1).
 
 **Task slug:** `combo-chart` · risk: medium · breaking: no · stack: typescript, react
 
@@ -365,7 +371,7 @@ Sigil can show a joint distribution (scatter) but not a marginal one: no spread,
 | 14 | `distribution-chart` | chart types | 2, 4 |
 | 15 | `heatmap-calendar-variant` | chart types | — |
 
-**State:** the four foundations (items 1–4) are shipped; 5–15 are open. The three tracks — 5–7, 8–9, 10–11 — are independent of each other and can start in any order.
+**State:** the four foundations (items 1–4) are shipped; 5 and 6 are in review and 7 is folded into 5 (November 2026 update plan, phase 1); 8–15 are open. The three tracks — 5–7, 8–9, 10–11 — are independent of each other and can start in any order.
 
 Items 1–4 are genuinely independent of each other and can run in any order or in parallel. After them, the three tracks (5–7, 8–9, 10–11) are independent; stage 5 draws on stage 2's output.
 

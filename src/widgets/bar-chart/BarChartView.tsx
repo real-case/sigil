@@ -29,6 +29,8 @@ import {
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 import { useLegendState } from "../shared/legend-state.js";
+import { referenceHeadroom, referenceMarks } from "../shared/ReferenceLayer.js";
+import { SeriesBarView } from "./SeriesBarView.js";
 
 const BAR_RADIUS = 7;
 const BAR_SIZE = 26;
@@ -93,14 +95,31 @@ function ActiveBandBridge({
   return null;
 }
 
+/**
+ * `render_bar_chart` draws two shapes: single-series `data` (the original
+ * pill-mode chart, unchanged) and multi-series `series` (grouped, stacked,
+ * percent, with optional line marks). The schema makes them mutually
+ * exclusive; a tile that reached here carries one or the other.
+ */
 export function BarChartView({ payload }: { payload: BarChartPayload }) {
+  if (payload.series) return <SeriesBarView payload={payload} series={payload.series} />;
+  return <SingleBarView payload={payload} data={payload.data ?? []} />;
+}
+
+function SingleBarView({
+  payload,
+  data,
+}: {
+  payload: BarChartPayload;
+  data: readonly BarDatum[];
+}) {
   const tokens = useTheme();
   const { focused, muted, setFocused, toggleMute, opacityFor } =
     useLegendState({ unfocusedOpacity: 0.32 });
   const canvasRef = useRef<HTMLDivElement>(null);
   // Defaults mirror the render_bar_chart handler, for the tile path where no
   // handler ran. See the note atop shared/payloads.ts.
-  const { title, data, orientation = "vertical", xlabel, ylabel } = payload;
+  const { title, orientation = "vertical", xlabel, ylabel, reference } = payload;
   const isHorizontal = orientation === "horizontal";
 
   const copyCsv = () =>
@@ -266,7 +285,9 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                   // (two rows of it when they stagger), and (with the numeric
                   // axis hidden) left room for rotated category labels that
                   // would otherwise clip at the edge.
-                  top: !isHorizontal && pillMode ? (staggerValueLabels ? 38 : 24) : 8,
+                  top:
+                    (!isHorizontal && pillMode ? (staggerValueLabels ? 38 : 24) : 8) +
+                    referenceHeadroom(reference),
                   right: isHorizontal && pillMode ? endLabelMargin : 16,
                   bottom: 8,
                   left: !isHorizontal && pillMode && needsRotation ? 28 : 8,
@@ -345,6 +366,7 @@ export function BarChartView({ payload }: { payload: BarChartPayload }) {
                     strokeWidth={1.5}
                   />
                 )}
+                {referenceMarks(reference, tokens, { swapped: isHorizontal })}
                 <Tooltip
                   cursor={false}
                   content={(props) => {

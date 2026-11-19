@@ -28,6 +28,7 @@ export function registerScatterChartTool(server: McpServer) {
         series: args.series,
         xlabel: args.xlabel,
         ylabel: args.ylabel,
+        reference: args.reference,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],

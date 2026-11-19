@@ -18,8 +18,8 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 
 | Tool | When it fires | Renders |
 |------|---------------|---------|
-| [`render_bar_chart`](#render_bar_chart) | comparing discrete categories, rankings | vertical/horizontal bars with hover tooltips, click-to-highlight |
-| [`render_line_chart`](#render_line_chart) | time-series, trends, continuous data | multi-series lines with shared crosshair tooltip |
+| [`render_bar_chart`](#render_bar_chart) | comparing discrete categories, rankings, parts of a total | vertical/horizontal bars; grouped, stacked and 100% stacked multi-series; line overlay; target lines and bands |
+| [`render_line_chart`](#render_line_chart) | time-series, trends, continuous data | multi-series lines with shared crosshair tooltip; previous-period comparison, targets, event annotations, incomplete-period tail |
 | [`render_pie_chart`](#render_pie_chart) | part-of-whole proportions, composition | pie or donut with percentage labels |
 | [`render_table`](#render_table) | structured data exploration | sortable + filterable data table |
 | [`render_scatter_chart`](#render_scatter_chart) | (x, y) relationships, correlation, clusters | multi-series scatter with optional point-size encoding |
@@ -102,18 +102,28 @@ The HTTP server binds to `127.0.0.1` and rejects browser requests from non-local
 
 ### `render_bar_chart`
 
-Render an interactive bar chart for comparing discrete categories or showing rankings. Supports vertical/horizontal orientation, hover tooltips, click-to-highlight.
+Render an interactive bar chart for comparing discrete categories or showing rankings. Supports vertical/horizontal orientation, hover tooltips, click-to-highlight. Pass `series` instead of `data` for several values per category.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | `string` | yes | Chart title above the bars |
-| `data` | `Array<{ label, value, color? }>` | yes | At least one bar |
+| `data` | `Array<{ label, value, color? }>` | one of `data` / `series` | Single-series bars, at least one |
 | `data[].label` | `string` | yes | Category label |
 | `data[].value` | `number` | yes | Bar length |
 | `data[].color` | `string` | no | Per-bar color override (e.g. `"#6366F1"`) |
-| `orientation` | `"vertical" \| "horizontal"` | no | Default `"vertical"` |
+| `series` | `Array<{ name, data, color?, mark?, axis? }>` | one of `data` / `series` | Multi-series bars; categories are the union of every series' labels, in first-seen order |
+| `series[].data` | `Array<{ label, value }>` | yes | One value per category; may be negative |
+| `series[].color` | `string` | no | Series color; wins over the palette |
+| `series[].mark` | `"bar" \| "line"` | no | Default `"bar"`. `"line"` draws the series as a line over the bars (never stacked) |
+| `series[].axis` | `"left" \| "right"` | no | Default `"left"` (shared axis). `"right"` is for a different unit only and requires `ylabelRight` |
+| `stack` | `"none" \| "normal" \| "percent"` | no | Multi-series only. Default `"none"` (grouped). `"normal"` stacks to a total, negative parts below zero; `"percent"` stacks to 100% |
+| `orientation` | `"vertical" \| "horizontal"` | no | Default `"vertical"`. Line marks and a right axis need `"vertical"` |
 | `xlabel` | `string` | no | X-axis label |
 | `ylabel` | `string` | no | Y-axis label |
+| `ylabelRight` | `string` | no | Right-axis label; required with `axis: "right"` |
+| `reference` | `Array<ReferenceMark>` | no | Target lines and bands — see [Reference marks](#reference-marks) |
+
+`data` and `series` are mutually exclusive. In multi-series mode the chart shows a numeric axis instead of the single-series value labels, the header KPI is the sum of every bar (`net total` once any value is negative), percent values use the pie chart's share format, and the tooltip lists every series in the hovered category plus the stack total.
 
 ### `render_line_chart`
 
@@ -122,13 +132,17 @@ Render an interactive line chart with one or more series. Use for time-series, t
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | `string` | yes | Chart title |
-| `series` | `Array<{ name, data }>` | yes | One or more series |
+| `series` | `Array<{ name, data, compare? }>` | yes | One or more series |
 | `series[].name` | `string` | yes | Series name (legend + tooltip) |
 | `series[].data` | `Array<{ x, y }>` | yes | Points; `x` can be string or number |
+| `series[].compare` | `{ label?, data: Array<{ x, y }> }` | no | Comparison baseline (previous period, last year, plan), matched to the series by `x`. Drawn as a faint dashed line in the series' color; the tooltip adds the baseline and the change in absolute and % terms |
 | `xlabel` | `string` | no | X-axis label |
 | `ylabel` | `string` | no | Y-axis label |
+| `reference` | `Array<ReferenceMark>` | no | Target lines and bands — see [Reference marks](#reference-marks) |
+| `annotations` | `Array<{ x, label, x2? }>` | no | Event markers: a vertical line at `x`, or a shaded region `x`..`x2`, labelled |
+| `partialFrom` | `string \| number` | no | First `x` of an incomplete period; the line is dashed from there and the tooltip marks those points incomplete |
 
-All-numeric `x` triggers a numeric axis (correct spacing for sparse values); any string switches to a category axis.
+All-numeric `x` triggers a numeric axis (correct spacing for sparse values); any string switches to a category axis. With a `compare` baseline on the first series, the header KPI caption adds the change in average against it.
 
 ### `render_pie_chart`
 
@@ -173,6 +187,23 @@ Render an interactive scatter plot for showing the relationship between two nume
 | `series[].data` | `Array<{ x, y, size? }>` | yes | Points; `x` and `y` are numeric; optional positive `size` |
 | `xlabel` | `string` | no | X-axis label |
 | `ylabel` | `string` | no | Y-axis label |
+| `reference` | `Array<ReferenceMark>` | no | Threshold lines and bands (numeric values only) — see [Reference marks](#reference-marks) |
+
+
+### Reference marks
+
+`render_bar_chart`, `render_line_chart` and `render_scatter_chart` share one optional `reference` field for authored context: targets, thresholds, averages, acceptable ranges.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `axis` | `"x" \| "y"` | yes | `"y"` is the value axis (on a horizontal bar chart too); `"x"` the category / x axis |
+| `kind` | `"line" \| "band"` | yes | A line at `value`, or a band from `from` to `to` |
+| `value` | `number \| string` | for `line` | Position of the line |
+| `from`, `to` | `number \| string` | for `band` | Ends of the band |
+| `label` | `string` | no | Text drawn with the mark; strongly recommended, since a band must not rely on color alone |
+| `tone` | `"neutral" \| "success" \| "warning" \| "danger"` | no | Default `"neutral"`; maps to the theme's status colors |
+
+A value-axis mark beyond the data widens the axis rather than disappearing. Reference marks take no clicks and no tab stop.
 
 ### `render_treemap`
 
