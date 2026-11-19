@@ -1,0 +1,27 @@
+# Sigil
+
+> Sigil is an MCP Apps server (npm: @real-case/sigil) that renders live, interactive chart widgets inline in MCP Apps hosts such as Claude Desktop, Claude web and VS Code Copilot Chat. Each tool takes JSON arguments validated by a zod schema and returns a UI resource the host mounts in a sandboxed iframe.
+
+## Install
+
+- Claude Desktop / VS Code: run over stdio with `npx -y @real-case/sigil` (see the README for the config snippet).
+- Claude web: run the HTTP server (`npm run dev`, port 3001) behind an HTTPS tunnel or proxy and add the `/mcp` URL as a custom connector.
+
+## Tools
+
+- render_bar_chart: comparing discrete categories and rankings
+- render_line_chart: time series, trends, continuous data
+- render_pie_chart: part-of-whole proportions
+- render_table: sortable, filterable rows with optional sparkline columns
+- render_scatter_chart: relationships and clusters between two measures
+- render_treemap: hierarchical part-of-whole
+- render_heatmap: intensity across two categorical axes
+- render_stat_panel: KPI and scorecard cards with trends and targets
+- render_sankey: flows from source to destination
+- render_dashboard: a grid of tiles, each tile any other widget
+- render_map: world or US-state choropleth and bubble maps
+
+## Docs
+
+- [README and tool reference](https://github.com/real-case/sigil#tool-reference)
+- [Payload schemas](https://github.com/real-case/sigil/blob/dev/src/shared/schemas.ts)
