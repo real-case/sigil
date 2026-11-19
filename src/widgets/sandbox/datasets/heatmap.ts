@@ -116,4 +116,56 @@ export const heatmapDatasets: Dataset<HeatmapPayload>[] = [
       midpoint: 0,
     },
   },
+  {
+    id: "heatmap-cohort-retention",
+    label: "Cohort — monthly retention, weighted average",
+    category: "medium",
+    payload: cohortRetention(),
+  },
+  {
+    id: "heatmap-cohort-nrr",
+    label: "Cohort — net revenue retention above 100%, no sizes",
+    category: "edgeLabels",
+    payload: {
+      title: "Net revenue retention by signup quarter",
+      mode: "cohort",
+      xLabels: ["Q0", "Q1", "Q2", "Q3", "Q4"],
+      yLabels: ["2025 Q3", "2025 Q4", "2026 Q1", "2026 Q2", "2026 Q3"],
+      cells: [
+        [100, 104, 109, 113, 118],
+        [100, 101, 106, 110],
+        [100, 97, 99],
+        [100, 103],
+        [100],
+      ].flatMap((row, y) => row.map((value, x) => ({ x, y, value }))),
+      xlabel: "Quarters since signup",
+      ylabel: "Signup quarter",
+    },
+  },
 ];
+
+// A triangular retention table: each monthly cohort decays at its own pace and
+// has only lived through the months since it signed up.
+function cohortRetention(): HeatmapPayload {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
+  const sizes = [1840, 2120, 1960, 2410, 2780, 2350, 3010, 3320, 2890, 3540];
+  const periods = months.length;
+  const cells: HeatmapPayload["cells"] = [];
+  months.forEach((_, y) => {
+    const floor = 18 + (y % 4) * 2.5;
+    for (let x = 0; x < periods - y; x++) {
+      const value = x === 0 ? 100 : floor + (100 - floor) * Math.exp(-0.9 * x) - x * 0.4;
+      cells.push({ x, y, value: Math.round(value * 10) / 10 });
+    }
+  });
+  return {
+    title: "Monthly retention by signup cohort, 2026",
+    mode: "cohort",
+    xLabels: Array.from({ length: periods }, (_, i) => `M${i}`),
+    yLabels: months.map((m) => `${m} 2026`),
+    cohortSizes: sizes,
+    cells,
+    xlabel: "Months since signup",
+    ylabel: "Signup cohort",
+  };
+}

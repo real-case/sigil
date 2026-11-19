@@ -9,6 +9,7 @@ import { isTreemapPayload } from "../widgets/treemap/guard.js";
 import { isHeatmapPayload } from "../widgets/heatmap/guard.js";
 import { isSankeyPayload } from "../widgets/sankey/guard.js";
 import { isFunnelPayload } from "../widgets/funnel/guard.js";
+import { isInfoCardPayload } from "../widgets/info-card/guard.js";
 import { isMapPayload } from "../widgets/map/guard.js";
 import { isStatPanelPayload } from "../widgets/stat-panel/guard.js";
 import { isDashboardPayload } from "../widgets/dashboard/guard.js";
@@ -379,6 +380,79 @@ const cases: GuardCase[] = [
       "empty yLabels": set("yLabels", []),
       "empty cells": set("cells", []),
       "empty-string xLabel": set("xLabels", ["a", ""]),
+      "unknown mode": set("mode", "pivot"),
+      "cohortSizes shorter than yLabels": set("cohortSizes", [10]),
+      "negative cohort size": set("cohortSizes", [10, -1]),
+    },
+    accepts: {
+      "cohort mode with sizes": (p) => ({ ...p, mode: "cohort", cohortSizes: [100, 80] }),
+      "cohort mode without sizes": set("mode", "cohort"),
+      "retention above 100%": set("cells", [{ x: 0, y: 0, value: 118 }]),
+    },
+  },
+  {
+    name: "bar-chart (waterfall)",
+    guard: isBarChartPayload,
+    valid: {
+      title: "T",
+      variant: "waterfall",
+      totalLabel: "Closing",
+      data: [
+        { label: "Open", value: 100, kind: "total" },
+        { label: "Up", value: 20 },
+        { label: "Down", value: -5, kind: "delta" },
+      ],
+    },
+    rejects: {
+      "waterfall with series": (p) => ({ ...p, data: undefined, series: [{ name: "s", data: [{ label: "a", value: 1 }] }] }),
+      "unknown kind": set("data", [{ label: "a", value: 1, kind: "subtotal" }]),
+      "unknown variant": set("variant", "bridge"),
+      "empty totalLabel": set("totalLabel", ""),
+    },
+  },
+  {
+    name: "info-card",
+    guard: isInfoCardPayload,
+    valid: {
+      title: "T",
+      variant: "bullet",
+      items: [{ label: "a", value: 8, target: 10, bands: [5, 8], max: 12, unit: "$M" }],
+    },
+    rejects: {
+      "missing title": omit("title"),
+      "missing variant": omit("variant"),
+      "unknown variant": set("variant", "donut"),
+      "missing items": omit("items"),
+      "empty items": set("items", []),
+      "item missing value": set("items", [{ label: "a" }]),
+      "max not above min": set("items", [{ label: "a", value: 1, min: 5, max: 5 }]),
+      "too many bands": set("items", [{ label: "a", value: 1, bands: [1, 2, 3, 4, 5] }]),
+      "fractional rankDelta": set("items", [{ label: "a", value: 1, rankDelta: 1.5 }]),
+      "narrative without text": (p) => ({ ...p, variant: "narrative" }),
+      "comparison without baseline": set("variant", "comparison"),
+    },
+    accepts: {
+      "gauge with thresholds": (p) => ({
+        ...p,
+        variant: "gauge",
+        items: [{ label: "Uptime", value: 99.9, thresholds: { warn: 99.9, critical: 99 } }],
+      }),
+      "narrative with text only": (p) => ({ title: p.title, variant: "narrative", text: "Revenue grew." }),
+      "ranking with rank deltas": (p) => ({
+        ...p,
+        variant: "ranking",
+        items: [
+          { label: "a", value: 3, rankDelta: 1 },
+          { label: "b", value: 2, rankDelta: -1 },
+        ],
+      }),
+      "comparison with baselines": (p) => ({
+        ...p,
+        variant: "comparison",
+        items: [{ label: "a", value: 3, baseline: 2 }],
+        currentLabel: "Q3",
+        baselineLabel: "Q2",
+      }),
     },
   },
   {
@@ -583,6 +657,7 @@ const cases: GuardCase[] = [
       "stat-panel tile": tile("stat-panel", { title: "T", items: [{ label: "A", value: 1 }] }),
       "sankey tile": tile("sankey", { title: "T", links: [] }),
       "funnel tile": tile("funnel", { title: "T", steps: [] }),
+      "info-card tile": tile("info-card", { title: "T", variant: "gauge" }),
       "map tile": tile("map", {
         title: "T",
         scope: "world",

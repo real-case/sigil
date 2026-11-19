@@ -20,6 +20,18 @@ export interface ValueLegendItem {
   meter?: number;
   /** Min/avg/max positions → renders the compact range variant. */
   range?: ValueLegendRange;
+  /** Shown in place of the swatch, e.g. a rank number ("1"). */
+  lead?: string;
+  /** A short marker after the value, e.g. a rank move "▲ 3". */
+  note?: ValueLegendNote;
+}
+
+export interface ValueLegendNote {
+  /** What is drawn, e.g. "▲ 3". Hidden from assistive tech… */
+  glyph: string;
+  /** …which reads this instead, e.g. "up 3 places". */
+  label: string;
+  tone?: "success" | "danger" | "muted";
 }
 
 interface ValueLegendProps {
@@ -32,6 +44,9 @@ interface ValueLegendProps {
   muted: ReadonlySet<number>;
   onFocus: (index: number | null) => void;
   onToggleMute: (index: number) => void;
+  /** False renders plain rows (no hover, no mute): a list that only reads,
+   *  such as the info-card ranking. Defaults to true. */
+  interactive?: boolean;
 }
 
 const clampPct = (n: number) => Math.max(0, Math.min(100, n));
@@ -53,35 +68,36 @@ export function ValueLegend({
   muted,
   onFocus,
   onToggleMute,
+  interactive = true,
 }: ValueLegendProps) {
   void focused; // focus feedback lives in the plot; rows restyle on :hover
   return (
     <ul className={`sigil-legend${layout === "row" ? " sigil-legend--row" : ""}`}>
       {items.map((item, i) => {
         const isMuted = muted.has(i);
-        return (
-          <li key={`${item.name}-${i}`} className="sigil-leg-item">
-            <button
-              type="button"
-              className={
-                "sigil-leg" +
-                (item.range ? " sigil-leg--lite" : "") +
-                (isMuted ? " is-muted" : "")
-              }
-              style={{ "--c": item.color } as CSSProperties}
-              aria-pressed={isMuted}
-              onMouseEnter={() => onFocus(i)}
-              onMouseLeave={() => onFocus(null)}
-              onFocus={() => onFocus(i)}
-              onBlur={() => onFocus(null)}
-              onClick={() => onToggleMute(i)}
-            >
-              <span className="sigil-leg-sw" aria-hidden />
+        const className =
+          "sigil-leg" +
+          (item.range ? " sigil-leg--lite" : "") +
+          (isMuted ? " is-muted" : "") +
+          (interactive ? "" : " is-static");
+        const body = (
+          <>
+              {item.lead !== undefined ? (
+                <span className="sigil-leg-lead">{item.lead}</span>
+              ) : (
+                <span className="sigil-leg-sw" aria-hidden="true" />
+              )}
               <span className="sigil-leg-name">{item.name}</span>
               <span className="sigil-leg-val">
                 {item.value}
                 {item.suffix !== undefined && (
                   <span className="sigil-leg-pct">{item.suffix}</span>
+                )}
+                {item.note !== undefined && (
+                  <span className="sigil-leg-note" data-tone={item.note.tone ?? "muted"}>
+                    <span aria-hidden="true">{item.note.glyph}</span>
+                    <span className="sigil-sr-only">{item.note.label}</span>
+                  </span>
                 )}
               </span>
               {item.range ? (
@@ -104,7 +120,29 @@ export function ValueLegend({
                   <i style={{ width: `${clampPct(item.meter)}%` }} />
                 </span>
               ) : null}
-            </button>
+          </>
+        );
+        return (
+          <li key={`${item.name}-${i}`} className="sigil-leg-item">
+            {interactive ? (
+              <button
+                type="button"
+                className={className}
+                style={{ "--c": item.color } as CSSProperties}
+                aria-pressed={isMuted}
+                onMouseEnter={() => onFocus(i)}
+                onMouseLeave={() => onFocus(null)}
+                onFocus={() => onFocus(i)}
+                onBlur={() => onFocus(null)}
+                onClick={() => onToggleMute(i)}
+              >
+                {body}
+              </button>
+            ) : (
+              <div className={className} style={{ "--c": item.color } as CSSProperties}>
+                {body}
+              </div>
+            )}
           </li>
         );
       })}

@@ -29,3 +29,6 @@ export const SeriesPercent: Story = { args: { payload: payloadById(barDatasets, 
 export const SeriesHorizontalStacked: Story = { args: { payload: payloadById(barDatasets, "bar-series-horizontal-stacked") } };
 export const SeriesDiverging: Story = { args: { payload: payloadById(barDatasets, "bar-series-diverging") } };
 export const SeriesCombo: Story = { args: { payload: payloadById(barDatasets, "bar-series-combo") } };
+export const WaterfallArr: Story = { args: { payload: payloadById(barDatasets, "bar-waterfall-arr") } };
+export const WaterfallPnl: Story = { args: { payload: payloadById(barDatasets, "bar-waterfall-pnl") } };
+export const WaterfallHorizontal: Story = { args: { payload: payloadById(barDatasets, "bar-waterfall-horizontal") } };

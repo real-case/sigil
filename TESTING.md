@@ -62,7 +62,7 @@ In a new chat, ask:
 
 > What MCP tools do you have available?
 
-You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_scatter_chart`**, **`render_treemap`**, **`render_heatmap`**, **`render_table`**, **`render_stat_panel`**, **`render_sankey`**, **`render_dashboard`**, **`render_map`**, and **`render_funnel`** in the list. If not — see [Debugging](#debugging) below.
+You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_scatter_chart`**, **`render_treemap`**, **`render_heatmap`**, **`render_table`**, **`render_stat_panel`**, **`render_sankey`**, **`render_dashboard`**, **`render_map`**, **`render_funnel`**, and **`render_info_card`** in the list. If not — see [Debugging](#debugging) below.
 
 ### A3. Smoke test each widget with explicit prompts
 
@@ -97,6 +97,12 @@ These force tool selection so you isolate **rendering** from **selection**.
 12. Use render_funnel to show a signup funnel:
     Visited 48200, Viewed pricing 17900, Started signup 6420,
     Verified email 4870, First project 1310.
+13. Use render_info_card as a gauge for uptime 99.95% on a 99–100 scale,
+    warning below 99.9, critical below 99.5.
+14. Use render_bar_chart with variant waterfall for an ARR bridge:
+    opening 4820 (total), new 610, expansion 284, contraction -142, churn -377.
+15. Use render_heatmap in cohort mode for monthly retention of three
+    cohorts (sizes 1800, 2100, 2400): Jan 100/52/34, Feb 100/49, Mar 100.
 ```
 
 **Pass criteria for each:**
@@ -126,6 +132,11 @@ Now test **without** naming the tool. Each prompt should pick the listed tool:
 | "MAU by month against our 55K goal" | `render_line_chart` (or bar) with a `reference` line |
 | "Where do users drop off: visit 48K, pricing 18K, signup 6.4K, activated 1.3K" | `render_funnel` |
 | "Our sales pipeline conversion from lead to closed won" | `render_funnel` (not `render_sankey`, not bar) |
+| "Are we on track against the Q3 plan: revenue 8.4M of 9M, new customers 412 of 380" | `render_info_card`, `variant: "bullet"` |
+| "Is the API healthy? Uptime 99.95%, p95 412 ms, CPU 91%" | `render_info_card`, `variant: "gauge"` (not `render_stat_panel`) |
+| "Top 10 accounts by ARR, and who moved up" | `render_info_card`, `variant: "ranking"` (or `render_bar_chart` without rank moves) |
+| "How did ARR get from 4.8M to 5.3M this quarter?" | `render_bar_chart` with `variant: "waterfall"` |
+| "Monthly retention by signup cohort" | `render_heatmap` with `mode: "cohort"` |
 
 **If Claude picks the wrong tool**, that's a description-tuning problem in `src/tools/<name>.ts`. The fix is to:
 - sharpen the **Use when …** clause (give concrete example domains)
@@ -138,7 +149,7 @@ Re-run `npm run build:server` and restart Claude Desktop after each change.
 
 After §A3 confirms widgets render at all, walk through this checklist to verify the v0.3.0 design system (tokens + primitives) is intact across every widget. Run it once in **light** and once in **dark** — switch the host app's appearance (Claude Desktop: Settings → Appearance) between passes; widgets follow the host theme first and the OS preference only when the host sends none. Each widget gets ~30 seconds.
 
-**Per-widget checks (× 12):**
+**Per-widget checks (× 13):**
 
 | Widget | Look for |
 |---|---|
@@ -152,6 +163,9 @@ After §A3 confirms widgets render at all, walk through this checklist to verify
 | `stat-panel` | KPI cards: mono `tabular-nums` values, trend deltas coloured from `semantic` tokens, sparkline / progress / badge variants render. Inside a dashboard tile, cards flatten to sunken wells (no elevation). |
 | `sankey` | Node rects colored from the series palette (payload `color` overrides win); ribbons inherit their source node's color at 30 % opacity. Every label hangs to the right of its rect, the last column reading into a reserved right band (≤ 28 % of the canvas), with a mono `tabular-nums` value line when the node is ≥ 26 px tall. Labels shrink with the width: a name that fits is shown whole, a longer one is truncated with an ellipsis, and below ~8 readable characters it is dropped rather than collided — narrow the viewport to 320/480 and confirm no two labels ever overlap. Hovering a node or ribbon raises connected ribbons to 55 % and dims the rest; the header KPI shows total inflow. A cyclic payload shows the error EmptyState, not a crash. |
 | `funnel` | Left-aligned bars on one baseline (not a centred trapezoid), one hue stepping light-ward down the sequential ramp, darkest first. Each stage after the first carries a faint "ghost" of the previous bar showing what it lost, and a mono line between rows: `↓ x% continued · −lost · conversionTime`. The worst step is outlined and its line reads "largest drop" in the warning text colour, repeated in the caption below. A stage larger than the one before it shows "▲ grew", not a capped bar; a zero stage draws no bar and prints `0%`, never `NaN`. Vertical orientation puts stages left to right with the same numbers above each column. Header KPI is overall conversion, first → last. |
+| `bar-chart` (waterfall) | Rises in the diverging scale's blue, falls in its orange, totals neutral grey; every change labelled with its sign (`+610`, `−377`, true minus), above a rise and below a fall. A dashed connector runs from each bar to the next at the level the step ended on, and none runs into a `total` that restarts the running total elsewhere (sandbox *Waterfall — P&L with a subtotal*). The closing bar is computed and its value is the header KPI. Axis ticks are round numbers; a bridge that dips below zero shows a zero line. A key under the plot names the three colours. |
+| `heatmap` (cohort) | A size column after the row labels, a percentage printed in every cell in whichever ink clears 4.5:1, an average row set apart below the cohorts ("Weighted avg" with sizes, "Average" without). Cells a cohort has not reached are blank — no grey, no `0%` — so the grid keeps its triangle. The average row is reachable with the arrow keys and shows a tooltip, but opens no drill-down menu. At 320 px the table scrolls sideways instead of squeezing cells. |
+| `info-card` | **bullet:** thin blue bar on grey bands (worst band darkest; reversed with `higherIsBetter: false`), black target tick, foot "x% of target … · status". **gauge:** half-dial, arc in the status colour, zone ring outside it, min / max under the ends, status word under the label. **progress:** bar ends at the target, coloured by status. **ranking:** read-only value-legend rows with rank numbers, meters scaled to the top entry, ▲ green / ▼ red / – muted moves — and no arrows at all when `rankDelta` is absent. **comparison:** one card per item with ▲/▼, signed % and absolute change (pp for `%`). **narrative:** key figures with a left rule, then plain paragraphs. Off-scale values (sandbox *Edge* presets) sit at the edge with an arrowhead and "above scale (max …)". |
 | `dashboard` | Tiles form a fixed-column grid (payload `columns`, clamped 1–4, default 2; column widths are fluid) honouring `colSpan`. Every tile keeps its own title/toolbar. Embedded widgets recede — no double surfaces or nested shadows. |
 | `map` | Choropleth uses the same sequential ramp + legend as the heatmap (or the diverging one with `scale: "diverging"` — sandbox preset *Negatives — temperature anomaly*); no-data land stays a neutral tint. Bubbles scale by √value (area-proportional above a 3 px floor) with a size legend. The footnote reports the *count* of unmatched regions / off-map points (ids are not listed). |
 
@@ -280,6 +294,6 @@ Before tagging a release (current target: v0.2.0):
 - [ ] Dark/light theme switching works in both hosts
 - [ ] Copy CSV → text in clipboard, parses cleanly when pasted into a spreadsheet
 - [ ] Copy PNG → image in clipboard or downloaded file
-- [ ] No console errors in DevTools across all 12 widgets
+- [ ] No console errors in DevTools across all 13 widgets
 - [ ] `npm run typecheck` clean
 - [ ] `npm run build` clean

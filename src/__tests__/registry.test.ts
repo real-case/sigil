@@ -17,6 +17,7 @@ describe("widget registry", () => {
       "dashboard",
       "funnel",
       "heatmap",
+      "info-card",
       "line-chart",
       "map",
       "pie-chart",

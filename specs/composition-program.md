@@ -275,7 +275,7 @@ Whether provenance should instead be a cross-widget field on every payload is th
 
 ## 10. Info card widget — narrative and comparison
 
-> ⏳ Open
+> 🔍 In review — phase 3 of the November 2026 update plan (PR stacked on [#78](https://github.com/real-case/sigil/pull/78)). `narrative` shipped as `text` plus optional key figures from `items`; `comparison` as value against a per-item `baseline` with a `currentLabel` / `baselineLabel` pair. The headline / `tone` / `source` / `asOf` fields and subject-vs-subject comparison described below were not built and remain open.
 
 **Task slug:** `info-card-narrative` · risk: medium · breaking: no · stack: typescript, react
 
@@ -292,7 +292,7 @@ Variants ship additively over releases, the way `map` shipped choropleth → us-
 
 ## 11. Info card widget — bullet and ranking
 
-> ⏳ Open
+> 🔍 In review — phase 3 of the November 2026 update plan (PR stacked on [#78](https://github.com/real-case/sigil/pull/78)), together with `gauge` and `progress` (plan decision R3: gauge is a variant, not a tool). `ranking` reuses `ValueLegend`, which gained a read-only mode, a lead slot for the rank and a note slot for the ▲▼ move.
 
 **Task slug:** `info-card-bullet-ranking` · risk: low · breaking: no · stack: typescript, react
 
@@ -311,7 +311,7 @@ Ordered by "shape no existing widget can express" — the criterion that picked 
 
 ## 12. Waterfall chart
 
-> ⏳ Open
+> 🔍 In review — phase 3 of the November 2026 update plan (PR stacked on [#78](https://github.com/real-case/sigil/pull/78)). Shipped as `render_bar_chart`'s `variant: "waterfall"` (rule 1), with `data[].kind` and a computed closing bar labelled by `totalLabel`. Drawn as Recharts range bars rather than a transparent base segment, so a bridge that crosses zero needs no special case; the step maths is `waterfallLayout` in `stack-layout.ts`.
 
 **Task slug:** `waterfall-chart` · risk: low · breaking: no · stack: typescript, react
 

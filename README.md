@@ -8,7 +8,7 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 
 🌐 [sigil.live](https://sigil.live) · [TESTING.md](./TESTING.md) · [INCANTATIONS.md](./INCANTATIONS.md) · [SPEC.md](./SPEC.md)
 
-> **Status:** v0.2.0 — 12 widgets + payload-guard / registry / registration test harness.
+> **Status:** v0.2.0 — 13 widgets + payload-guard / registry / registration test harness.
 
 ## Demo
 
@@ -18,20 +18,21 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 
 | Tool | When it fires | Renders |
 |------|---------------|---------|
-| [`render_bar_chart`](#render_bar_chart) | comparing discrete categories, rankings, parts of a total | vertical/horizontal bars; grouped, stacked and 100% stacked multi-series; line overlay; target lines and bands |
+| [`render_bar_chart`](#render_bar_chart) | comparing discrete categories, rankings, parts of a total | vertical/horizontal bars; grouped, stacked and 100% stacked multi-series; line overlay; target lines and bands; waterfall bridges |
 | [`render_line_chart`](#render_line_chart) | time-series, trends, continuous data | multi-series lines with shared crosshair tooltip; previous-period comparison, targets, event annotations, incomplete-period tail |
 | [`render_pie_chart`](#render_pie_chart) | part-of-whole proportions, composition | pie or donut with percentage labels |
 | [`render_table`](#render_table) | structured data exploration | sortable + filterable data table |
 | [`render_scatter_chart`](#render_scatter_chart) | (x, y) relationships, correlation, clusters | multi-series scatter with optional point-size encoding |
 | [`render_treemap`](#render_treemap) | hierarchical part-of-whole, many leaves | nested rectangles sized by value, palette-tinted by branch |
-| [`render_heatmap`](#render_heatmap) | 2D categorical × numeric intensity | matrix with palette gradient, hover tooltip per cell |
+| [`render_heatmap`](#render_heatmap) | 2D categorical × numeric intensity, retention cohorts | matrix with palette gradient, hover tooltip per cell; cohort mode with a size column and a weighted average row |
 | [`render_stat_panel`](#render_stat_panel) | KPIs / scorecards, at-a-glance metrics | grid of metric cards with coloured trend deltas and status accents |
 | [`render_sankey`](#render_sankey) | source-to-destination flows: budgets, user journeys, traffic | flow ribbons between stages, width ∝ value, hover-highlighting of connected flows |
 | [`render_dashboard`](#render_dashboard) | several related views at once | grid of tiles, each tile any other widget rendered from its own payload |
 | [`render_map`](#render_map) | country- or state-level metrics, geographic intensity | world / US-state choropleth — regions shaded by value, hover tooltip, click-to-focus |
 | [`render_funnel`](#render_funnel) | conversion funnels, drop-off, pipeline stages | ordered stage bars with conversion from first and previous stage, largest drop called out |
+| [`render_info_card`](#render_info_card) | value vs target, health thresholds, leaderboards, period comparisons, short summaries | bullet, gauge, progress, ranking, comparison and narrative cards; status always printed in words |
 
-All chart widgets expose **Copy CSV** and **Copy PNG** buttons; the table and stat panel expose **Copy CSV**. The dashboard composes other widgets, so each tile keeps its own controls.
+All chart widgets expose **Copy CSV** and **Copy PNG** buttons; the table, stat panel and info card expose **Copy CSV**. The dashboard composes other widgets, so each tile keeps its own controls.
 
 **Drill-down.** On a host that accepts messages from a widget (MCP Apps `hostCapabilities.message`), clicking a bar, point, slice, funnel step, heatmap cell or table row opens a small menu of follow-up questions — "Break down…", "Why is it like this?", "Show rows" — and the one picked is sent to the model as your next message, naming the mark and the chart. Bar, line, pie, funnel, heatmap and table accept an optional `followUps: string[]` to replace those defaults with questions about the data's real dimensions. On other hosts there is no menu and a click behaves as before.
 
@@ -110,10 +111,13 @@ Render an interactive bar chart for comparing discrete categories or showing ran
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | `string` | yes | Chart title above the bars |
-| `data` | `Array<{ label, value, color? }>` | one of `data` / `series` | Single-series bars, at least one |
+| `variant` | `"bars" \| "waterfall"` | no | Default `"bars"`. `"waterfall"` draws `data` as a bridge — see below |
+| `data` | `Array<{ label, value, color?, kind? }>` | one of `data` / `series` | Single-series bars, at least one |
 | `data[].label` | `string` | yes | Category label |
 | `data[].value` | `number` | yes | Bar length |
 | `data[].color` | `string` | no | Per-bar color override (e.g. `"#6366F1"`) |
+| `data[].kind` | `"delta" \| "total"` | no | Waterfall only. Default `"delta"`: a signed change from the running total. `"total"`: a level standing on zero that restarts the running total (opening balance, known subtotal) |
+| `totalLabel` | `string` | no | Waterfall only: label of the computed closing bar; default `"Total"` |
 | `series` | `Array<{ name, data, color?, mark?, axis? }>` | one of `data` / `series` | Multi-series bars; categories are the union of every series' labels, in first-seen order |
 | `series[].data` | `Array<{ label, value }>` | yes | One value per category; may be negative |
 | `series[].color` | `string` | no | Series color; wins over the palette |
@@ -125,6 +129,8 @@ Render an interactive bar chart for comparing discrete categories or showing ran
 | `ylabel` | `string` | no | Y-axis label |
 | `ylabelRight` | `string` | no | Right-axis label; required with `axis: "right"` |
 | `reference` | `Array<ReferenceMark>` | no | Target lines and bands — see [Reference marks](#reference-marks) |
+
+**Waterfall.** With `variant: "waterfall"` each `data` item floats from where the running total stood: rises blue, falls orange (the two arms of the diverging scale, safe for red–green colour blindness), totals neutral grey, every change labelled with its sign, and a dashed connector at the level each step ended on. The closing bar is computed — start plus every change — and appended unless the last item is already a `total`; the header KPI is that closing value. A waterfall takes `data`, not `series`; the tooltip shows the change and the running total; `reference` lines work as on ordinary bars.
 
 `data` and `series` are mutually exclusive. In multi-series mode the chart shows a numeric axis instead of the single-series value labels, the header KPI is the sum of every bar (`net total` once any value is negative), percent values use the pie chart's share format, and the tooltip lists every series in the hovered category plus the stack total.
 
@@ -235,6 +241,10 @@ Render an interactive heatmap matrix: a 2D grid where each cell's color encodes 
 | `ylabel` | `string` | no | Y-axis title |
 | `scale` | `"sequential" \| "diverging"` | no | Colour scale. Defaults to `"sequential"` |
 | `midpoint` | `number` | no | Diverging only: the value shown as neutral (default `0`). The farther side sets the extremes; the nearer side is not stretched |
+| `mode` | `"matrix" \| "cohort"` | no | Default `"matrix"`. `"cohort"` reads the grid as a retention table — see below |
+| `cohortSizes` | `number[]` | no | Cohort mode: one size per `yLabels` row, shown as a size column and used to weight the average row |
+
+**Cohort mode.** Rows are cohorts (signup month), columns are periods since start (`M0`, `M1`, …), and each cell is a percentage — values above 100 are fine for net revenue retention. The widget prints the % in every cell (with whichever of two inks clears 4.5:1 on that colour), adds a size column when `cohortSizes` is given, and appends an average row. The average for each period covers only the cohorts that reached it, weighted by cohort size when sizes are given ("Weighted avg") and a plain mean otherwise ("Average"). Periods a cohort has not reached are simply omitted from `cells` and stay empty, so the table keeps its triangle; they are never drawn as 0. On a narrow host the table scrolls sideways rather than shrinking cells below their printed value.
 
 ### `render_stat_panel`
 
@@ -285,7 +295,7 @@ Render a multi-widget dashboard: a grid of tiles where each tile is one of the o
 | `title` | `string` | yes | Dashboard title |
 | `columns` | `number` | no | Grid column count (1–4); defaults to `2` |
 | `tiles` | `Array<{ type, payload, colSpan? }>` | yes | Ordered tiles, laid out left-to-right, top-to-bottom |
-| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel" \| "sankey" \| "map" \| "funnel"` | yes | Which widget to render |
+| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel" \| "sankey" \| "map" \| "funnel" \| "info-card"` | yes | Which widget to render |
 | `tiles[].payload` | `object` | yes | That widget's own payload — the same object its `render_<type>` tool accepts |
 | `tiles[].colSpan` | `number` | no | How many columns the tile spans (1..`columns`); defaults to `1` |
 
@@ -332,6 +342,38 @@ Render a conversion funnel: ordered stages as left-aligned bars sized by how man
 
 The header KPI is overall conversion, first stage to last. A stage of 0 prints `0%` and the stages after it a dash, never `NaN`; a stage larger than the one before it is drawn at its real size and marked "grew" rather than capped.
 
+### `render_info_card`
+
+Render one value in context. `variant` picks what the value is held against; every graphic is backed by text, so the target, status and any off-scale flag read the same without the picture.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Card title |
+| `variant` | `"bullet" \| "gauge" \| "progress" \| "ranking" \| "comparison" \| "narrative"` | yes | The form, see below |
+| `items` | `Array<Item>` | all but `narrative` | 1–20 values |
+| `items[].label` | `string` | yes | Metric or entry name |
+| `items[].value` | `number` | yes | The actual value |
+| `items[].unit` | `string` | no | Display unit; `%` and `×` hug the number |
+| `items[].target` | `number` | no | bullet / progress / gauge: the goal |
+| `items[].min`, `items[].max` | `number` | no | Scale ends. Unset, the scale starts at 0 and ends at a round number above every mark, so nothing is off-scale; a `%` that fits uses 0–100 |
+| `items[].bands` | `number[]` | no | bullet: up to 4 qualitative range boundaries, drawn as grey shades (worst darkest) |
+| `items[].thresholds` | `{ warn, critical }` | no | gauge (also bullet / progress): status zones |
+| `items[].higherIsBetter` | `boolean` | no | Default `true`; flips thresholds, target status and comparison colours |
+| `items[].rankDelta` | `integer` | no | ranking: places moved, `+` up (▲), `−` down (▼), `0` unchanged (–) |
+| `items[].baseline` | `number` | comparison (required) | The value compared against |
+| `items[].caption` | `string` | no | Small text under the item |
+| `text` | `string` | narrative (required) | Plain text; a blank line separates paragraphs |
+| `currentLabel`, `baselineLabel` | `string` | no | comparison: period names; default `"Current"` / `"Previous"` |
+
+- **bullet** — a thin bar on qualitative bands with a target tick; the foot reads "93.3% of target 9 $M · Below target".
+- **gauge** — a half-dial whose arc takes the status colour, with the ok / warning / critical zones as an outer ring. With `higherIsBetter` (default) a value at or below `warn` is Warning and at or below `critical` is Critical; with `false`, at or above them. The status is printed under the dial.
+- **progress** — a bar that ends at `target` (unless `max` is set), coloured by status.
+- **ranking** — the value-legend rows used beside the charts, read-only: rank, name, value, a meter scaled to the top entry, and a ▲▼ move when `rankDelta` is given. Pass entries already in rank order.
+- **comparison** — one card per item: value, change against the baseline in % and absolute (percentage points for a `%` unit), green when better and red when worse per `higherIsBetter`, with the arrow and sign as well as colour.
+- **narrative** — a few sentences, optionally under a row of key figures taken from `items`.
+
+A value outside an explicit `min`/`max` is drawn at the edge with an arrowhead pointing past it and "above scale (max …)" / "below scale (min …)" in the foot; it never runs off the track.
+
 ## Development
 
 ```bash
@@ -341,7 +383,7 @@ npm run dev:stdio           # stdio server (for Claude Desktop / VS Code)
 npm run dev:sandbox         # in-browser widget sandbox — pick any widget + preset, toggle theme / viewport / debug overlay
 npm run typecheck           # tsc --noEmit
 npm test                    # vitest: payloads, registry, registration, theme, e2e
-npm run build               # bundle 12 widgets + compile server
+npm run build               # bundle 13 widgets + compile server
 npm start                   # run compiled HTTP server
 npm run start:stdio         # run compiled stdio server
 ```
@@ -379,7 +421,8 @@ src/
 │   ├── sankey.ts
 │   ├── dashboard.ts
 │   ├── map.ts
-│   └── funnel.ts
+│   ├── funnel.ts
+│   └── info-card.ts
 ├── resources/            # ui:// resource serving for bundled widget HTMLs
 ├── registry.ts           # single source of truth — server tools, resources, build
 ├── shared/payloads.ts    # contract types between server and widgets
@@ -397,7 +440,8 @@ src/
     ├── sankey/           # flow ribbons between stages (Recharts Sankey)
     ├── dashboard/        # grid of tiles composing the other widgets
     ├── map/              # d3-geo + TopoJSON choropleth / bubbles (no Recharts)
-    └── funnel/           # conversion funnel, hand-rolled SVG (no Recharts)
+    ├── funnel/           # conversion funnel, hand-rolled SVG (no Recharts)
+    └── info-card/        # bullet / gauge / progress / ranking / comparison / narrative cards
 ```
 
 Each widget bundles to a standalone single-file HTML via Vite + `vite-plugin-singlefile`, then gets served as a `ui://sigil/<widget>` resource by the MCP server. The host renders it in a sandboxed iframe and communicates with it via `postMessage` per the MCP Apps spec.

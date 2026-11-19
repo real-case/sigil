@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerAppTool } from "@modelcontextprotocol/ext-apps/server";
+import { z } from "zod";
 import { heatmapSchema } from "../shared/schemas.js";
 import type { HeatmapPayload } from "../shared/payloads.js";
 
@@ -10,6 +11,7 @@ const description = [
   "Use for two categorical axes plus one metric — correlation matrices, day-of-week × hour-of-day activity, confusion matrices, A/B test results across segments.",
   "By default a sequential single-hue scale runs light (low) to dark (high).",
   "For values with a meaningful centre (change vs target, growth, correlation), set scale 'diverging' and, if the centre is not 0, midpoint.",
+  "For retention or cohort tables (signup month × months since signup), set mode 'cohort': cells are percentages, cohortSizes weights the average row, and periods a cohort has not reached are simply omitted.",
 ].join(" ");
 
 export function registerHeatmapTool(server: McpServer) {
@@ -23,6 +25,10 @@ export function registerHeatmapTool(server: McpServer) {
       _meta: { ui: { resourceUri: HEATMAP_UI_URI } },
     },
     async (args) => {
+      // `.shape` cannot carry the cross-field rule (one cohort size per row),
+      // so the handler runs the whole schema and names the rule on failure.
+      const checked = heatmapSchema.safeParse(args);
+      if (!checked.success) throw new Error(z.prettifyError(checked.error));
       const payload: HeatmapPayload = {
         title: args.title,
         followUps: args.followUps,
@@ -33,6 +39,8 @@ export function registerHeatmapTool(server: McpServer) {
         ylabel: args.ylabel,
         scale: args.scale,
         midpoint: args.midpoint,
+        mode: args.mode,
+        cohortSizes: args.cohortSizes,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],

@@ -391,6 +391,29 @@ body,
   box-shadow: 0 0 0 2px var(--sigil-surface);
 }
 
+/* waterfall colour key: what blue, orange and grey mean */
+.sigil-wf-key {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 16px;
+  margin-top: var(--sigil-space-sm);
+  font-size: 12px;
+  color: var(--sigil-text-secondary);
+}
+
+.sigil-wf-key > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sigil-wf-key i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
 /* axis caption line under a plot (used when the value axis is hidden) */
 .sigil-caption {
   font-family: var(--sigil-font-axis-cap-family);
@@ -629,4 +652,384 @@ body,
 .sigil-mark-menu-item:focus-visible {
   outline: var(--sigil-focus-ring-width) solid var(--sigil-focus-ring);
   outline-offset: -2px;
+}
+
+/* ---- shared helpers ------------------------------------------------------ */
+
+.sigil-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* value legend rows that only read (info-card ranking) */
+.sigil-leg.is-static {
+  cursor: default;
+  user-select: text;
+}
+
+.sigil-leg.is-static:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.sigil-leg.is-static:hover .sigil-leg-name {
+  color: var(--sigil-text-secondary);
+}
+
+.sigil-leg-lead {
+  grid-area: sw;
+  font-family: var(--sigil-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--sigil-text-muted);
+  text-align: right;
+}
+
+.sigil-leg-note {
+  margin-left: 9px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.sigil-leg-note[data-tone="success"] {
+  color: var(--sigil-success-text);
+}
+
+.sigil-leg-note[data-tone="danger"] {
+  color: var(--sigil-danger-text);
+}
+
+.sigil-leg-note[data-tone="muted"] {
+  color: var(--sigil-text-muted);
+}
+
+/* ---- info card ----------------------------------------------------------- */
+
+.sigil-ic-list,
+.sigil-ic-grid,
+.sigil-ic-figures {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sigil-ic-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sigil-ic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sigil-space-lg);
+}
+
+.sigil-ic-grid--gauge {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.sigil-ic-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sigil-space-md);
+  margin-bottom: 7px;
+}
+
+.sigil-ic-label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--sigil-text-secondary);
+}
+
+.sigil-ic-value {
+  font-family: var(--sigil-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--sigil-text);
+  white-space: nowrap;
+}
+
+.sigil-ic-track {
+  position: relative;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--sigil-surface-sunken);
+  overflow: visible;
+}
+
+.sigil-ic-track--progress {
+  height: 10px;
+  border-radius: var(--sigil-radius-full);
+}
+
+.sigil-ic-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.sigil-ic-band:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.sigil-ic-band:nth-last-child(1 of .sigil-ic-band) {
+  border-radius: 0 4px 4px 0;
+}
+
+.sigil-ic-bar {
+  position: absolute;
+  top: 33%;
+  bottom: 33%;
+  border-radius: 2px;
+}
+
+.sigil-ic-track--progress .sigil-ic-bar {
+  top: 0;
+  bottom: 0;
+  border-radius: var(--sigil-radius-full);
+}
+
+/* A value pinned to an edge gets a hatched end, so a clamped bar never reads
+   as the edge value itself. The words "above scale" say the rest. */
+.sigil-ic-bar.is-off-above {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 3px,
+    color-mix(in oklab, var(--sigil-surface) 70%, transparent) 3px 5px
+  );
+  background-size: 14px 100%;
+  background-position: right;
+  background-repeat: no-repeat;
+}
+
+.sigil-ic-bar.is-off-below {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 3px,
+    color-mix(in oklab, var(--sigil-surface) 70%, transparent) 3px 5px
+  );
+  background-size: 14px 100%;
+  background-position: left;
+  background-repeat: no-repeat;
+}
+
+/* …and an arrowhead past the edge, pointing where the value really is. */
+.sigil-ic-bar.is-off-above::after,
+.sigil-ic-bar.is-off-below::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  border-block: 6px solid transparent;
+  transform: translateY(-50%);
+}
+
+.sigil-ic-bar.is-off-above::after {
+  right: -8px;
+  border-left: 7px solid currentColor;
+}
+
+.sigil-ic-bar.is-off-below::after {
+  left: -8px;
+  border-right: 7px solid currentColor;
+}
+
+.sigil-ic-target {
+  position: absolute;
+  top: 12%;
+  bottom: 12%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--sigil-text);
+  border-radius: 1px;
+}
+
+.sigil-ic-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--sigil-text-muted);
+}
+
+.sigil-ic-foot--center {
+  justify-content: center;
+  text-align: center;
+}
+
+.sigil-ic-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.sigil-ic-status > i {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--sigil-radius-full);
+  background: currentColor;
+}
+
+.sigil-ic-status[data-tone="success"] {
+  color: var(--sigil-success-text);
+}
+
+.sigil-ic-status[data-tone="warning"] {
+  color: var(--sigil-warning-text);
+}
+
+.sigil-ic-status[data-tone="danger"] {
+  color: var(--sigil-danger-text);
+}
+
+.sigil-ic-off {
+  color: var(--sigil-text-secondary);
+  font-style: italic;
+}
+
+.sigil-ic-caption {
+  font-size: 12px;
+  color: var(--sigil-text-muted);
+}
+
+.sigil-ic-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.sigil-ic-dial {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+}
+
+.sigil-ic-dial-value {
+  font-family: var(--sigil-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.sigil-ic-dial-end {
+  font-family: var(--sigil-font-mono);
+  font-size: 10.5px;
+  fill: var(--sigil-text-muted);
+}
+
+.sigil-ic-legend {
+  margin-bottom: var(--sigil-space-md);
+}
+
+.sigil-ic-cmp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--sigil-space-md) var(--sigil-space-lg);
+  border-radius: var(--sigil-radius-lg);
+  border: 1px solid var(--sigil-border-subtle);
+  background: var(--sigil-surface);
+}
+
+.sigil-ic-cmp-value {
+  font-family: var(--sigil-font-value-sm-family);
+  font-size: var(--sigil-font-value-sm-size);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--sigil-text);
+}
+
+.sigil-ic-cmp-change {
+  font-family: var(--sigil-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sigil-ic-cmp-change[data-tone="success"] {
+  color: var(--sigil-success-text);
+}
+
+.sigil-ic-cmp-change[data-tone="danger"] {
+  color: var(--sigil-danger-text);
+}
+
+.sigil-ic-cmp-change[data-tone="muted"] {
+  color: var(--sigil-text-muted);
+}
+
+.sigil-ic-cmp-abs {
+  font-weight: 400;
+  color: var(--sigil-text-muted);
+}
+
+.sigil-ic-narrative > p {
+  margin: 0 0 10px;
+  max-width: 68ch;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--sigil-text);
+}
+
+.sigil-ic-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sigil-space-md) var(--sigil-space-xl);
+  margin-bottom: var(--sigil-space-lg);
+}
+
+.sigil-ic-figures > li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 10px;
+  border-left: 3px solid var(--c);
+}
+
+.sigil-ic-fig-value {
+  font-family: var(--sigil-font-value-sm-family);
+  font-size: var(--sigil-font-value-sm-size);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--sigil-text);
+}
+
+@media (forced-colors: active) {
+  .sigil-ic-bar,
+  /* …and an arrowhead past the edge, pointing where the value really is. */
+.sigil-ic-bar.is-off-above::after,
+.sigil-ic-bar.is-off-below::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  border-block: 6px solid transparent;
+  transform: translateY(-50%);
+}
+
+.sigil-ic-bar.is-off-above::after {
+  right: -8px;
+  border-left: 7px solid currentColor;
+}
+
+.sigil-ic-bar.is-off-below::after {
+  left: -8px;
+  border-right: 7px solid currentColor;
+}
+
+.sigil-ic-target {
+    background: CanvasText !important;
+  }
 }

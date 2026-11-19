@@ -9,6 +9,7 @@
 // marks and their key.
 
 import type { ChartDesignTokens } from "./theme.js";
+import { contrastRatio } from "./color-audit.js";
 
 export type ColorScaleKind = "sequential" | "diverging";
 
@@ -70,6 +71,35 @@ export function colorScale(
   const steps = tokens.sequential;
   return (v) => rampAt(steps, sequentialPosition(v, min, max, steps.length));
 }
+
+/**
+ * Which ink reads on top of the scale colour at `value`: whichever of
+ * `SCALE_INK` has the higher contrast on the nearest explicit step. The step
+ * stands in for the in-between mix, which is close enough — neighbouring
+ * steps are only ~0.1 apart in OKLCH lightness — and keeps the browser out of
+ * the maths.
+ */
+export function scaleInk(
+  tokens: ChartDesignTokens,
+  { kind = "sequential", min, max, midpoint = 0 }: ColorScaleOptions,
+): (value: number) => "dark" | "light" {
+  const steps = kind === "diverging" ? tokens.diverging : tokens.sequential;
+  const ink = steps.map((step): "dark" | "light" =>
+    contrastRatio(step, SCALE_INK.dark) >= contrastRatio(step, SCALE_INK.light) ? "dark" : "light",
+  );
+  return (v) => {
+    const pos =
+      kind === "diverging"
+        ? divergingPosition(v, min, max, midpoint, steps.length)
+        : sequentialPosition(v, min, max, steps.length);
+    return ink[Math.round(pos)] ?? "dark";
+  };
+}
+
+/** The two inks `scaleInk` chooses between. */
+// The dark ink is a touch deeper than texts.primary: the mid-ramp light blue
+// (#2784D5) clears 4.5:1 with neither #1A1B1F nor white.
+export const SCALE_INK = { dark: "#0F1012", light: "#FFFFFF" } as const;
 
 const DEFAULT_FMT = new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 });
 const LEGEND_SAMPLES = 13;

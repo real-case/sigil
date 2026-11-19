@@ -12,6 +12,7 @@ const description = [
   "Pass `series` instead of `data` for several values per category: grouped side by side (stack 'none'), stacked to a total ('normal', negatives go below zero), or stacked to 100% ('percent').",
   "A series with mark 'line' draws a line over the bars on the same axis (e.g. a target or average); a right-hand axis is for a different unit only and needs ylabelRight.",
   "Add `reference` for target lines, thresholds and goal bands.",
+  "Set variant 'waterfall' for a bridge from a start value to an end value (P&L bridge, ARR movement: opening → new → expansion → churn → closing): `data` items are signed changes, 'total' items stand on zero, and the closing total is computed for you.",
   "Use for categorical data (e.g. sales by region, votes by option, count by status).",
   "For time-series or continuous trends, use render_line_chart instead.",
   "For part-of-whole proportions, use render_pie_chart instead.",
@@ -51,6 +52,9 @@ export function registerBarChartTool(server: McpServer) {
             title: args.title,
             followUps: args.followUps,
             data: args.data,
+            ...(args.variant === "waterfall"
+              ? { variant: "waterfall" as const, totalLabel: args.totalLabel }
+              : {}),
             orientation: args.orientation ?? "vertical",
             xlabel: args.xlabel,
             ylabel: args.ylabel,
