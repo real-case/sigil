@@ -18,3 +18,5 @@ export const Small: Story = { args: { payload: payloadById(heatmapDatasets, "hea
 export const Medium: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-medium") } };
 export const Large: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-large") } };
 export const EdgeLongLabels: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-edge-labels") } };
+export const CohortRetention: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-cohort-retention") } };
+export const CohortNetRevenue: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-cohort-nrr") } };

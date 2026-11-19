@@ -14,6 +14,7 @@ import { registerSankeyTool, SANKEY_UI_URI } from "./tools/sankey.js";
 import { registerDashboardTool, DASHBOARD_UI_URI } from "./tools/dashboard.js";
 import { registerMapTool, MAP_UI_URI } from "./tools/map.js";
 import { registerFunnelTool, FUNNEL_UI_URI } from "./tools/funnel.js";
+import { registerInfoCardTool, INFO_CARD_UI_URI } from "./tools/info-card.js";
 
 export interface WidgetEntry {
   name: string;
@@ -34,4 +35,5 @@ export const WIDGETS: readonly WidgetEntry[] = [
   { name: "dashboard", uri: DASHBOARD_UI_URI, register: registerDashboardTool },
   { name: "map", uri: MAP_UI_URI, register: registerMapTool },
   { name: "funnel", uri: FUNNEL_UI_URI, register: registerFunnelTool },
+  { name: "info-card", uri: INFO_CARD_UI_URI, register: registerInfoCardTool },
 ] as const;

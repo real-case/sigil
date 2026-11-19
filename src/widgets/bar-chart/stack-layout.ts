@@ -90,3 +90,56 @@ export function percentDomain(rows: readonly StackRow[]): [number, number] {
 export function seriesTotal(s: Pick<BarSeries, "data">): number {
   return s.data.reduce((sum, d) => sum + d.value, 0);
 }
+
+// ----- waterfall -------------------------------------------------------------
+//
+// A waterfall is a stack with an invisible base: every delta floats from where
+// the running total stood, so its bar spans [running, running + delta]. A
+// `total` stands on zero and restarts the running total from its own value —
+// an opening balance, or a subtotal the payload states. The closing bar is
+// computed, not trusted: it is the running total after the last item, which
+// is start + Σ deltas by construction, and is appended unless the payload
+// already ends on a total.
+
+export type WaterfallKind = "delta" | "total";
+
+export interface WaterfallStep {
+  label: string;
+  kind: WaterfallKind;
+  /** The signed change (delta) or the level (total). */
+  value: number;
+  /** Running total before this step (0 for a total, which stands on zero). */
+  start: number;
+  /** Running total after this step. */
+  end: number;
+  /** Index into the payload's `data`, or -1 for the appended closing total. */
+  source: number;
+}
+
+export function waterfallLayout(
+  data: readonly { label: string; value: number; kind?: WaterfallKind }[],
+  totalLabel = "Total",
+): WaterfallStep[] {
+  const steps: WaterfallStep[] = [];
+  let running = 0;
+  data.forEach((d, source) => {
+    const value = Number.isFinite(d.value) ? d.value : 0;
+    if ((d.kind ?? "delta") === "total") {
+      running = value;
+      steps.push({ label: d.label, kind: "total", value, start: 0, end: value, source });
+    } else {
+      steps.push({ label: d.label, kind: "delta", value, start: running, end: running + value, source });
+      running += value;
+    }
+  });
+  const last = steps[steps.length - 1];
+  if (last && last.kind !== "total") {
+    steps.push({ label: totalLabel, kind: "total", value: running, start: 0, end: running, source: -1 });
+  }
+  return steps;
+}
+
+/** The [low, high] span a waterfall step's bar covers on the value axis. */
+export function waterfallSpan(step: Pick<WaterfallStep, "start" | "end">): [number, number] {
+  return step.start <= step.end ? [step.start, step.end] : [step.end, step.start];
+}

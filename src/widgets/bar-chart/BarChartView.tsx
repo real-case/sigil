@@ -31,6 +31,7 @@ import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 import { useLegendState } from "../shared/legend-state.js";
 import { referenceHeadroom, referenceMarks } from "../shared/ReferenceLayer.js";
 import { SeriesBarView } from "./SeriesBarView.js";
+import { WaterfallView } from "./WaterfallView.js";
 import { useMarkMenu } from "../shared/MarkMenu.js";
 import { ActiveDatumProbe, useChartKeyActivation, type ActiveDatum } from "../shared/chart-activation.js";
 
@@ -98,13 +99,15 @@ function ActiveBandBridge({
 }
 
 /**
- * `render_bar_chart` draws two shapes: single-series `data` (the original
- * pill-mode chart, unchanged) and multi-series `series` (grouped, stacked,
- * percent, with optional line marks). The schema makes them mutually
- * exclusive; a tile that reached here carries one or the other.
+ * `render_bar_chart` draws three shapes: single-series `data` (the original
+ * pill-mode chart, unchanged), multi-series `series` (grouped, stacked,
+ * percent, with optional line marks), and `variant: "waterfall"` over `data`.
+ * The schema makes `data` and `series` mutually exclusive; a tile that
+ * reached here carries one or the other.
  */
 export function BarChartView({ payload }: { payload: BarChartPayload }) {
   if (payload.series) return <SeriesBarView payload={payload} series={payload.series} />;
+  if (payload.variant === "waterfall") return <WaterfallView payload={payload} data={payload.data ?? []} />;
   return <SingleBarView payload={payload} data={payload.data ?? []} />;
 }
 

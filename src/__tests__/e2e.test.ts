@@ -73,6 +73,11 @@ const TOOL_ARGS: Record<string, Record<string, unknown>> = {
       { label: "Bought", value: 7 },
     ],
   },
+  render_info_card: {
+    title: "E2E info card",
+    variant: "bullet",
+    items: [{ label: "Revenue", value: 8, target: 10 }],
+  },
 };
 
 let client!: Client;

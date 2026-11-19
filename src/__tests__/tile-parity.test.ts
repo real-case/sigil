@@ -32,6 +32,7 @@ import { isHeatmapPayload } from "../widgets/heatmap/guard.js";
 import { isStatPanelPayload } from "../widgets/stat-panel/guard.js";
 import { isSankeyPayload } from "../widgets/sankey/guard.js";
 import { isFunnelPayload } from "../widgets/funnel/guard.js";
+import { isInfoCardPayload } from "../widgets/info-card/guard.js";
 import { isMapPayload } from "../widgets/map/guard.js";
 import { isDashboardPayload } from "../widgets/dashboard/guard.js";
 import type {
@@ -45,6 +46,7 @@ import type {
   StatPanelPayload,
   SankeyPayload,
   FunnelPayload,
+  InfoCardPayload,
   MapPayload,
   DashboardPayload,
 } from "../shared/payloads.js";
@@ -188,6 +190,52 @@ const CASES: Record<string, ErasedCase> = {
       cells: [{ x: 0, y: 0, value: 1 }],
       xlabel: "x",
       ylabel: "y",
+      mode: "cohort",
+      cohortSizes: [10],
+    },
+  }),
+  "bar-chart (waterfall)": parity<BarChartPayload>({
+    guard: isBarChartPayload,
+    minimal: { title: "T", variant: "waterfall", data: [{ label: "a", value: 1 }] },
+    maximal: {
+      title: "T",
+      variant: "waterfall",
+      totalLabel: "End",
+      data: [
+        { label: "a", value: 10, kind: "total" },
+        { label: "b", value: -3, kind: "delta" },
+      ],
+      orientation: "horizontal",
+      xlabel: "x",
+      ylabel: "y",
+      reference: [{ axis: "y", kind: "line", value: 8, label: "Plan" }],
+    },
+  }),
+  "info-card": parity<InfoCardPayload>({
+    guard: isInfoCardPayload,
+    minimal: { title: "T", variant: "narrative", text: "Flat month." },
+    maximal: {
+      title: "T",
+      variant: "comparison",
+      items: [
+        {
+          label: "a",
+          value: 1,
+          unit: "%",
+          target: 2,
+          min: 0,
+          max: 3,
+          bands: [1, 2],
+          thresholds: { warn: 1, critical: 0.5 },
+          higherIsBetter: false,
+          rankDelta: -1,
+          baseline: 2,
+          caption: "c",
+        },
+      ],
+      text: "t",
+      currentLabel: "Now",
+      baselineLabel: "Then",
     },
   }),
   "stat-panel": parity<StatPanelPayload>({

@@ -123,6 +123,12 @@ const barDatumSchema = z.object({
     .describe("Category label (x-axis for vertical, y-axis for horizontal)."),
   value: z.number().describe("Numeric value controlling bar length."),
   color: colorOverride,
+  kind: z
+    .enum(["delta", "total"])
+    .optional()
+    .describe(
+      "Waterfall only. 'delta' (default): a signed change added to the running total (+120 new customers, −40 churn). 'total': a level drawn from zero, e.g. the opening balance (make the FIRST item a 'total') or a known subtotal; the running total restarts from its value.",
+    ),
 });
 
 const barSeriesSchema = z.object({
@@ -161,6 +167,19 @@ export const barChartSchema = z
   .object({
     title: chartTitle("Chart title shown above the bars."),
     followUps: followUpsField,
+    variant: z
+      .enum(["bars", "waterfall"])
+      .optional()
+      .describe(
+        "'bars' (default): ordinary bars. 'waterfall': a bridge from a start value to an end value — each `data` item is a step that floats from the running total (rises blue, falls orange, signed labels), 'total' items stand on zero. Use for P&L bridges, ARR / MRR movements (start → new → expansion → churn → end), budget vs actual, headcount changes. Needs `data`, not `series`.",
+      ),
+    totalLabel: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        "Waterfall only: label of the closing bar, which the chart computes (start plus every change) and appends unless the last item is already a 'total'. Defaults to 'Total'; e.g. 'End of Q3'.",
+      ),
     data: z
       .array(barDatumSchema)
       .min(1)
@@ -194,6 +213,13 @@ export const barChartSchema = z
     reference: referenceField(),
   })
   .superRefine((p, ctx) => {
+    if (p.variant === "waterfall" && p.series !== undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["series"],
+        message: "A waterfall takes `data` (one step per item), not `series`.",
+      });
+    }
     if (p.data === undefined && p.series === undefined) {
       ctx.addIssue({ code: "custom", path: ["data"], message: "Provide `data` or `series`." });
     }
@@ -458,6 +484,26 @@ export const heatmapSchema = z.object({
   xlabel: z.string().optional().describe("Axis label for the x-axis."),
   ylabel: z.string().optional().describe("Axis label for the y-axis."),
   ...colorScaleFields,
+  mode: z
+    .enum(["matrix", "cohort"])
+    .optional()
+    .describe(
+      "'matrix' (default): a plain value grid. 'cohort': a retention / cohort table — one row per cohort (yLabels, e.g. signup month), one column per period since start (xLabels, e.g. 'M0', 'M1', …), each cell a PERCENTAGE (42.5 means 42.5%; above 100 is fine for net revenue retention). Adds a cohort-size column and an average row, prints the % in each cell, and leaves periods a cohort has not reached yet empty — omit those cells, never send 0 for them.",
+    ),
+  cohortSizes: z
+    .array(z.number().nonnegative())
+    .optional()
+    .describe(
+      "Cohort mode only: how many users / accounts each cohort started with, one per yLabels entry in the same order. Shown as the size column and used to weight the average row. Without it the average is a plain mean of the cohorts that reached each period.",
+    ),
+}).superRefine((p, ctx) => {
+  if (p.cohortSizes !== undefined && p.cohortSizes.length !== p.yLabels.length) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["cohortSizes"],
+      message: "`cohortSizes` needs exactly one entry per `yLabels` row.",
+    });
+  }
 });
 
 export type HeatmapPayload = z.infer<typeof heatmapSchema>;
@@ -613,6 +659,125 @@ export const funnelSchema = z.object({
 export type FunnelPayload = z.infer<typeof funnelSchema>;
 export type FunnelStep = FunnelPayload["steps"][number];
 
+// ----- info card -------------------------------------------------------------
+//
+// One tool for "one value against something": a target (bullet, progress), a
+// set of thresholds (gauge), the other entries (ranking), an earlier period
+// (comparison), or a few sentences of context (narrative). Variants rather
+// than tools, to keep the tool list short (plan decision R3).
+
+export const INFO_CARD_VARIANTS = [
+  "bullet",
+  "gauge",
+  "progress",
+  "ranking",
+  "comparison",
+  "narrative",
+] as const;
+
+const infoCardItemSchema = z.object({
+  label: z.string().min(1).describe("Metric or entry name, e.g. 'Q3 revenue', 'EMEA'."),
+  value: z.number().describe("The actual value."),
+  unit: z
+    .string()
+    .optional()
+    .describe("Unit shown after the value, e.g. '%', 'ms', '$K'. Formatting only."),
+  target: z
+    .number()
+    .optional()
+    .describe("bullet / progress / gauge: the goal. Drawn as a marker (bullet, gauge) or as the end of the bar (progress)."),
+  min: z
+    .number()
+    .optional()
+    .describe("bullet / gauge / progress: start of the scale. Defaults to 0 (or the lowest value given, if below 0)."),
+  max: z
+    .number()
+    .optional()
+    .describe("bullet / gauge / progress: end of the scale. Defaults to a round number above the largest of value, target, bands and thresholds. A value outside min..max is drawn at the edge and flagged."),
+  bands: z
+    .array(z.number())
+    .min(1)
+    .max(4)
+    .optional()
+    .describe("bullet only: qualitative range boundaries between min and max, ascending, e.g. [60, 80] for poor < 60 ≤ fair < 80 ≤ good. Drawn as grey shades behind the bar."),
+  thresholds: z
+    .object({
+      warn: z.number().describe("Where 'Warning' starts."),
+      critical: z.number().describe("Where 'Critical' starts."),
+    })
+    .optional()
+    .describe("gauge (also bullet / progress): status thresholds. With higherIsBetter (default) a value below `warn` is Warning and below `critical` is Critical, e.g. uptime { warn: 99.9, critical: 99 }; with higherIsBetter false, above them, e.g. p95 latency { warn: 300, critical: 500 }. The status is printed as text as well as colour."),
+  higherIsBetter: z
+    .boolean()
+    .optional()
+    .describe("Whether a larger value is good. Defaults to true. Flips thresholds, target status and comparison colours."),
+  rankDelta: z
+    .number()
+    .int()
+    .optional()
+    .describe("ranking only: places moved since the previous period. Positive = moved up (▲), negative = moved down (▼), 0 = unchanged. Omit when unknown."),
+  baseline: z
+    .number()
+    .optional()
+    .describe("comparison only (required there): the value it is compared with, e.g. last quarter."),
+  caption: z.string().optional().describe("Small text under the item, e.g. 'fiscal year to date'."),
+});
+
+export const infoCardSchema = z
+  .object({
+    title: chartTitle("Card title shown above the content."),
+    variant: z
+      .enum(INFO_CARD_VARIANTS)
+      .describe(
+        "'bullet': actual vs target on a linear scale with qualitative bands — the compact choice for several KPIs against plan. 'gauge': a dial with ok / warning / critical zones from `thresholds` — use for one or a few health metrics (uptime, utilisation, NPS). 'progress': a bar filling towards `target` (quota, goal, budget used). 'ranking': a leaderboard — entries in rank order, each with a share meter and optional `rankDelta` arrows. 'comparison': each item's `value` against its `baseline` with the absolute and % change. 'narrative': a short written summary in `text`, optionally with `items` as key figures.",
+      ),
+    items: z
+      .array(infoCardItemSchema)
+      .min(1)
+      .max(20)
+      .optional()
+      .describe(
+        "The values. Required for every variant except 'narrative'. ranking: pass entries already in rank order, best first; up to 20.",
+      ),
+    text: z
+      .string()
+      .min(1)
+      .max(1200)
+      .optional()
+      .describe(
+        "narrative only (required there): two to four short sentences of plain text — what changed and why it matters. Separate paragraphs with a blank line. No Markdown.",
+      ),
+    currentLabel: z
+      .string()
+      .optional()
+      .describe("comparison only: name of the current period, e.g. 'Q3 2026'. Defaults to 'Current'."),
+    baselineLabel: z
+      .string()
+      .optional()
+      .describe("comparison only: name of the baseline, e.g. 'Q3 2025'. Defaults to 'Previous'."),
+  })
+  .superRefine((p, ctx) => {
+    if (p.variant === "narrative") {
+      if (p.text === undefined) {
+        ctx.addIssue({ code: "custom", path: ["text"], message: "A narrative card needs `text`." });
+      }
+    } else if (p.items === undefined) {
+      ctx.addIssue({ code: "custom", path: ["items"], message: `A ${p.variant} card needs \`items\`.` });
+    }
+    for (const [i, item] of (p.items ?? []).entries()) {
+      if (item.min !== undefined && item.max !== undefined && item.max <= item.min) {
+        ctx.addIssue({ code: "custom", path: ["items", i, "max"], message: "`max` must be greater than `min`." });
+      }
+      if (p.variant === "comparison" && item.baseline === undefined) {
+        ctx.addIssue({ code: "custom", path: ["items", i, "baseline"], message: "A comparison item needs `baseline`." });
+      }
+    }
+  });
+
+export type InfoCardPayload = z.infer<typeof infoCardSchema>;
+export type InfoCardItem = z.infer<typeof infoCardItemSchema>;
+export type InfoCardVariant = InfoCardPayload["variant"];
+
 // ----- stat panel ------------------------------------------------------------
 
 export const statPanelSchema = z.object({
@@ -758,6 +923,7 @@ export const DASHBOARD_TILE_TYPES = [
   "sankey",
   "map",
   "funnel",
+  "info-card",
 ] as const;
 
 export type DashboardTileType = (typeof DASHBOARD_TILE_TYPES)[number];
