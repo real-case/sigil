@@ -123,3 +123,16 @@
   color: var(--sigil-text-muted);
   text-align: center;
 }
+
+.sandbox-host-log {
+  margin: 12px 0 0;
+  padding: 8px 12px 8px 28px;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  border: 1px dashed currentColor;
+  border-radius: 6px;
+  opacity: 0.8;
+}
+
+.sandbox-host-log li[data-kind="context"] {
+  opacity: 0.6;
+}

@@ -25,6 +25,7 @@ export function registerHeatmapTool(server: McpServer) {
     async (args) => {
       const payload: HeatmapPayload = {
         title: args.title,
+        followUps: args.followUps,
         xLabels: args.xLabels,
         yLabels: args.yLabels,
         cells: args.cells,

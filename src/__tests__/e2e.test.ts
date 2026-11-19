@@ -66,6 +66,13 @@ const TOOL_ARGS: Record<string, Record<string, unknown>> = {
     links: [{ source: "A", target: "B", value: 1 }],
   },
   render_map: { title: "E2E map", data: [{ id: "USA", value: 1 }] },
+  render_funnel: {
+    title: "E2E funnel",
+    steps: [
+      { label: "Visited", value: 100 },
+      { label: "Bought", value: 7 },
+    ],
+  },
 };
 
 let client!: Client;

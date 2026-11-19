@@ -35,6 +35,20 @@ const colorOverride = z
 const axisLabel = (axis: "x" | "y") =>
   z.string().optional().describe(`Label for the ${axis}-axis.`);
 
+// ----- drill-down (bar, line, pie, funnel, heatmap, table) -------------------
+//
+// Only meaningful on a host that accepts messages from a widget; elsewhere the
+// field is ignored and a click does what it always did.
+
+const followUpsField = z
+  .array(z.string().min(1).max(80))
+  .min(1)
+  .max(6)
+  .optional()
+  .describe(
+    "Optional drill-down menu. When the user clicks a mark (a bar, a point, a slice, a funnel step, a cell, a table row) the widget offers these as short follow-up questions; the picked one is sent to you as the user's next message with the mark and chart title appended. Name the dimensions the data really has, e.g. ['Break down by product', 'Compare with last year']. Omit for the defaults: break down, why, show rows.",
+  );
+
 // ----- reference layer (bar, line, scatter) ----------------------------------
 //
 // One authored-context field shared by the three cartesian charts: targets,
@@ -146,6 +160,7 @@ const barSeriesSchema = z.object({
 export const barChartSchema = z
   .object({
     title: chartTitle("Chart title shown above the bars."),
+    followUps: followUpsField,
     data: z
       .array(barDatumSchema)
       .min(1)
@@ -231,6 +246,7 @@ const linePointSchema = z.object({
 
 export const lineChartSchema = z.object({
   title: chartTitle("Chart title shown above the lines."),
+  followUps: followUpsField,
   series: z
     .array(
       z.object({
@@ -297,6 +313,7 @@ export type LineAnnotation = NonNullable<LineChartPayload["annotations"]>[number
 
 export const pieChartSchema = z.object({
   title: chartTitle("Chart title shown above the pie."),
+  followUps: followUpsField,
   data: z
     .array(
       z.object({
@@ -417,6 +434,7 @@ const colorScaleFields = {
 
 export const heatmapSchema = z.object({
   title: chartTitle("Chart title shown above the matrix."),
+  followUps: followUpsField,
   xLabels: z
     .array(z.string().min(1))
     .min(1)
@@ -547,6 +565,54 @@ export type SankeyPayload = z.infer<typeof sankeySchema>;
 export type SankeyNode = NonNullable<SankeyPayload["nodes"]>[number];
 export type SankeyLink = SankeyPayload["links"][number];
 
+// ----- funnel ----------------------------------------------------------------
+
+export const funnelSchema = z.object({
+  title: chartTitle("Chart title shown above the funnel."),
+  steps: z
+    .array(
+      z.object({
+        label: z.string().min(1).describe("Stage name, e.g. 'Visited pricing'."),
+        value: z
+          .number()
+          .nonnegative()
+          .describe("How many reached this stage (users, sessions, deals). Non-negative."),
+        conversionTime: z
+          .string()
+          .min(1)
+          .optional()
+          .describe(
+            "Optional typical time from the previous stage to this one, as display text, e.g. '2.4 days' or 'median 3 h'. Ignored on the first step.",
+          ),
+      }),
+    )
+    .min(1)
+    .max(20)
+    .describe(
+      "Stages in order, first (widest) to last. Each value is the count that reached that stage. A step larger than the one before it is drawn and flagged, not hidden.",
+    ),
+  orientation: z
+    .enum(["horizontal", "vertical"])
+    .optional()
+    .describe(
+      "'horizontal' (default): one row per stage, bars grow rightwards — best for long stage names. 'vertical': stages left to right as columns.",
+    ),
+  showDropOff: z
+    .boolean()
+    .optional()
+    .describe(
+      "Show the loss between consecutive stages and call out the largest one. Defaults to true.",
+    ),
+  valueLabel: z
+    .string()
+    .optional()
+    .describe("What the values count, e.g. 'users'. Shown in the tooltip and the header."),
+  followUps: followUpsField,
+});
+
+export type FunnelPayload = z.infer<typeof funnelSchema>;
+export type FunnelStep = FunnelPayload["steps"][number];
+
 // ----- stat panel ------------------------------------------------------------
 
 export const statPanelSchema = z.object({
@@ -623,6 +689,7 @@ export type StatStatus = NonNullable<StatItem["status"]>;
 
 export const tableSchema = z.object({
   title: chartTitle("Table title shown above the rows."),
+  followUps: followUpsField,
   columns: z
     .array(
       z.object({
@@ -677,7 +744,7 @@ export type ColumnKind = NonNullable<TableColumn["kind"]>;
  *
  * Not derived from `WIDGETS` directly: the registry imports every tool module,
  * and this file is reachable from the widget bundles, so the import would drag
- * the server into all eleven of them. `registry.test.ts` pins it instead.
+ * the server into all twelve of them. `registry.test.ts` pins it instead.
  */
 export const DASHBOARD_TILE_TYPES = [
   "bar-chart",
@@ -690,6 +757,7 @@ export const DASHBOARD_TILE_TYPES = [
   "stat-panel",
   "sankey",
   "map",
+  "funnel",
 ] as const;
 
 export type DashboardTileType = (typeof DASHBOARD_TILE_TYPES)[number];

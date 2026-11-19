@@ -22,6 +22,8 @@ import { fmtNumber, fmtCompact, fmtShare } from "../shared/chart-text.js";
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 import { useLegendState } from "../shared/legend-state.js";
+import { useMarkMenu } from "../shared/MarkMenu.js";
+import { ActiveDatumProbe, useChartKeyActivation, type ActiveDatum } from "../shared/chart-activation.js";
 
 // Fat ring per the redesign: inner/outer ≈ 0.67 leaves room for the center KPI.
 const OUTER_RADIUS = "80%";
@@ -64,6 +66,11 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
     useLegendState({ unfocusedOpacity: 0.32 });
   const [expanded, setExpanded] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const probe = useRef<ActiveDatum | null>(null);
+  const menu = useMarkMenu(payload.title, payload.followUps);
+  // Set below, after the early returns; the key handler reads it at key time.
+  const activateRef = useRef<((datum: unknown, at: { x: number; y: number }) => void) | null>(null);
+  useChartKeyActivation(canvasRef, probe, menu.open && ((d, at) => activateRef.current?.(d, at)));
   // "donut", not "pie": the schema's documented default, applied here for the
   // tile path where no handler ran. See the note atop shared/payloads.ts.
   const { title, data, variant = "donut" } = payload;
@@ -143,6 +150,28 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
     } else {
       toggleMute(s.origIndex);
     }
+  };
+
+  // A slice click: Other still expands; any other slice opens the drill-down
+  // menu when the host takes follow-ups (muting stays on the legend), else
+  // mutes as before.
+  const handleSliceClick = (i: number, at: { x: number; y: number }) => {
+    const s = shown[i];
+    if (!s) return;
+    if (s.isOther || !menu.open) {
+      handleSliceAction(i);
+      return;
+    }
+    menu.open(
+      { label: s.label, value: `${fmtNumber(s.value)}, ${fmtShare(s.value / total)}` },
+      at,
+    );
+  };
+
+  activateRef.current = (datum, at) => {
+    const origIndex = (datum as { origIndex?: number }).origIndex;
+    const i = shown.findIndex((d) => d.origIndex === origIndex);
+    if (i >= 0) handleSliceClick(i, at);
   };
 
   const focusShown = (i: number | null) =>
@@ -243,8 +272,9 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
                   }}
                   onMouseEnter={(_, i) => focusShown(i)}
                   onMouseLeave={() => setFocused(null)}
-                  onClick={(_, i) => handleSliceAction(i)}
+                  onClick={(_, i, e) => handleSliceClick(i, { x: e.clientX, y: e.clientY })}
                 />
+                <ActiveDatumProbe into={probe} />
                 {isDonut && (
                   <>
                     <text
@@ -347,6 +377,7 @@ export function PieChartView({ payload }: { payload: PieChartPayload }) {
           onToggleMute={handleSliceAction}
         />
       </div>
+      {menu.element}
     </div>
   );
 }

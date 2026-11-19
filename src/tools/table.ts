@@ -26,6 +26,7 @@ export function registerTableTool(server: McpServer) {
     async (args) => {
       const payload: TablePayload = {
         title: args.title,
+        followUps: args.followUps,
         columns: args.columns,
         rows: args.rows,
         sortable: args.sortable ?? true,

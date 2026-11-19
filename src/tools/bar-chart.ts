@@ -38,6 +38,7 @@ export function registerBarChartTool(server: McpServer) {
       const payload: BarChartPayload = args.series
         ? {
             title: args.title,
+            followUps: args.followUps,
             series: args.series,
             stack: args.stack ?? "none",
             orientation: args.orientation ?? "vertical",
@@ -48,6 +49,7 @@ export function registerBarChartTool(server: McpServer) {
           }
         : {
             title: args.title,
+            followUps: args.followUps,
             data: args.data,
             orientation: args.orientation ?? "vertical",
             xlabel: args.xlabel,

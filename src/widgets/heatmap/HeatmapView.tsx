@@ -5,6 +5,7 @@ import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
 import { ColorScaleLegend, colorScale } from "../shared/color-scale.js";
 import { useRovingFocus } from "../shared/roving-focus.js";
+import { useMarkMenu } from "../shared/MarkMenu.js";
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 
@@ -90,6 +91,28 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
   const toggleSelection = (key: string) =>
     setSelected((prev) => (prev === key ? null : key));
 
+  // On a host that takes follow-up messages a cell opens the drill-down menu
+  // and is marked selected while it is open; elsewhere a click toggles the
+  // selection highlight, as it always did.
+  const menu = useMarkMenu(title, payload.followUps);
+  const activateCell = (index: number, anchor: Element | null) => {
+    const cell = lookup.values.get(index);
+    if (!cell) return;
+    const key = cellKey(index % columns, Math.floor(index / columns));
+    if (menu.open && anchor) {
+      setSelected(key);
+      menu.open(
+        {
+          label: `${yLabels[cell.y] ?? ""}, ${xLabels[cell.x] ?? ""}`,
+          value: NUMBER_FMT.format(cell.value),
+        },
+        anchor,
+      );
+    } else {
+      toggleSelection(key);
+    }
+  };
+
   // The matrix is one composite widget, not one tab stop per cell: arrows walk
   // it in two dimensions and Enter/Space selects, exactly as a click does.
   // Value-less cells keep their place in the sequence so arrowing across the
@@ -97,10 +120,8 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
   const roving = useRovingFocus<SVGRectElement>({
     count: columns * yLabels.length,
     columns,
-    onActivate: (index) => {
-      if (!lookup.values.has(index)) return;
-      toggleSelection(cellKey(index % columns, Math.floor(index / columns)));
-    },
+    onActivate: (index) =>
+      activateCell(index, canvasRef.current?.querySelector(`[data-cell="${index}"]`) ?? null),
   });
 
   if (xLabels.length === 0 || yLabels.length === 0 || cells.length === 0) {
@@ -283,6 +304,8 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
                         ref={ref}
                         className="sigil-mark"
                         role="gridcell"
+                        data-cell={index}
+                        aria-haspopup={cell && menu.open ? "menu" : undefined}
                         tabIndex={tabIndex}
                         aria-label={
                           cell
@@ -312,7 +335,7 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
                         onMouseEnter={cell ? (e) => handleCellEnter(cell, e) : undefined}
                         onMouseMove={cell ? handleCellMove : undefined}
                         onMouseLeave={cell ? handleCellLeave : undefined}
-                        onClick={cell ? () => toggleSelection(key) : undefined}
+                        onClick={cell ? (e) => activateCell(index, e.currentTarget) : undefined}
                       />
                     );
                   })}
@@ -389,6 +412,7 @@ export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
           </div>
         )}
       </div>
+      {menu.element}
     </div>
   );
 }

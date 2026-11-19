@@ -15,6 +15,7 @@ describe("widget registry", () => {
     expect(names).toEqual([
       "bar-chart",
       "dashboard",
+      "funnel",
       "heatmap",
       "line-chart",
       "map",

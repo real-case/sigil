@@ -62,7 +62,7 @@ In a new chat, ask:
 
 > What MCP tools do you have available?
 
-You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_scatter_chart`**, **`render_treemap`**, **`render_heatmap`**, **`render_table`**, **`render_stat_panel`**, **`render_sankey`**, **`render_dashboard`**, and **`render_map`** in the list. If not — see [Debugging](#debugging) below.
+You should see **`render_bar_chart`**, **`render_line_chart`**, **`render_pie_chart`**, **`render_scatter_chart`**, **`render_treemap`**, **`render_heatmap`**, **`render_table`**, **`render_stat_panel`**, **`render_sankey`**, **`render_dashboard`**, **`render_map`**, and **`render_funnel`** in the list. If not — see [Debugging](#debugging) below.
 
 ### A3. Smoke test each widget with explicit prompts
 
@@ -94,6 +94,9 @@ These force tool selection so you isolate **rendering** from **selection**.
     and a stat-panel tile of the same totals.
 11. Use render_map to color a world map by population:
     China, India, USA, Indonesia, Pakistan.
+12. Use render_funnel to show a signup funnel:
+    Visited 48200, Viewed pricing 17900, Started signup 6420,
+    Verified email 4870, First project 1310.
 ```
 
 **Pass criteria for each:**
@@ -121,6 +124,8 @@ Now test **without** naming the tool. Each prompt should pick the listed tool:
 | "Compare this month's daily revenue with last month" | `render_line_chart` with `series[].compare` |
 | "Revenue by region and quarter" | `render_bar_chart` with `series` + `stack: "normal"` |
 | "MAU by month against our 55K goal" | `render_line_chart` (or bar) with a `reference` line |
+| "Where do users drop off: visit 48K, pricing 18K, signup 6.4K, activated 1.3K" | `render_funnel` |
+| "Our sales pipeline conversion from lead to closed won" | `render_funnel` (not `render_sankey`, not bar) |
 
 **If Claude picks the wrong tool**, that's a description-tuning problem in `src/tools/<name>.ts`. The fix is to:
 - sharpen the **Use when …** clause (give concrete example domains)
@@ -133,7 +138,7 @@ Re-run `npm run build:server` and restart Claude Desktop after each change.
 
 After §A3 confirms widgets render at all, walk through this checklist to verify the v0.3.0 design system (tokens + primitives) is intact across every widget. Run it once in **light** and once in **dark** — switch the host app's appearance (Claude Desktop: Settings → Appearance) between passes; widgets follow the host theme first and the OS preference only when the host sends none. Each widget gets ~30 seconds.
 
-**Per-widget checks (× 11):**
+**Per-widget checks (× 12):**
 
 | Widget | Look for |
 |---|---|
@@ -146,6 +151,7 @@ After §A3 confirms widgets render at all, walk through this checklist to verify
 | `table` | Header row in mono uppercase axis-cap font. Numeric cells use mono with `tabular-nums`. Row hover gets `surface-sunken` background. Filter input gets a 2 px focus ring when tabbed into. Sparkline columns render a 56 × 16 `series-0` spark plus a mono last-value readout, centered by default; header click sorts by last value; filter terms never match digits inside sparks; row hover must NOT re-emphasize the spark; Copy CSV exports one joined quoted cell per series. |
 | `stat-panel` | KPI cards: mono `tabular-nums` values, trend deltas coloured from `semantic` tokens, sparkline / progress / badge variants render. Inside a dashboard tile, cards flatten to sunken wells (no elevation). |
 | `sankey` | Node rects colored from the series palette (payload `color` overrides win); ribbons inherit their source node's color at 30 % opacity. Every label hangs to the right of its rect, the last column reading into a reserved right band (≤ 28 % of the canvas), with a mono `tabular-nums` value line when the node is ≥ 26 px tall. Labels shrink with the width: a name that fits is shown whole, a longer one is truncated with an ellipsis, and below ~8 readable characters it is dropped rather than collided — narrow the viewport to 320/480 and confirm no two labels ever overlap. Hovering a node or ribbon raises connected ribbons to 55 % and dims the rest; the header KPI shows total inflow. A cyclic payload shows the error EmptyState, not a crash. |
+| `funnel` | Left-aligned bars on one baseline (not a centred trapezoid), one hue stepping light-ward down the sequential ramp, darkest first. Each stage after the first carries a faint "ghost" of the previous bar showing what it lost, and a mono line between rows: `↓ x% continued · −lost · conversionTime`. The worst step is outlined and its line reads "largest drop" in the warning text colour, repeated in the caption below. A stage larger than the one before it shows "▲ grew", not a capped bar; a zero stage draws no bar and prints `0%`, never `NaN`. Vertical orientation puts stages left to right with the same numbers above each column. Header KPI is overall conversion, first → last. |
 | `dashboard` | Tiles form a fixed-column grid (payload `columns`, clamped 1–4, default 2; column widths are fluid) honouring `colSpan`. Every tile keeps its own title/toolbar. Embedded widgets recede — no double surfaces or nested shadows. |
 | `map` | Choropleth uses the same sequential ramp + legend as the heatmap (or the diverging one with `scale: "diverging"` — sandbox preset *Negatives — temperature anomaly*); no-data land stays a neutral tint. Bubbles scale by √value (area-proportional above a 3 px floor) with a size legend. The footnote reports the *count* of unmatched regions / off-map points (ids are not listed). |
 
@@ -169,6 +175,29 @@ After §A3 confirms widgets render at all, walk through this checklist to verify
 - Token vars look unset (`var(--sigil-foo)` showing literal text) → token-surface test should catch this; run `npm test` to find a missing emitter.
 
 ---
+
+### A6. Drill-down (follow-up messages from a chart)
+
+Bar, line, pie, funnel, heatmap and table can turn a click on a mark into a follow-up question to the model, through the MCP Apps `ui/message` request (`app.sendMessage`). It only exists on hosts that declare `hostCapabilities.message`; everywhere else the click does what it did before (bars and slices mute, heatmap cells and funnel steps highlight, table rows do nothing).
+
+To try it without a host: `npm run dev:sandbox`, turn on **Host message**, click any mark. The log under the stage shows each `updateModelContext` (sent when the menu opens) and each `sendMessage` (sent when an item is picked).
+
+**Checks, on a host that supports it:**
+
+- [ ] Click a bar: a small menu opens beside it with the mark's name and value, then "Break down…", "Why is it like this?", "Show rows" (or the payload's own `followUps`). Muting is now on the legend only.
+- [ ] Pick an item: exactly one user message appears in the chat, quoting the mark and the chart title, and the model answers it. Pick again before the answer arrives: nothing is sent.
+- [ ] Keyboard: Tab into the chart, move with the arrow keys, Enter opens the menu with focus on its first item; Up/Down move, Esc closes and focus returns to the chart or the mark.
+- [ ] A click outside the menu closes it.
+
+**Host support (task 2.2 of the 2026-11 plan).** Fill in one row per host from a real session; the sandbox cannot answer this. To read the capabilities, open DevTools on the widget iframe and run `app.getHostCapabilities()` from a breakpoint in `widget-shell.tsx`, or look for the menu: it appears only when `message` is declared.
+
+| Host | Version | `message` | `updateModelContext` | How a widget message looks in the chat | Checked on |
+|---|---|---|---|---|---|
+| Claude Desktop | | not yet checked | not yet checked | | |
+| Claude web | | not yet checked | not yet checked | | |
+| VS Code Copilot Chat | | not yet checked | not yet checked | | |
+
+If a host declares `updateModelContext` but not `message`, there is no menu at all: the widget has nothing to send, and a hint the user never sees acted on is not worth a click that changes meaning.
 
 ## Path B — Claude Web (HTTP via Custom Connector)
 
@@ -251,6 +280,6 @@ Before tagging a release (current target: v0.2.0):
 - [ ] Dark/light theme switching works in both hosts
 - [ ] Copy CSV → text in clipboard, parses cleanly when pasted into a spreadsheet
 - [ ] Copy PNG → image in clipboard or downloaded file
-- [ ] No console errors in DevTools across all 11 widgets
+- [ ] No console errors in DevTools across all 12 widgets
 - [ ] `npm run typecheck` clean
 - [ ] `npm run build` clean

@@ -20,6 +20,8 @@ import { SankeyView } from "../sankey/SankeyView.js";
 import { isSankeyPayload } from "../sankey/guard.js";
 import { MapView } from "../map/MapView.js";
 import { isMapPayload } from "../map/guard.js";
+import { FunnelView } from "../funnel/FunnelView.js";
+import { isFunnelPayload } from "../funnel/guard.js";
 
 // Production map of widget type → { View, payload guard }, used by the dashboard
 // widget to render child tiles. Imports only `*View` and `guard` modules — both
@@ -50,6 +52,7 @@ export const WIDGET_VIEWS: Record<DashboardTileType, WidgetViewEntry> = {
   "stat-panel": { View: StatPanelView as unknown as AnyView, isPayload: isStatPanelPayload },
   sankey: { View: SankeyView as unknown as AnyView, isPayload: isSankeyPayload },
   map: { View: MapView as unknown as AnyView, isPayload: isMapPayload },
+  funnel: { View: FunnelView as unknown as AnyView, isPayload: isFunnelPayload },
 };
 
 /**

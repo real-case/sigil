@@ -39,6 +39,8 @@ export type {
   SankeyPayload,
   SankeyNode,
   SankeyLink,
+  FunnelPayload,
+  FunnelStep,
   StatPanelPayload,
   StatItem,
   StatStatus,

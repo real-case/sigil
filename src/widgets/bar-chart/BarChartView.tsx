@@ -31,6 +31,8 @@ import { toCsv, copyText, copySvgAsPng } from "../shared/export-utils.js";
 import { useLegendState } from "../shared/legend-state.js";
 import { referenceHeadroom, referenceMarks } from "../shared/ReferenceLayer.js";
 import { SeriesBarView } from "./SeriesBarView.js";
+import { useMarkMenu } from "../shared/MarkMenu.js";
+import { ActiveDatumProbe, useChartKeyActivation, type ActiveDatum } from "../shared/chart-activation.js";
 
 const BAR_RADIUS = 7;
 const BAR_SIZE = 26;
@@ -117,10 +119,31 @@ function SingleBarView({
   const { focused, muted, setFocused, toggleMute, opacityFor } =
     useLegendState({ unfocusedOpacity: 0.32 });
   const canvasRef = useRef<HTMLDivElement>(null);
+  const probe = useRef<ActiveDatum | null>(null);
   // Defaults mirror the render_bar_chart handler, for the tile path where no
   // handler ran. See the note atop shared/payloads.ts.
   const { title, orientation = "vertical", xlabel, ylabel, reference } = payload;
   const isHorizontal = orientation === "horizontal";
+  // With drill-down a bar opens the follow-up menu and muting stays on the
+  // legend, so one click never does two things; without it a bar click mutes,
+  // as before.
+  const menu = useMarkMenu(title, payload.followUps);
+  const openBar = menu.open
+    ? (i: number, at: { x: number; y: number }) => {
+        const d = data[i];
+        if (d) menu.open?.({ label: d.label, value: fmtNumber(d.value) }, at);
+      }
+    : null;
+  useChartKeyActivation(
+    canvasRef,
+    probe,
+    openBar &&
+      ((datum, at) => {
+        const d = datum as BarDatum;
+        const i = data.indexOf(d);
+        openBar(i >= 0 ? i : data.findIndex((x) => x.label === d.label), at);
+      }),
+  );
 
   const copyCsv = () =>
     copyText(
@@ -295,6 +318,7 @@ function SingleBarView({
                 barCategoryGap="24%"
               >
                 <ActiveBandBridge data={data} onFocus={setFocused} />
+                <ActiveDatumProbe into={probe} />
                 <CartesianGrid
                   strokeDasharray="2 5"
                   stroke={tokens.chartLines.grid}
@@ -410,7 +434,10 @@ function SingleBarView({
                   minPointSize={3}
                   background={lane}
                   isAnimationActive={false}
-                  onClick={(_, i) => toggleMute(i)}
+                  onClick={(_, i, e) =>
+                    openBar ? openBar(i, { x: e.clientX, y: e.clientY }) : toggleMute(i)
+                  }
+                  style={openBar ? { cursor: "pointer" } : undefined}
                   // Recharts 3 deprecates <Cell>; per-bar fill/opacity render
                   // through a custom shape instead.
                   // Recharts hands the shape its own computed bar geometry and
@@ -458,6 +485,7 @@ function SingleBarView({
           onToggleMute={toggleMute}
         />
       </div>
+      {menu.element}
     </div>
   );
 }
