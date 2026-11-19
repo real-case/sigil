@@ -189,6 +189,37 @@ export const lineDatasets: Dataset<LineChartPayload>[] = [
       partialFrom: "Sep",
     },
   },
+  {
+    id: "line-facets",
+    label: "Multi-series — small multiples, 6 regions",
+    category: "multiSeries",
+    payload: {
+      title: "Weekly signups by region",
+      xlabel: "Week",
+      facet: true,
+      series: ["North America", "Europe", "LatAm", "Middle East", "South Asia", "Oceania"].map((name, s) => ({
+        name,
+        data: ramp(40 + s, 16, 200 + s * 60 - (s === 3 ? 120 : 0), 140 + s * 30),
+      })),
+      reference: [{ axis: "y", kind: "line", value: 400, label: "Target", tone: "success" }],
+    },
+  },
+  {
+    id: "line-patterns",
+    label: "Multi-series — 5 series with dash patterns",
+    category: "multiSeries",
+    payload: {
+      title: "Error rate by service",
+      xlabel: "Hour",
+      ylabel: "Errors / min",
+      patterns: true,
+      series: ["gateway", "auth", "payments", "search", "notifications"].map((name, s) => ({
+        name,
+        data: ramp(60 + s, 24, 4 + s * 2, 6),
+        ...(name === "payments" ? { dash: "solid" as const } : {}),
+      })),
+    },
+  },
 ];
 
 function range(n: number): number[] {

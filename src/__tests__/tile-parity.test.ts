@@ -33,6 +33,8 @@ import { isStatPanelPayload } from "../widgets/stat-panel/guard.js";
 import { isSankeyPayload } from "../widgets/sankey/guard.js";
 import { isFunnelPayload } from "../widgets/funnel/guard.js";
 import { isInfoCardPayload } from "../widgets/info-card/guard.js";
+import { isDistributionPayload } from "../widgets/distribution/guard.js";
+import { isTimelinePayload } from "../widgets/timeline/guard.js";
 import { isMapPayload } from "../widgets/map/guard.js";
 import { isDashboardPayload } from "../widgets/dashboard/guard.js";
 import type {
@@ -47,6 +49,8 @@ import type {
   SankeyPayload,
   FunnelPayload,
   InfoCardPayload,
+  DistributionPayload,
+  TimelinePayload,
   MapPayload,
   DashboardPayload,
 } from "../shared/payloads.js";
@@ -116,8 +120,11 @@ const CASES: Record<string, ErasedCase> = {
           name: "s",
           data: [{ x: 1, y: 2 }],
           compare: { label: "Last month", data: [{ x: 1, y: 1 }] },
+          dash: "dotted",
         },
       ],
+      patterns: true,
+      facet: true,
       xlabel: "x",
       ylabel: "y",
       reference: [{ axis: "y", kind: "band", from: 0, to: 1, label: "Low", tone: "warning" }],
@@ -154,10 +161,11 @@ const CASES: Record<string, ErasedCase> = {
     minimal: { title: "T", series: [{ name: "s", data: [{ x: 1, y: 2 }] }] },
     maximal: {
       title: "T",
-      series: [{ name: "s", data: [{ x: 1, y: 2, size: 3 }] }],
+      series: [{ name: "s", data: [{ x: 1, y: 2, size: 3 }], shape: "diamond" }],
       xlabel: "x",
       ylabel: "y",
       reference: [{ axis: "x", kind: "line", value: 1, label: "Threshold", tone: "danger" }],
+      shapes: true,
     },
   }),
   treemap: parity<TreemapPayload>({
@@ -192,6 +200,60 @@ const CASES: Record<string, ErasedCase> = {
       ylabel: "y",
       mode: "cohort",
       cohortSizes: [10],
+    },
+  }),
+  "heatmap (calendar)": parity<HeatmapPayload>({
+    guard: isHeatmapPayload,
+    minimal: { title: "T", mode: "calendar", days: [{ date: "2026-02-28", value: 1 }] },
+    maximal: {
+      title: "T",
+      mode: "calendar",
+      days: [
+        { date: "2026-02-28", value: 1 },
+        { date: "2026-03-01", value: -2 },
+      ],
+      weekStart: "sunday",
+      valueLabel: "orders",
+      scale: "diverging",
+      midpoint: 0,
+      followUps: ["Why the dip?"],
+    },
+  }),
+  distribution: parity<DistributionPayload>({
+    guard: isDistributionPayload,
+    minimal: { title: "T", groups: [{ name: "a", values: [1, 2, 3] }] },
+    maximal: {
+      title: "T",
+      variant: "box",
+      groups: [
+        { name: "a", values: [1, 2, 3, 40] },
+        { name: "b", summary: { min: 1, q1: 2, median: 3, q3: 4, max: 5, mean: 3.1, count: 90, outliers: [12] } },
+        { name: "c", values: [2, 3], bins: [{ start: 0, end: 5, count: 2 }] },
+      ],
+      binCount: 12,
+      valueLabel: "ms",
+      markers: [{ value: 4, label: "SLO", tone: "warning" }],
+      followUps: ["Why is b wider?"],
+    },
+  }),
+  timeline: parity<TimelinePayload>({
+    guard: isTimelinePayload,
+    minimal: { title: "T", items: [{ row: "a", start: 0 }] },
+    maximal: {
+      title: "T",
+      items: [
+        { row: "api", start: "2026-11-01T00:00:00Z", state: "up", label: "v1" },
+        { row: "api", start: "2026-11-01T02:00:00Z", end: "2026-11-01T02:30:00Z", state: "down" },
+      ],
+      rows: ["api", "web"],
+      states: [
+        { name: "up", tone: "success" },
+        { name: "down" },
+      ],
+      milestones: [{ at: "2026-11-01T01:00:00Z", label: "Deploy", row: "web" }],
+      now: "2026-11-01T04:00:00Z",
+      unit: "hour",
+      followUps: ["What caused the outage?"],
     },
   }),
   "bar-chart (waterfall)": parity<BarChartPayload>({
@@ -260,6 +322,7 @@ const CASES: Record<string, ErasedCase> = {
         },
       ],
       columns: 3,
+      trendScale: "shared",
     },
   }),
   sankey: parity<SankeyPayload>({
@@ -310,11 +373,22 @@ const CASES: Record<string, ErasedCase> = {
     maximal: {
       title: "T",
       columns: 3,
+      note: "Excludes test accounts",
+      source: "Warehouse",
+      asOf: "2026-11-18",
       tiles: [
         {
           type: "stat-panel",
           payload: { title: "t", items: [{ label: "A", value: 1 }] },
           colSpan: 2,
+          note: "n",
+          source: "s",
+          asOf: "a",
+        },
+        {
+          section: "Traffic",
+          description: "Requests",
+          tiles: [{ type: "timeline", payload: { title: "t", items: [{ row: "a", start: 0 }] } }],
         },
       ],
     },

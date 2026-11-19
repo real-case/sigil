@@ -285,7 +285,18 @@ body,
     transform var(--sigil-duration-fast) var(--sigil-easing-standard);
 }
 
-.sigil-leg:hover .sigil-leg-sw {
+/* A shape or dash glyph instead of the colour chip (secondary encoding). */
+.sigil-leg-sw--glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 14px;
+  background: none;
+  box-shadow: none;
+}
+
+.sigil-leg:hover .sigil-leg-sw:not(.sigil-leg-sw--glyph) {
   transform: scale(1.08);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.32),
@@ -1032,4 +1043,126 @@ body,
 .sigil-ic-target {
     background: CanvasText !important;
   }
+}
+
+/* ----- dashboard: sections and provenance (plan 4.1–4.2) ----------------- */
+
+.sigil-dash-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sigil-space-sm);
+  min-width: 0;
+}
+
+.sigil-dash-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--sigil-space-md);
+  row-gap: 2px;
+  padding-bottom: var(--sigil-space-xs);
+  border-bottom: 1px solid var(--sigil-border-subtle);
+}
+
+.sigil-dash-section-title {
+  margin: 0;
+  font-family: var(--sigil-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--sigil-text);
+}
+
+.sigil-dash-section-desc,
+.sigil-dash-note,
+.sigil-dash-source {
+  margin: 0;
+  font-family: var(--sigil-font-sans);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--sigil-text-muted);
+}
+
+.sigil-dash-tile-foot {
+  padding: 0 var(--sigil-space-lg) var(--sigil-space-md);
+  margin-top: calc(-1 * var(--sigil-space-xs));
+}
+
+.sigil-dash-foot {
+  margin-top: var(--sigil-space-md);
+  padding-top: var(--sigil-space-sm);
+  border-top: 1px solid var(--sigil-border-subtle);
+}
+
+/* ----- timeline state key (plan 4.5) --------------------------------------- */
+
+.sigil-tl-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sigil-space-xs) var(--sigil-space-lg);
+  margin: var(--sigil-space-sm) 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--sigil-font-sans);
+  font-size: 12px;
+  color: var(--sigil-text-secondary);
+}
+
+.sigil-tl-key li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sigil-tl-key i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ----- line-chart small multiples (plan 4.8) ------------------------------- */
+
+.sigil-facets {
+  display: grid;
+  gap: var(--sigil-space-lg) var(--sigil-space-xl);
+}
+
+.sigil-facet {
+  margin: 0;
+  min-width: 0;
+}
+
+.sigil-facet-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sigil-space-sm);
+  margin-bottom: var(--sigil-space-xs);
+  font-family: var(--sigil-font-sans);
+  font-size: 12.5px;
+  color: var(--sigil-text);
+}
+
+.sigil-facet-head i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.sigil-facet-name {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sigil-facet-val {
+  margin-left: auto;
+  font-family: var(--sigil-font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--sigil-text-muted);
 }

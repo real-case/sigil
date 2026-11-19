@@ -22,7 +22,9 @@ import {
   type LineRow,
 } from "./line-layout.js";
 import { useTheme, seriesColor } from "../shared/theme.js";
-import { seriesDash, useMediaQuery } from "../shared/use-media-query.js";
+import { useMediaQuery } from "../shared/use-media-query.js";
+import { niceStep } from "../distribution/distribution-math.js";
+import { DashGlyph, lineDash } from "../shared/secondary-encoding.js";
 import { ChartHeader } from "../shared/ChartHeader.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip, type TooltipRow } from "../shared/SigilTooltip.js";
@@ -32,6 +34,7 @@ import { annotationMarks, referenceHeadroom, referenceMarks } from "../shared/Re
 import {
   tickTextStyle,
   axisCapTextStyle,
+  fmtCompact,
   fmtNumber,
   fmtStat,
 } from "../shared/chart-text.js";
@@ -58,6 +61,9 @@ const GHOST_DASH = "5 4";
 // The incomplete-period tail: the series' own colour and weight, dashed.
 const PARTIAL_DASH = "3 4";
 const PARTIAL_FILL_FACTOR = 0.45;
+// Small multiples: each panel is short, and panels wrap at this width.
+const FACET_HEIGHT = 150;
+const FACET_MIN_WIDTH = 240;
 
 interface SeriesStats {
   avg: number;
@@ -163,9 +169,17 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
   const tickStyle = tickTextStyle(tokens);
   const capStyle = axisCapTextStyle(tokens);
 
+  // Dash patterns as a second channel: on request (`patterns`, a series'
+  // `dash`), and always under forced colours (WCAG 1.4.1).
+  const autoDash = payload.patterns === true || forcedColors;
+  const dashOf = (i: number) => lineDash(i, series[i]?.dash, autoDash);
+  const encodesDash = autoDash || series.some((s) => s.dash !== undefined);
+  const faceted = payload.facet === true && series.length > 1;
+
   const legendItems = series.map((s, i) => ({
     name: s.name,
     color: seriesColor(tokens, i),
+    glyph: encodesDash ? <DashGlyph dash={dashOf(i)} color={seriesColor(tokens, i)} /> : undefined,
     value: fmtStat(stats[i]!.avg),
     suffix: "avg",
     range: {
@@ -292,11 +306,12 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
   openRowRef.current = openRow;
 
   const lastRow = rows.length - 1;
-  const showFill = series.length <= AREA_FILL_MAX_SERIES;
+  const showFill = faceted || series.length <= AREA_FILL_MAX_SERIES;
 
   // Baselines first, so every series draws over its own ghost.
-  const ghosts: ReactElement[] = series.flatMap((s, i) =>
-    s.compare
+  const ghostFor = (i: number): ReactElement[] => {
+    const s = series[i]!;
+    return s.compare
       ? [
           <Area
             key={`${s.name}-baseline`}
@@ -317,10 +332,12 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
             connectNulls
           />,
         ]
-      : [],
-  );
+      : [];
+  };
+  const ghosts: ReactElement[] = series.flatMap((_, i) => ghostFor(i));
 
-  const lines: ReactElement[] = series.flatMap((s, i) => {
+  const linesFor = (i: number): ReactElement[] => {
+    const s = series[i]!;
     const color = seriesColor(tokens, i);
     const isMuted = muted.has(i);
     const opacity = opacityFor(i);
@@ -335,7 +352,7 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
         dataKey={s.name}
         stroke={color}
         strokeWidth={STROKE_WIDTH}
-        strokeDasharray={forcedColors ? seriesDash(i) : undefined}
+        strokeDasharray={dashOf(i)}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeOpacity={opacity}
@@ -370,7 +387,138 @@ export function LineChartView({ payload }: { payload: LineChartPayload }) {
         connectNulls
       />,
     ];
-  });
+  };
+  const lines: ReactElement[] = series.flatMap((_, i) => linesFor(i));
+
+  const gradientDefs = (only?: number) => (
+    <defs>
+      {series.map((s, i) => {
+        if (only !== undefined && i !== only) return null;
+        const color = seriesColor(tokens, i);
+        return (
+          <linearGradient key={s.name} id={`${gradientUid}-${i}`} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={AREA_TOP_OPACITY} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        );
+      })}
+    </defs>
+  );
+
+  if (faceted) {
+    // Small multiples (plan task 4.8): one panel per series, every panel on the
+    // same x values and the same y range, so a taller line is a larger number.
+    let lo = Math.min(0, globalMin);
+    let hi = globalMax;
+    for (const row of rows) {
+      for (const v of Object.values(row.__cmp ?? {})) {
+        if (typeof v === "number") {
+          lo = Math.min(lo, v);
+          hi = Math.max(hi, v);
+        }
+      }
+    }
+    for (const r of reference ?? []) {
+      if (r.axis !== "y") continue;
+      for (const v of [r.value, r.from, r.to]) {
+        if (typeof v === "number") {
+          lo = Math.min(lo, v);
+          hi = Math.max(hi, v);
+        }
+      }
+    }
+    if (!(hi > lo)) hi = lo + 1;
+    // Round the shared range out to whole steps, so every panel carries the
+    // same three short, readable ticks.
+    const step = niceStep((hi - lo) / 3);
+    lo = Math.floor(lo / step) * step;
+    hi = Math.ceil(hi / step) * step;
+    const domain: [number, number] = [lo, hi];
+    const yTicks = Array.from({ length: Math.round((hi - lo) / step) + 1 }, (_, k) => Number((lo + k * step).toPrecision(12)));
+    return (
+      <div className="sigil-root">
+        <ChartHeader
+          title={title}
+          kpi={{ value: String(series.length), caption: `series · ${countOf(rows.length, "point")} each` }}
+        >
+          <Toolbar>
+            <ToolbarButton icon={<CsvIcon />} label="Copy CSV" onAction={copyCsv} />
+          </Toolbar>
+        </ChartHeader>
+        <div
+          className="sigil-canvas sigil-facets"
+          ref={canvasRef}
+          style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(${FACET_MIN_WIDTH}px, 100%), 1fr))` }}
+        >
+          {series.map((s, i) => {
+            const color = seriesColor(tokens, i);
+            return (
+              <figure key={s.name} className="sigil-facet">
+                <figcaption className="sigil-facet-head">
+                  <i style={{ background: color }} aria-hidden="true" />
+                  <span className="sigil-facet-name">{s.name}</span>
+                  <span className="sigil-facet-val">{fmtStat(stats[i]!.avg)} avg</span>
+                </figcaption>
+                <ResponsiveContainer width="100%" height={FACET_HEIGHT}>
+                  <AreaChart
+                    aria-label={chartLabel(`${title}: ${s.name}`, "line chart", `${countOf(s.data.length, "point")}, same scale as the other panels`)}
+                    data={plotRows}
+                    style={openRow ? { cursor: "pointer" } : undefined}
+                    onClick={
+                      openRow
+                        ? (_state, e) => {
+                            const active = probe.current;
+                            const { clientX, clientY } = e as unknown as MouseEvent;
+                            if (active) openRow(active.datum, { x: clientX, y: clientY });
+                          }
+                        : undefined
+                    }
+                    margin={{ top: 8, right: 10, bottom: 0, left: 0 }}
+                  >
+                    {gradientDefs(i)}
+                    <CartesianGrid stroke={tokens.chartLines.grid} horizontal vertical={false} />
+                    <XAxis
+                      dataKey="x"
+                      type={numericX ? "number" : "category"}
+                      domain={numericX ? ["dataMin", "dataMax"] : undefined}
+                      tick={tickStyle}
+                      axisLine={{ stroke: tokens.chartLines.axis }}
+                      tickLine={false}
+                      height={24}
+                      minTickGap={24}
+                    />
+                    <YAxis domain={domain} ticks={yTicks} tickFormatter={(v: number) => fmtCompact(v)} tick={tickStyle} axisLine={false} tickLine={false} width={44} />
+                    <Tooltip
+                      cursor={{ stroke: tokens.chartLines.axis, strokeWidth: 1, strokeDasharray: "2 3" }}
+                      content={(props) => {
+                        const row = props.payload?.[0]?.payload as LineRow | undefined;
+                        if (!props.active || !row) return <SigilTooltip active={false} />;
+                        const x = xlabel !== undefined ? `${xlabel} ${String(row.x)}` : String(row.x);
+                        return (
+                          <SigilTooltip
+                            active
+                            label={x}
+                            payload={tooltipRows(row).filter((r) => String(r.dataKey ?? "").startsWith(`${i}:`))}
+                          />
+                        );
+                      }}
+                    />
+                    {referenceMarks(reference, tokens)}
+                    {annotationMarks(annotations, tokens)}
+                    {ghostFor(i)}
+                    {linesFor(i)}
+                    <ActiveDatumProbe into={probe} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </figure>
+            );
+          })}
+        </div>
+        {xlabel && <div className="sigil-caption">{xlabel} · every panel on the same scale</div>}
+        {menu.element}
+      </div>
+    );
+  }
 
   return (
     <div className="sigil-root">

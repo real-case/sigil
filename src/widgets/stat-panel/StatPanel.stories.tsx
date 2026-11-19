@@ -20,3 +20,4 @@ export const Small: Story = { args: { payload: payloadById(statPanelDatasets, "s
 export const Medium: Story = { args: { payload: payloadById(statPanelDatasets, "stat-medium") } };
 export const Rich: Story = { args: { payload: payloadById(statPanelDatasets, "stat-rich") } };
 export const EdgeLongLabels: Story = { args: { payload: payloadById(statPanelDatasets, "stat-edge-labels") } };
+export const SharedTrendScale: Story = { args: { payload: payloadById(statPanelDatasets, "stat-shared-trends") } };

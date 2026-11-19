@@ -70,14 +70,16 @@ function Sparkline({
   color,
   gradientId,
   label,
+  domain,
 }: {
   values: number[];
   color: string;
   gradientId: string;
   label: string;
+  domain?: { min: number; max: number };
 }) {
   const n = values.length;
-  const points = sparkPoints(values, SPARK_BOX);
+  const points = sparkPoints(values, SPARK_BOX, domain);
   const first = points[0];
   const last = points[points.length - 1];
   // Only reachable if the caller's `trend.length > 1` check ever moves: one
@@ -124,10 +126,13 @@ function StatCard({
   item,
   tokens,
   index,
+  trendDomain,
 }: {
   item: StatItem;
   tokens: ChartDesignTokens;
   index: number;
+  /** trendScale "shared": the range every card's sparkline is drawn against. */
+  trendDomain?: { min: number; max: number };
 }) {
   // Inside a dashboard tile (itself a surface) recede the card to a sunken well
   // so it doesn't read as surface-on-surface; standalone it stays raised.
@@ -304,7 +309,8 @@ function StatCard({
             values={trend!}
             color={accentColor}
             gradientId={`sigil-spark-${index}`}
-            label={label}
+            label={trendDomain ? `${label} (shared scale)` : label}
+            domain={trendDomain}
           />
         )}
 
@@ -353,6 +359,14 @@ export function StatPanelView({ payload }: { payload: StatPanelPayload }) {
       ),
     );
 
+  // trendScale "shared": every sparkline against one range, so the cards read
+  // as small multiples of one measure (plan task 4.8).
+  const trendDomain = (() => {
+    if (payload.trendScale !== "shared") return undefined;
+    const all = items.flatMap((it) => (Array.isArray(it.trend) ? it.trend.filter(Number.isFinite) : []));
+    return all.length > 0 ? { min: Math.min(...all), max: Math.max(...all) } : undefined;
+  })();
+
   const gridTemplateColumns = columns
     ? `repeat(${columns}, minmax(0, 1fr))`
     : `repeat(auto-fit, minmax(${CARD_MIN_WIDTH}px, 1fr))`;
@@ -367,7 +381,7 @@ export function StatPanelView({ payload }: { payload: StatPanelPayload }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns, gap: tokens.spacing.md }}>
         {items.map((item, i) => (
-          <StatCard key={`${item.label}-${i}`} item={item} tokens={tokens} index={i} />
+          <StatCard key={`${item.label}-${i}`} item={item} tokens={tokens} index={i} trendDomain={trendDomain} />
         ))}
       </div>
     </div>

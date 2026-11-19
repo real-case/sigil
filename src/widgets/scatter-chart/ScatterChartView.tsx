@@ -29,6 +29,8 @@ import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 import { useLegendState } from "../shared/legend-state.js";
 import { referenceHeadroom, referenceMarks } from "../shared/ReferenceLayer.js";
+import { useMediaQuery } from "../shared/use-media-query.js";
+import { markerShape, ShapeGlyph } from "../shared/secondary-encoding.js";
 
 const BASE_FILL_OPACITY = 0.7;
 const POINT_RANGE: [number, number] = [40, 320];
@@ -43,6 +45,12 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
     useLegendState({ unfocusedOpacity: 0.2 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const { title, series, xlabel, ylabel, reference } = payload;
+  // Shapes as a second channel: on request, per series, and always under
+  // forced colours, where every series is painted the same system colour.
+  const forcedColors = useMediaQuery("(forced-colors: active)");
+  const autoShapes = payload.shapes === true || forcedColors;
+  const shapeOf = (i: number) => markerShape(i, series[i]?.shape, autoShapes);
+  const encodesShape = autoShapes || series.some((s) => s.shape !== undefined);
 
   const totalPoints = useMemo(
     () => series.reduce((n, s) => n + s.data.length, 0),
@@ -99,6 +107,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
   const legendItems = series.map((s, i) => ({
     name: s.name,
     color: seriesColor(tokens, i),
+    glyph: encodesShape ? <ShapeGlyph shape={shapeOf(i)} color={seriesColor(tokens, i)} /> : undefined,
     value: fmtStat(stats[i]!.avg),
     suffix: "avg",
     range: {
@@ -208,6 +217,7 @@ export function ScatterChartView({ payload }: { payload: ScatterChartPayload }) 
                 key={s.name}
                 name={s.name}
                 data={s.data}
+                shape={shapeOf(i)}
                 fill={seriesColor(tokens, i)}
                 fillOpacity={opacityFor(i) * BASE_FILL_OPACITY}
                 isAnimationActive={false}

@@ -31,6 +31,7 @@ export type {
   TreemapNode,
   HeatmapPayload,
   HeatmapCell,
+  HeatmapDay,
   MapPayload,
   MapRegionDatum,
   MapPoint,
@@ -44,6 +45,15 @@ export type {
   InfoCardPayload,
   InfoCardItem,
   InfoCardVariant,
+  DistributionPayload,
+  DistributionGroup,
+  BoxSummary,
+  HistogramBin,
+  TimelinePayload,
+  TimelineItem,
+  TimelineMilestone,
+  TimelineState,
+  StateTone,
   StatPanelPayload,
   StatItem,
   StatStatus,
@@ -55,7 +65,9 @@ export type {
   ColumnKind,
   DashboardPayload,
   DashboardTile,
+  DashboardSection,
+  DashboardEntry,
   DashboardTileType,
 } from "./schemas.js";
 
-export { DASHBOARD_TILE_TYPES } from "./schemas.js";
+export { DASHBOARD_TILE_TYPES, isDashboardSection } from "./schemas.js";

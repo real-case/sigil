@@ -142,6 +142,29 @@ export const heatmapDatasets: Dataset<HeatmapPayload>[] = [
       ylabel: "Signup quarter",
     },
   },
+  {
+    id: "heatmap-calendar-year",
+    label: "Calendar — a year of daily commits",
+    category: "large",
+    payload: calendarYear(),
+  },
+  {
+    id: "heatmap-calendar-gaps",
+    label: "Calendar — 10 weeks, diverging vs plan, missing days",
+    category: "negatives",
+    payload: {
+      title: "Daily orders vs plan",
+      mode: "calendar",
+      valueLabel: "orders vs plan",
+      scale: "diverging",
+      midpoint: 0,
+      weekStart: "sunday",
+      days: dayRange("2026-09-06", 70)
+        // A collection outage: those days are absent, not zero.
+        .filter((_, i) => i < 30 || i > 33)
+        .map((date, i) => ({ date, value: Math.round(Math.sin(i / 4) * 40 + (det(91, i) - 0.5) * 30) })),
+    },
+  },
 ];
 
 // A triangular retention table: each monthly cohort decays at its own pace and
@@ -167,5 +190,28 @@ function cohortRetention(): HeatmapPayload {
     cells,
     xlabel: "Months since signup",
     ylabel: "Signup cohort",
+  };
+}
+
+/** `n` consecutive ISO dates from `start`. */
+function dayRange(start: string, n: number): string[] {
+  const t0 = Date.parse(`${start}T00:00:00Z`);
+  return Array.from({ length: n }, (_, i) => new Date(t0 + i * 86_400_000).toISOString().slice(0, 10));
+}
+
+function calendarYear(): HeatmapPayload {
+  const days = dayRange("2025-11-17", 365).map((date, i) => {
+    const dow = new Date(`${date}T00:00:00Z`).getUTCDay();
+    const weekend = dow === 0 || dow === 6;
+    const base = weekend ? 1 : 7;
+    const burst = Math.floor(i / 7) % 9 === 4 ? 9 : 0;
+    return { date, value: Math.max(0, Math.round(base + burst + (det(57, i) - 0.4) * 8)) };
+  });
+  return {
+    title: "Commits per day, last 12 months",
+    mode: "calendar",
+    valueLabel: "commits",
+    days,
+    followUps: ["What shipped that week?", "Who committed most?"],
   };
 }

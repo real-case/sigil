@@ -9,6 +9,7 @@ const description = [
   "Render an interactive scatter plot showing the relationship between two numeric variables.",
   "Use for correlation analysis, cluster visualization, or any (x, y) distribution.",
   "Supports multiple series overlaid in the same coordinate space and an optional point size encoding a third metric.",
+  "Keep to about three coloured series; with more, set `shapes` so each series also gets its own marker shape, or split the series into several charts in a dashboard.",
   "For comparing discrete categories use render_bar_chart; for time-series use render_line_chart.",
 ].join(" ");
 
@@ -29,6 +30,7 @@ export function registerScatterChartTool(server: McpServer) {
         xlabel: args.xlabel,
         ylabel: args.ylabel,
         reference: args.reference,
+        shapes: args.shapes,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],

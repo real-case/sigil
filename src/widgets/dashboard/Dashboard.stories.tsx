@@ -20,3 +20,5 @@ export const Overview: Story = { args: { payload: payloadById(dashboardDatasets,
 export const Flow: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-flow") } };
 export const Geo: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-geo") } };
 export const Degraded: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-degraded") } };
+export const SectionsRedTemplate: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-red-sections") } };
+export const ProductTemplate: Story = { args: { payload: payloadById(dashboardDatasets, "dashboard-product-template") } };

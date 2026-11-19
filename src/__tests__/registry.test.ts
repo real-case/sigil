@@ -15,6 +15,7 @@ describe("widget registry", () => {
     expect(names).toEqual([
       "bar-chart",
       "dashboard",
+      "distribution",
       "funnel",
       "heatmap",
       "info-card",
@@ -25,6 +26,7 @@ describe("widget registry", () => {
       "scatter-chart",
       "stat-panel",
       "table",
+      "timeline",
       "treemap",
     ]);
   });

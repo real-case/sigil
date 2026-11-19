@@ -43,3 +43,5 @@ export { DashboardView } from "../src/widgets/dashboard/DashboardView.js";
 export { MapView } from "../src/widgets/map/MapView.js";
 export { FunnelView } from "../src/widgets/funnel/FunnelView.js";
 export { InfoCardView } from "../src/widgets/info-card/InfoCardView.js";
+export { DistributionView } from "../src/widgets/distribution/DistributionView.js";
+export { TimelineView } from "../src/widgets/timeline/TimelineView.js";

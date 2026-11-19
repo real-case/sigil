@@ -15,6 +15,8 @@ import { registerDashboardTool, DASHBOARD_UI_URI } from "./tools/dashboard.js";
 import { registerMapTool, MAP_UI_URI } from "./tools/map.js";
 import { registerFunnelTool, FUNNEL_UI_URI } from "./tools/funnel.js";
 import { registerInfoCardTool, INFO_CARD_UI_URI } from "./tools/info-card.js";
+import { registerDistributionTool, DISTRIBUTION_UI_URI } from "./tools/distribution.js";
+import { registerTimelineTool, TIMELINE_UI_URI } from "./tools/timeline.js";
 
 export interface WidgetEntry {
   name: string;
@@ -36,4 +38,6 @@ export const WIDGETS: readonly WidgetEntry[] = [
   { name: "map", uri: MAP_UI_URI, register: registerMapTool },
   { name: "funnel", uri: FUNNEL_UI_URI, register: registerFunnelTool },
   { name: "info-card", uri: INFO_CARD_UI_URI, register: registerInfoCardTool },
+  { name: "distribution", uri: DISTRIBUTION_UI_URI, register: registerDistributionTool },
+  { name: "timeline", uri: TIMELINE_UI_URI, register: registerTimelineTool },
 ] as const;

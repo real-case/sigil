@@ -8,7 +8,7 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 
 🌐 [sigil.live](https://sigil.live) · [TESTING.md](./TESTING.md) · [INCANTATIONS.md](./INCANTATIONS.md) · [SPEC.md](./SPEC.md)
 
-> **Status:** v0.2.0 — 13 widgets + payload-guard / registry / registration test harness.
+> **Status:** v0.2.0 — 15 widgets + payload-guard / registry / registration test harness.
 
 ## Demo
 
@@ -19,22 +19,24 @@ Unlike existing MCP chart servers that return static images, Sigil renders **liv
 | Tool | When it fires | Renders |
 |------|---------------|---------|
 | [`render_bar_chart`](#render_bar_chart) | comparing discrete categories, rankings, parts of a total | vertical/horizontal bars; grouped, stacked and 100% stacked multi-series; line overlay; target lines and bands; waterfall bridges |
-| [`render_line_chart`](#render_line_chart) | time-series, trends, continuous data | multi-series lines with shared crosshair tooltip; previous-period comparison, targets, event annotations, incomplete-period tail |
+| [`render_line_chart`](#render_line_chart) | time-series, trends, continuous data | multi-series lines with shared crosshair tooltip; previous-period comparison, targets, event annotations, incomplete-period tail; dash patterns or small multiples for many series |
 | [`render_pie_chart`](#render_pie_chart) | part-of-whole proportions, composition | pie or donut with percentage labels |
 | [`render_table`](#render_table) | structured data exploration | sortable + filterable data table |
-| [`render_scatter_chart`](#render_scatter_chart) | (x, y) relationships, correlation, clusters | multi-series scatter with optional point-size encoding |
+| [`render_scatter_chart`](#render_scatter_chart) | (x, y) relationships, correlation, clusters | multi-series scatter with optional point-size encoding and per-series marker shapes |
 | [`render_treemap`](#render_treemap) | hierarchical part-of-whole, many leaves | nested rectangles sized by value, palette-tinted by branch |
-| [`render_heatmap`](#render_heatmap) | 2D categorical × numeric intensity, retention cohorts | matrix with palette gradient, hover tooltip per cell; cohort mode with a size column and a weighted average row |
-| [`render_stat_panel`](#render_stat_panel) | KPIs / scorecards, at-a-glance metrics | grid of metric cards with coloured trend deltas and status accents |
+| [`render_heatmap`](#render_heatmap) | 2D categorical × numeric intensity, retention cohorts | matrix with palette gradient, hover tooltip per cell; cohort mode with a size column and a weighted average row; calendar mode for one value per day |
+| [`render_stat_panel`](#render_stat_panel) | KPIs / scorecards, at-a-glance metrics | grid of metric cards with coloured trend deltas and status accents; sparklines on a shared scale on request |
 | [`render_sankey`](#render_sankey) | source-to-destination flows: budgets, user journeys, traffic | flow ribbons between stages, width ∝ value, hover-highlighting of connected flows |
-| [`render_dashboard`](#render_dashboard) | several related views at once | grid of tiles, each tile any other widget rendered from its own payload |
+| [`render_dashboard`](#render_dashboard) | several related views at once | responsive grid of tiles, each tile any other widget rendered from its own payload; sections, source / as-of footnotes, layout templates for RED, USE, SaaS KPIs and product analytics |
 | [`render_map`](#render_map) | country- or state-level metrics, geographic intensity | world / US-state choropleth — regions shaded by value, hover tooltip, click-to-focus |
 | [`render_funnel`](#render_funnel) | conversion funnels, drop-off, pipeline stages | ordered stage bars with conversion from first and previous stage, largest drop called out |
 | [`render_info_card`](#render_info_card) | value vs target, health thresholds, leaderboards, period comparisons, short summaries | bullet, gauge, progress, ranking, comparison and narrative cards; status always printed in words |
+| [`render_distribution`](#render_distribution) | spread, percentiles, skew, outliers; comparing variability across groups | histogram (raw values or pre-computed buckets, groups stacked on shared scales) or box plots (raw values or five-number summaries), with SLO / target markers |
+| [`render_timeline`](#render_timeline) | schedules, phases, incident windows, service state over time | Gantt-style bars in lanes or a state timeline coloured by state, with milestones and a "now" line |
 
-All chart widgets expose **Copy CSV** and **Copy PNG** buttons; the table, stat panel and info card expose **Copy CSV**. The dashboard composes other widgets, so each tile keeps its own controls.
+All chart widgets (including distribution and timeline) expose **Copy CSV** and **Copy PNG** buttons; the table, stat panel and info card expose **Copy CSV**. The dashboard composes other widgets, so each tile keeps its own controls.
 
-**Drill-down.** On a host that accepts messages from a widget (MCP Apps `hostCapabilities.message`), clicking a bar, point, slice, funnel step, heatmap cell or table row opens a small menu of follow-up questions — "Break down…", "Why is it like this?", "Show rows" — and the one picked is sent to the model as your next message, naming the mark and the chart. Bar, line, pie, funnel, heatmap and table accept an optional `followUps: string[]` to replace those defaults with questions about the data's real dimensions. On other hosts there is no menu and a click behaves as before.
+**Drill-down.** On a host that accepts messages from a widget (MCP Apps `hostCapabilities.message`), clicking a bar, point, slice, funnel step, heatmap cell or calendar day, histogram bucket or box, timeline bar, or table row opens a small menu of follow-up questions — "Break down…", "Why is it like this?", "Show rows" — and the one picked is sent to the model as your next message, naming the mark and the chart. Bar, line, pie, funnel, heatmap, distribution, timeline and table accept an optional `followUps: string[]` to replace those defaults with questions about the data's real dimensions. On other hosts there is no menu and a click behaves as before.
 
 ### Optional: Ritual Mode
 
@@ -145,13 +147,16 @@ Render an interactive line chart with one or more series. Use for time-series, t
 | `series[].name` | `string` | yes | Series name (legend + tooltip) |
 | `series[].data` | `Array<{ x, y }>` | yes | Points; `x` can be string or number |
 | `series[].compare` | `{ label?, data: Array<{ x, y }> }` | no | Comparison baseline (previous period, last year, plan), matched to the series by `x`. Drawn as a faint dashed line in the series' color; the tooltip adds the baseline and the change in absolute and % terms |
+| `series[].dash` | `"solid" \| "dashed" \| "dotted" \| "dash-dot"` | no | Stroke pattern for this series; overrides `patterns` |
 | `xlabel` | `string` | no | X-axis label |
 | `ylabel` | `string` | no | Y-axis label |
 | `reference` | `Array<ReferenceMark>` | no | Target lines and bands — see [Reference marks](#reference-marks) |
 | `annotations` | `Array<{ x, label, x2? }>` | no | Event markers: a vertical line at `x`, or a shaded region `x`..`x2`, labelled |
 | `partialFrom` | `string \| number` | no | First `x` of an incomplete period; the line is dashed from there and the tooltip marks those points incomplete |
+| `patterns` | `boolean` | no | Give every series after the first its own dash pattern as well as its colour (secondary encoding). The legend shows the pattern |
+| `facet` | `boolean` | no | Small multiples: one small panel per series, all on the same x values and the same y range, instead of an overlay |
 
-All-numeric `x` triggers a numeric axis (correct spacing for sparse values); any string switches to a category axis. With a `compare` baseline on the first series, the header KPI caption adds the change in average against it.
+All-numeric `x` triggers a numeric axis (correct spacing for sparse values); any string switches to a category axis. With a `compare` baseline on the first series, the header KPI caption adds the change in average against it. Under Windows High Contrast (forced colours) every series gets a dash pattern automatically, because the system paints them all one colour.
 
 ### `render_pie_chart`
 
@@ -194,9 +199,11 @@ Render an interactive scatter plot for showing the relationship between two nume
 | `series` | `Array<{ name, data }>` | yes | One or more series; rendered in distinct palette colors |
 | `series[].name` | `string` | yes | Series name (legend + tooltip) |
 | `series[].data` | `Array<{ x, y, size? }>` | yes | Points; `x` and `y` are numeric; optional positive `size` |
+| `series[].shape` | `"circle" \| "square" \| "triangle" \| "diamond" \| "cross" \| "star"` | no | Marker shape for this series; overrides `shapes` |
 | `xlabel` | `string` | no | X-axis label |
 | `ylabel` | `string` | no | Y-axis label |
 | `reference` | `Array<ReferenceMark>` | no | Threshold lines and bands (numeric values only) — see [Reference marks](#reference-marks) |
+| `shapes` | `boolean` | no | Give each series its own marker shape as well as its colour; the legend shows the shape. Recommended past three series. Always on under forced colours |
 
 
 ### Reference marks
@@ -234,17 +241,22 @@ Render an interactive heatmap matrix: a 2D grid where each cell's color encodes 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | `string` | yes | Chart title |
-| `xLabels` | `string[]` | yes | Column labels along the x-axis |
-| `yLabels` | `string[]` | yes | Row labels along the y-axis |
-| `cells` | `Array<{ x, y, value }>` | yes | `x` indexes `xLabels`, `y` indexes `yLabels`, `value` is the cell intensity. Missing combinations render as empty cells. |
+| `xLabels` | `string[]` | yes, except calendar | Column labels along the x-axis |
+| `yLabels` | `string[]` | yes, except calendar | Row labels along the y-axis |
+| `cells` | `Array<{ x, y, value }>` | yes, except calendar | `x` indexes `xLabels`, `y` indexes `yLabels`, `value` is the cell intensity. Missing combinations render as empty cells. |
 | `xlabel` | `string` | no | X-axis title |
 | `ylabel` | `string` | no | Y-axis title |
 | `scale` | `"sequential" \| "diverging"` | no | Colour scale. Defaults to `"sequential"` |
 | `midpoint` | `number` | no | Diverging only: the value shown as neutral (default `0`). The farther side sets the extremes; the nearer side is not stretched |
-| `mode` | `"matrix" \| "cohort"` | no | Default `"matrix"`. `"cohort"` reads the grid as a retention table — see below |
+| `mode` | `"matrix" \| "cohort" \| "calendar"` | no | Default `"matrix"`. `"cohort"` reads the grid as a retention table, `"calendar"` lays out `days` — see below |
 | `cohortSizes` | `number[]` | no | Cohort mode: one size per `yLabels` row, shown as a size column and used to weight the average row |
+| `days` | `Array<{ date, value }>` | calendar (required) | One entry per day, `date` as `YYYY-MM-DD`; up to 1,200 days |
+| `weekStart` | `"monday" \| "sunday"` | no | Calendar mode: the first weekday row (default `"monday"`) |
+| `valueLabel` | `string` | no | Calendar mode: what the values count, e.g. `"commits"` |
 
 **Cohort mode.** Rows are cohorts (signup month), columns are periods since start (`M0`, `M1`, …), and each cell is a percentage — values above 100 are fine for net revenue retention. The widget prints the % in every cell (with whichever of two inks clears 4.5:1 on that colour), adds a size column when `cohortSizes` is given, and appends an average row. The average for each period covers only the cohorts that reached it, weighted by cohort size when sizes are given ("Weighted avg") and a plain mean otherwise ("Average"). Periods a cohort has not reached are simply omitted from `cells` and stay empty, so the table keeps its triangle; they are never drawn as 0. On a narrow host the table scrolls sideways rather than shrinking cells below their printed value.
+
+**Calendar mode.** One value per day, laid out as weeks (columns) by weekdays (rows) with month labels — the contribution-graph layout. Up to 53 weeks draw as one continuous block; a longer span gets one block per calendar year. Dates are read in UTC, so a day never shifts with the viewer's time zone. A day inside the range that `days` leaves out is drawn as "no data", never as 0. The same `scale` / `midpoint` options apply, so a diverging calendar of "orders vs plan" works like a diverging matrix. Arrow keys move by day (up / down) and by week (left / right).
 
 ### `render_stat_panel`
 
@@ -267,6 +279,7 @@ Render an interactive panel of key metrics (KPI / scorecard cards). Each card sh
 | `items[].target` | `number` | no | Goal for the metric; with a numeric value, draws a progress bar |
 | `items[].badge` | `string` | no | Short status pill next to the label, coloured by `status` |
 | `columns` | `number` | no | Fixed column count (1–4); defaults to an auto-fit grid |
+| `trendScale` | `"own" \| "shared"` | no | Default `"own"`: each sparkline fits its own range. `"shared"`: one range for every card, so cards of the same measure read as small multiples |
 
 ### `render_sankey`
 
@@ -293,11 +306,16 @@ Render a multi-widget dashboard: a grid of tiles where each tile is one of the o
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `title` | `string` | yes | Dashboard title |
-| `columns` | `number` | no | Grid column count (1–4); defaults to `2` |
-| `tiles` | `Array<{ type, payload, colSpan? }>` | yes | Ordered tiles, laid out left-to-right, top-to-bottom |
-| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel" \| "sankey" \| "map" \| "funnel" \| "info-card"` | yes | Which widget to render |
-| `tiles[].payload` | `object` | yes | That widget's own payload — the same object its `render_<type>` tool accepts |
-| `tiles[].colSpan` | `number` | no | How many columns the tile spans (1..`columns`); defaults to `1` |
+| `columns` | `number` | no | Maximum grid column count (1–4); defaults to `2`. The grid drops columns as the dashboard narrows (a tile never gets narrower than 300 px) |
+| `tiles` | `Array<Tile \| Section>` | yes | Ordered entries, laid out left-to-right, top-to-bottom |
+| `tiles[].type` | `"bar-chart" \| "line-chart" \| "pie-chart" \| "table" \| "scatter-chart" \| "treemap" \| "heatmap" \| "stat-panel" \| "sankey" \| "map" \| "funnel" \| "info-card" \| "distribution" \| "timeline"` | tile | Which widget to render |
+| `tiles[].payload` | `object` | tile | That widget's own payload — the same object its `render_<type>` tool accepts |
+| `tiles[].colSpan` | `number` | no | How many columns the tile spans (1..`columns`); defaults to `1`, and shrinks with the grid |
+| `tiles[].note`, `.source`, `.asOf` | `string` | no | A footnote, data source and as-of time printed under the tile |
+| `tiles[].section` | `string` | section | Section heading; the entry is then `{ section, description?, tiles }` and groups its tiles under the heading. One level only |
+| `note`, `source`, `asOf` | `string` | no | Dashboard-level footnote, data source and as-of time, printed at the bottom |
+
+The `tiles` description also carries four layout templates the model can follow — service health (RED: rate, errors, duration), resources (USE: utilisation, saturation, errors), SaaS KPIs, and product analytics (KPI → trend → funnel → retention). They are advice in text, not code: the model drops the tiles it has no data for.
 
 ### `render_map`
 
@@ -374,6 +392,46 @@ Render one value in context. `variant` picks what the value is held against; eve
 
 A value outside an explicit `min`/`max` is drawn at the edge with an arrowhead pointing past it and "above scale (max …)" / "below scale (min …)" in the foot; it never runs off the track.
 
+### `render_distribution`
+
+Render how one measure is distributed: a histogram of bucket counts, or box plots that compare spread across groups.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Chart title |
+| `variant` | `"histogram" \| "box"` | no | Default `"histogram"` |
+| `groups` | `Array<Group>` | yes | 1–12 groups |
+| `groups[].name` | `string` | yes | Group name |
+| `groups[].values` | `number[]` | one of | Raw observations; the widget computes buckets or quartiles |
+| `groups[].summary` | `{ min, q1, median, q3, max, mean?, count?, outliers? }` | one of (box) | Pre-computed five-number summary |
+| `groups[].bins` | `Array<{ start, end, count }>` | one of (histogram) | Pre-computed buckets, ascending, not overlapping |
+| `binCount` | `number` | no | Histogram from raw values: bucket count; default chosen from the data (Freedman–Diaconis, 5–40) |
+| `valueLabel` | `string` | no | What the values measure, with unit; labels the value axis |
+| `markers` | `Array<{ value, label, tone? }>` | no | Up to 5 vertical lines: an SLO, a target, a limit |
+| `followUps` | `string[]` | no | Drill-down questions for a bucket or a box |
+
+- **Histogram** — touching bars on a numeric axis with round bucket edges. Several groups become stacked small histograms that share both axes, so heights compare directly. A dotted line marks each raw-value group's median.
+- **Box** — one row per group on a shared axis: the box spans the 25th–75th percentile, a line marks the median, a diamond the mean, whiskers reach the furthest values within 1.5 × the box width, and anything beyond is drawn as a dot. A caption under the chart says so in words. Quartiles use linear interpolation (the default of R, NumPy and Excel's `QUARTILE.INC`), so pre-computed summaries from those tools match.
+
+### `render_timeline`
+
+Render intervals in time as bars in lanes: a Gantt-style schedule, or a state timeline.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | `string` | yes | Chart title |
+| `items` | `Array<{ row, start, end?, label?, state? }>` | yes | Intervals; `row` is the lane |
+| `items[].start`, `items[].end` | `string \| number` | `start` yes | ISO 8601 dates / date-times, or plain numbers — one kind throughout. Without `end` an item runs to the next item in its lane, else to `now`, else to the end of the chart |
+| `items[].label` | `string` | no | Text on the bar |
+| `items[].state` | `string` | no | State during the interval; same state, same colour |
+| `rows` | `string[]` | no | Lane order; unlisted lanes follow in first-seen order |
+| `states` | `Array<{ name, tone? }>` | no | State order and meaning; `tone` is `success`, `warning`, `danger`, `info` or `neutral`, so "down" is never green. States without a tone take categorical colours |
+| `milestones` | `Array<{ at, label, row? }>` | no | Point events: a diamond in a lane, or a labelled line across the chart |
+| `now` | `string \| number` | no | A "Now" line |
+| `unit` | `string` | no | Numeric times: what one unit is, e.g. `"sprint"` |
+
+Times are printed in UTC (and the chart says so when they carry a clock), so a date-only `"2026-11-03"` is the 3rd for every viewer. Ticks align to calendar boundaries — hours, days, weeks starting Monday, months, quarters, years. Without `state`, every bar takes one accent colour, because the lane label already says what the bar is.
+
 ## Development
 
 ```bash
@@ -383,7 +441,7 @@ npm run dev:stdio           # stdio server (for Claude Desktop / VS Code)
 npm run dev:sandbox         # in-browser widget sandbox — pick any widget + preset, toggle theme / viewport / debug overlay
 npm run typecheck           # tsc --noEmit
 npm test                    # vitest: payloads, registry, registration, theme, e2e
-npm run build               # bundle 13 widgets + compile server
+npm run build               # bundle 15 widgets + compile server
 npm start                   # run compiled HTTP server
 npm run start:stdio         # run compiled stdio server
 ```
@@ -441,7 +499,9 @@ src/
     ├── dashboard/        # grid of tiles composing the other widgets
     ├── map/              # d3-geo + TopoJSON choropleth / bubbles (no Recharts)
     ├── funnel/           # conversion funnel, hand-rolled SVG (no Recharts)
-    └── info-card/        # bullet / gauge / progress / ranking / comparison / narrative cards
+    ├── info-card/        # bullet / gauge / progress / ranking / comparison / narrative cards
+    ├── distribution/     # histogram / box plot, hand-rolled SVG
+    └── timeline/         # Gantt and state timeline lanes, hand-rolled SVG
 ```
 
 Each widget bundles to a standalone single-file HTML via Vite + `vite-plugin-singlefile`, then gets served as a `ui://sigil/<widget>` resource by the MCP server. The host renders it in a sandboxed iframe and communicates with it via `postMessage` per the MCP Apps spec.
