@@ -9,6 +9,7 @@ import { useMarkMenu } from "../shared/MarkMenu.js";
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
 import { cohortAverage, fmtCohortSize, fmtPercent } from "./cohort-math.js";
+import { CalendarView } from "./CalendarView.js";
 
 const CHART_HEIGHT = 360;
 const RIGHT_MARGIN = 16;
@@ -93,14 +94,31 @@ interface TooltipState {
   pageY: number;
 }
 
+/**
+ * render_heatmap's three modes share one tool and one bundle; the calendar
+ * lays out dates, not an index-addressed matrix, so it is its own component.
+ */
 export function HeatmapView({ payload }: { payload: HeatmapPayload }) {
+  if (payload.mode === "calendar") return <CalendarView payload={payload} />;
+  return <MatrixHeatmapView payload={payload} />;
+}
+
+// Stable empties, so a calendar-shaped payload that reaches the matrix (it
+// cannot via the guard, but types allow it) does not re-key every memo.
+const NO_LABELS: string[] = [];
+const NO_CELLS: HeatmapCell[] = [];
+
+function MatrixHeatmapView({ payload }: { payload: HeatmapPayload }) {
   const tokens = useTheme();
   const [selected, setSelected] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const width = useContainerWidth(containerRef);
-  const { title, xLabels, yLabels, cells, xlabel, ylabel } = payload;
+  const { title, xlabel, ylabel } = payload;
+  const xLabels = payload.xLabels ?? NO_LABELS;
+  const yLabels = payload.yLabels ?? NO_LABELS;
+  const cells = payload.cells ?? NO_CELLS;
   const cohort = payload.mode === "cohort";
   const sizes =
     cohort && payload.cohortSizes?.length === yLabels.length ? payload.cohortSizes : undefined;

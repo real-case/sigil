@@ -238,7 +238,7 @@ Plus `xlabel`, `ylabel`, `ylabelRight`, and the item-6 `reference` field. Stacki
 
 ## 8. Responsive dashboard grid
 
-> ⏳ Open
+> 🔍 In review — phase 4 of the November 2026 update plan (PR stacked on [#79](https://github.com/real-case/sigil/pull/79)). `columns` is a maximum and `colSpan` clamps, as specified, but the column count comes from a `ResizeObserver` on the dashboard's own root rather than a CSS container query: clamping a span needs the count as a number in the render, which CSS cannot hand back. It is still the dashboard's width, not the viewport's. Pure rules in `grid-layout.ts`.
 
 **Task slug:** `dashboard-responsive-grid` · risk: low · breaking: no · stack: react, css
 
@@ -254,7 +254,7 @@ Plus `xlabel`, `ylabel`, `ylabelRight`, and the item-6 `reference` field. Stacki
 
 ## 9. Dashboard sections and provenance
 
-> ⏳ Open
+> 🔍 In review — phase 4 of the November 2026 update plan. Sections and `note` / `source` / `asOf` on the dashboard and on each tile shipped as specified, one level of nesting. Provenance stayed dashboard-level (the recommendation); four layout templates — RED, USE, SaaS KPIs, product analytics — ship as `tiles` describe text, not as code.
 
 **Task slug:** `dashboard-sections` · risk: medium · breaking: no · stack: typescript, react
 
@@ -321,7 +321,7 @@ Contribution-to-change: start value → signed steps → end value, the standard
 
 ## 13. Timeline / Gantt
 
-> ⏳ Open
+> 🔍 In review — phase 4 of the November 2026 update plan. A new `render_timeline` tool (no existing tool's mental model takes a `{ start, end }` pair). Times are either ISO strings or plain numbers, one kind per payload; an item without `end` runs to the next item in its lane, else to `now`. Optional `states` with tones turn it into a state timeline; `milestones` are per lane or global.
 
 **Task slug:** `timeline-chart` · risk: medium · breaking: no · stack: typescript, react
 
@@ -331,7 +331,7 @@ Intervals in time — schedules, phases, incident windows, availability. No Sigi
 
 ## 14. Distribution — box plot and histogram
 
-> ⏳ Open
+> 🔍 In review — phase 4 of the November 2026 update plan. One `render_distribution` tool with `variant: "histogram" | "box"`, taking raw `values`, a precomputed `summary` or precomputed `bins` per group. Hand-rolled SVG; quartiles are type-7, whiskers Tukey 1.5 × IQR, auto bin count Freedman–Diaconis clamped to 5–40.
 
 **Task slug:** `distribution-chart` · risk: medium · breaking: no · stack: typescript, react
 
@@ -341,7 +341,7 @@ Sigil can show a joint distribution (scatter) but not a marginal one: no spread,
 
 ## 15. Calendar heatmap
 
-> ⏳ Open
+> 🔍 In review — phase 4 of the November 2026 update plan. Shipped as `mode: "calendar"` beside the existing `matrix` and `cohort` modes (the discriminator `render_heatmap` already had), not as `variant`, with `days`, `weekStart` and `valueLabel`.
 
 **Task slug:** `heatmap-calendar-variant` · risk: low · breaking: no · stack: typescript, react
 
@@ -371,7 +371,7 @@ Sigil can show a joint distribution (scatter) but not a marginal one: no spread,
 | 14 | `distribution-chart` | chart types | 2, 4 |
 | 15 | `heatmap-calendar-variant` | chart types | — |
 
-**State:** the four foundations (items 1–4) are shipped; 5 and 6 are in review and 7 is folded into 5 (November 2026 update plan, phase 1); 8–15 are open. The three tracks — 5–7, 8–9, 10–11 — are independent of each other and can start in any order.
+**State:** the four foundations (items 1–4) are shipped; 5 and 6 are in review and 7 is folded into 5 (November 2026 update plan, phase 1); 10–12 are in review (phase 3) and 8, 9, 13–15 are in review (phase 4). The three tracks — 5–7, 8–9, 10–11 — are independent of each other and can start in any order.
 
 Items 1–4 are genuinely independent of each other and can run in any order or in parallel. After them, the three tracks (5–7, 8–9, 10–11) are independent; stage 5 draws on stage 2's output.
 

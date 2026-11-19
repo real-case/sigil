@@ -22,3 +22,5 @@ export const Negatives: Story = { args: { payload: payloadById(lineDatasets, "li
 export const MultiSeries: Story = { args: { payload: payloadById(lineDatasets, "line-multi-series") } };
 export const ComparePrevious: Story = { args: { payload: payloadById(lineDatasets, "line-compare-previous") } };
 export const ReferenceAnnotations: Story = { args: { payload: payloadById(lineDatasets, "line-reference-annotations") } };
+export const SmallMultiples: Story = { args: { payload: payloadById(lineDatasets, "line-facets") } };
+export const DashPatterns: Story = { args: { payload: payloadById(lineDatasets, "line-patterns") } };

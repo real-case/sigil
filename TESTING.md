@@ -103,6 +103,21 @@ These force tool selection so you isolate **rendering** from **selection**.
     opening 4820 (total), new 610, expansion 284, contraction -142, churn -377.
 15. Use render_heatmap in cohort mode for monthly retention of three
     cohorts (sizes 1800, 2100, 2400): Jan 100/52/34, Feb 100/49, Mar 100.
+16. Use render_heatmap in calendar mode for daily commits over the last
+    six months (any plausible daily counts).
+17. Use render_distribution as a histogram of API latency for two
+    endpoints (~60 raw values each), with a marker at the 300 ms SLO.
+18. Use render_distribution with variant box to compare order values
+    across three regions, giving raw values for each.
+19. Use render_timeline for a project plan: Discovery Jan 6–Jan 24,
+    Design Jan 20–Feb 14, Build Feb 10–Mar 28, Launch milestone Mar 31.
+20. Use render_timeline for service status over one day: lanes api and
+    db, states up/degraded/down, with a "now" line.
+21. Use render_dashboard with sections "Traffic" and "Health", a source
+    and asOf on the dashboard, and three columns.
+22. Use render_line_chart with facet: true for weekly signups in six
+    regions.
+23. Use render_scatter_chart with shapes: true for three series.
 ```
 
 **Pass criteria for each:**
@@ -137,6 +152,12 @@ Now test **without** naming the tool. Each prompt should pick the listed tool:
 | "Top 10 accounts by ARR, and who moved up" | `render_info_card`, `variant: "ranking"` (or `render_bar_chart` without rank moves) |
 | "How did ARR get from 4.8M to 5.3M this quarter?" | `render_bar_chart` with `variant: "waterfall"` |
 | "Monthly retention by signup cohort" | `render_heatmap` with `mode: "cohort"` |
+| "Show my daily commits for the past year" | `render_heatmap` with `mode: "calendar"` |
+| "How are response times distributed? Here are 200 samples" | `render_distribution` (histogram, not `render_bar_chart`) |
+| "Compare salary spread across five teams" | `render_distribution`, `variant: "box"` |
+| "Plot the project schedule: phases with start and end dates" | `render_timeline` (not `render_bar_chart`) |
+| "When was each service down yesterday?" | `render_timeline` with `states` |
+| "Build me a RED dashboard for the checkout service" | `render_dashboard` following the RED template, in sections |
 
 **If Claude picks the wrong tool**, that's a description-tuning problem in `src/tools/<name>.ts`. The fix is to:
 - sharpen the **Use when …** clause (give concrete example domains)
@@ -149,7 +170,7 @@ Re-run `npm run build:server` and restart Claude Desktop after each change.
 
 After §A3 confirms widgets render at all, walk through this checklist to verify the v0.3.0 design system (tokens + primitives) is intact across every widget. Run it once in **light** and once in **dark** — switch the host app's appearance (Claude Desktop: Settings → Appearance) between passes; widgets follow the host theme first and the OS preference only when the host sends none. Each widget gets ~30 seconds.
 
-**Per-widget checks (× 13):**
+**Per-widget checks (× 15):**
 
 | Widget | Look for |
 |---|---|
@@ -166,7 +187,13 @@ After §A3 confirms widgets render at all, walk through this checklist to verify
 | `bar-chart` (waterfall) | Rises in the diverging scale's blue, falls in its orange, totals neutral grey; every change labelled with its sign (`+610`, `−377`, true minus), above a rise and below a fall. A dashed connector runs from each bar to the next at the level the step ended on, and none runs into a `total` that restarts the running total elsewhere (sandbox *Waterfall — P&L with a subtotal*). The closing bar is computed and its value is the header KPI. Axis ticks are round numbers; a bridge that dips below zero shows a zero line. A key under the plot names the three colours. |
 | `heatmap` (cohort) | A size column after the row labels, a percentage printed in every cell in whichever ink clears 4.5:1, an average row set apart below the cohorts ("Weighted avg" with sizes, "Average" without). Cells a cohort has not reached are blank — no grey, no `0%` — so the grid keeps its triangle. The average row is reachable with the arrow keys and shows a tooltip, but opens no drill-down menu. At 320 px the table scrolls sideways instead of squeezing cells. |
 | `info-card` | **bullet:** thin blue bar on grey bands (worst band darkest; reversed with `higherIsBetter: false`), black target tick, foot "x% of target … · status". **gauge:** half-dial, arc in the status colour, zone ring outside it, min / max under the ends, status word under the label. **progress:** bar ends at the target, coloured by status. **ranking:** read-only value-legend rows with rank numbers, meters scaled to the top entry, ▲ green / ▼ red / – muted moves — and no arrows at all when `rankDelta` is absent. **comparison:** one card per item with ▲/▼, signed % and absolute change (pp for `%`). **narrative:** key figures with a left rule, then plain paragraphs. Off-scale values (sandbox *Edge* presets) sit at the edge with an arrowhead and "above scale (max …)". |
-| `dashboard` | Tiles form a fixed-column grid (payload `columns`, clamped 1–4, default 2; column widths are fluid) honouring `colSpan`. Every tile keeps its own title/toolbar. Embedded widgets recede — no double surfaces or nested shadows. |
+| `dashboard` | `columns` (1–4, default 2) is a maximum: the grid steps down to fewer columns as the dashboard narrows (about 300 px per column), and `colSpan` clamps to the count in force — at 320/480 px every tile is full width, never overflowing. Sections render as a small heading with an optional description above their own grid. A tile with `note`/`source`/`asOf` shows a muted footnote inside its card ("Source: … · As of …"); the dashboard's own provenance sits under the last grid. Every tile keeps its own title/toolbar. Embedded widgets recede — no double surfaces or nested shadows. |
+| `heatmap` (calendar) | One column per week, one row per weekday (Monday or Sunday first per `weekStart`), month labels above, the sequential ramp and its legend below. Days with no value are a sunken tint labelled "no data", not the lowest colour. Spans over about a year split into one block per calendar year. Arrow keys move a day (up/down) or a week (left/right). Caption: highest day, daily average, count of days without data. |
+| `distribution` | **Histogram:** one panel per group sharing bin edges and the y scale, bars in the group's series colour, a dashed median line, markers as labelled vertical rules. **Box:** one row per group on a shared axis, whiskers to the last value inside 1.5 × IQR, box q1–q3, a median bar, a mean diamond when known, outliers as hollow circles. The caption explains the box plot. Summary-only groups render without outliers. |
+| `timeline` | One lane per `row`, bars from start to end on a calendar-aligned UTC axis (caption "Times in UTC"); an open-ended item runs to the next one in its lane or to `now`. State colours come from `states[].tone`, with a key under the chart; labels inside bars pick the ink that clears contrast. Lane milestones are diamonds, global ones dashed rules; `now` is a red rule. Bar labels truncate to fit and disappear on bars too short to hold one, so at 320 px nothing spills out of its bar. |
+| `line-chart` (facets, patterns) | With `facet: true`, one small panel per series in a wrapping grid, all on the same rounded y scale and ticks, each with the series name as caption. With `patterns: true`, each series gets its own dash and the legend swatch shows that dash; an explicit `dash` wins. |
+| `scatter-chart` (shapes) | With `shapes: true` (or a `shape` per series), each series draws its own marker shape and the legend swatch shows that shape. |
+| `stat-panel` (shared trends) | With `trendScale: "shared"`, every sparkline is drawn on one y domain, so a flat KPI looks flat next to a steep one. |
 | `map` | Choropleth uses the same sequential ramp + legend as the heatmap (or the diverging one with `scale: "diverging"` — sandbox preset *Negatives — temperature anomaly*); no-data land stays a neutral tint. Bubbles scale by √value (area-proportional above a 3 px floor) with a size legend. The footnote reports the *count* of unmatched regions / off-map points (ids are not listed). |
 
 **Cross-cutting checks:**

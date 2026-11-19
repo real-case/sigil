@@ -13,6 +13,8 @@ import { isInfoCardPayload } from "../widgets/info-card/guard.js";
 import { isMapPayload } from "../widgets/map/guard.js";
 import { isStatPanelPayload } from "../widgets/stat-panel/guard.js";
 import { isDashboardPayload } from "../widgets/dashboard/guard.js";
+import { isDistributionPayload } from "../widgets/distribution/guard.js";
+import { isTimelinePayload } from "../widgets/timeline/guard.js";
 
 type Mutator = (v: Record<string, unknown>) => unknown;
 
@@ -383,11 +385,172 @@ const cases: GuardCase[] = [
       "unknown mode": set("mode", "pivot"),
       "cohortSizes shorter than yLabels": set("cohortSizes", [10]),
       "negative cohort size": set("cohortSizes", [10, -1]),
+      "calendar mode without days": set("mode", "calendar"),
     },
     accepts: {
       "cohort mode with sizes": (p) => ({ ...p, mode: "cohort", cohortSizes: [100, 80] }),
       "cohort mode without sizes": set("mode", "cohort"),
       "retention above 100%": set("cells", [{ x: 0, y: 0, value: 118 }]),
+    },
+  },
+  {
+    name: "heatmap (calendar)",
+    guard: isHeatmapPayload,
+    valid: {
+      title: "T",
+      mode: "calendar",
+      days: [
+        { date: "2026-01-01", value: 3 },
+        { date: "2026-01-02", value: 0 },
+      ],
+      weekStart: "sunday",
+      valueLabel: "commits",
+    },
+    rejects: {
+      "missing days": omit("days"),
+      "empty days": set("days", []),
+      "non-ISO date": set("days", [{ date: "01/02/2026", value: 1 }]),
+      "impossible date": set("days", [{ date: "2026-13-40", value: 1 }]),
+      "duplicate date": set("days", [
+        { date: "2026-01-01", value: 1 },
+        { date: "2026-01-01", value: 2 },
+      ]),
+      "non-numeric value": set("days", [{ date: "2026-01-01", value: "3" }]),
+      "unknown weekStart": set("weekStart", "friday"),
+      "days outside calendar mode": (p) => ({ ...p, mode: "matrix", xLabels: ["a"], yLabels: ["b"], cells: [{ x: 0, y: 0, value: 1 }] }),
+    },
+    accepts: {
+      "calendar with matrix fields left out": omit("valueLabel"),
+      "diverging calendar": (p) => ({ ...p, scale: "diverging", midpoint: 1 }),
+    },
+  },
+  {
+    name: "distribution",
+    guard: isDistributionPayload,
+    valid: {
+      title: "T",
+      groups: [{ name: "a", values: [1, 2, 3] }],
+      valueLabel: "ms",
+      markers: [{ value: 2, label: "SLO", tone: "danger" }],
+      followUps: ["Why so slow?"],
+    },
+    rejects: {
+      "missing title": omit("title"),
+      "missing groups": omit("groups"),
+      "empty groups": set("groups", []),
+      "group without data": set("groups", [{ name: "a" }]),
+      "empty values": set("groups", [{ name: "a", values: [] }]),
+      "non-numeric value": set("groups", [{ name: "a", values: ["1"] }]),
+      "histogram from a summary only": set("groups", [
+        { name: "a", summary: { min: 1, q1: 2, median: 3, q3: 4, max: 5 } },
+      ]),
+      "box from bins only": (p) => ({ ...p, variant: "box", groups: [{ name: "a", bins: [{ start: 0, end: 1, count: 2 }] }] }),
+      "unordered summary": (p) => ({
+        ...p,
+        variant: "box",
+        groups: [{ name: "a", summary: { min: 1, q1: 4, median: 3, q3: 4, max: 5 } }],
+      }),
+      "bin with end before start": set("groups", [{ name: "a", bins: [{ start: 2, end: 1, count: 1 }] }]),
+      "overlapping bins": set("groups", [
+        {
+          name: "a",
+          bins: [
+            { start: 0, end: 2, count: 1 },
+            { start: 1, end: 3, count: 1 },
+          ],
+        },
+      ]),
+      "negative bin count": set("groups", [{ name: "a", bins: [{ start: 0, end: 1, count: -1 }] }]),
+      "binCount below 2": set("binCount", 1),
+      "unknown variant": set("variant", "violin"),
+      "marker without label": set("markers", [{ value: 1 }]),
+    },
+    accepts: {
+      "box from a summary": (p) => ({
+        ...p,
+        variant: "box",
+        groups: [{ name: "a", summary: { min: 1, q1: 2, median: 3, q3: 4, max: 5, outliers: [9] } }],
+      }),
+      "histogram from bins": set("groups", [
+        {
+          name: "a",
+          bins: [
+            { start: 0, end: 1, count: 3 },
+            { start: 1, end: 2, count: 0 },
+          ],
+        },
+      ]),
+    },
+  },
+  {
+    name: "timeline",
+    guard: isTimelinePayload,
+    valid: {
+      title: "T",
+      items: [
+        { row: "api", start: "2026-11-01T00:00:00Z", state: "up" },
+        { row: "api", start: "2026-11-01T03:00:00Z", end: "2026-11-01T03:20:00Z", state: "down" },
+      ],
+      states: [
+        { name: "up", tone: "success" },
+        { name: "down", tone: "danger" },
+      ],
+      milestones: [{ at: "2026-11-01T02:00:00Z", label: "Deploy" }],
+      now: "2026-11-01T06:00:00Z",
+    },
+    rejects: {
+      "missing title": omit("title"),
+      "missing items": omit("items"),
+      "empty items": set("items", []),
+      "item missing row": set("items", [{ start: 1 }]),
+      "unparseable date": set("items", [{ row: "a", start: "next tuesday" }]),
+      "end before start": set("items", [{ row: "a", start: 5, end: 2 }]),
+      "mixed time kinds": set("items", [
+        { row: "a", start: 1 },
+        { row: "a", start: "2026-01-01" },
+      ]),
+      "milestone of the other kind": set("milestones", [{ at: 3, label: "x" }]),
+      "unknown tone": set("states", [{ name: "up", tone: "green" }]),
+    },
+    accepts: {
+      "numeric times with a unit": (p) => ({
+        ...p,
+        items: [{ row: "Design", start: 0, end: 3, label: "Wireframes" }],
+        milestones: [{ at: 2, label: "Review", row: "Design" }],
+        now: 1,
+        unit: "week",
+      }),
+      "date-only times": set("items", [{ row: "a", start: "2026-01-05", end: "2026-01-09" }]),
+    },
+  },
+  {
+    name: "dashboard (sections)",
+    guard: isDashboardPayload,
+    valid: {
+      title: "T",
+      source: "Warehouse",
+      asOf: "2026-11-18",
+      note: "Excludes test accounts",
+      tiles: [
+        { type: "stat-panel", payload: { title: "T", items: [{ label: "A", value: 1 }] }, colSpan: 2 },
+        {
+          section: "Traffic",
+          description: "Requests and errors",
+          tiles: [{ type: "line-chart", payload: { title: "T", series: [] }, source: "Prometheus" }],
+        },
+      ],
+    },
+    rejects: {
+      "section without tiles": set("tiles", [{ section: "S", tiles: [] }]),
+      "nested section": set("tiles", [{ section: "S", tiles: [{ section: "Inner", tiles: [] }] }]),
+      "empty section heading": set("tiles", [{ section: "", tiles: [{ type: "table", payload: {} }] }]),
+      "over-long note": set("note", "x".repeat(400)),
+      "non-string source": set("source", 3),
+    },
+    accepts: {
+      "distribution tile": tile("distribution", { title: "T", groups: [] }),
+      "timeline tile": tile("timeline", { title: "T", items: [] }),
+      "unknown type inside a section": set("tiles", [{ section: "S", tiles: [{ type: "future-widget", payload: {} }] }]),
     },
   },
   {

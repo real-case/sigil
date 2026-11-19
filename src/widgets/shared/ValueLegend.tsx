@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 export interface ValueLegendRange {
   /** Left edge of the min→max span, 0–100. */
@@ -24,6 +24,9 @@ export interface ValueLegendItem {
   lead?: string;
   /** A short marker after the value, e.g. a rank move "▲ 3". */
   note?: ValueLegendNote;
+  /** Drawn in place of the colour swatch: a marker shape or line pattern, so
+   *  the key shows the same secondary encoding as the marks. */
+  glyph?: ReactNode;
 }
 
 export interface ValueLegendNote {
@@ -84,6 +87,10 @@ export function ValueLegend({
           <>
               {item.lead !== undefined ? (
                 <span className="sigil-leg-lead">{item.lead}</span>
+              ) : item.glyph !== undefined ? (
+                <span className="sigil-leg-sw sigil-leg-sw--glyph" aria-hidden="true">
+                  {item.glyph}
+                </span>
               ) : (
                 <span className="sigil-leg-sw" aria-hidden="true" />
               )}

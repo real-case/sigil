@@ -20,3 +20,4 @@ export const Large: Story = { args: { payload: payloadById(scatterDatasets, "sca
 export const Negatives: Story = { args: { payload: payloadById(scatterDatasets, "scatter-negatives") } };
 export const MultiSeries: Story = { args: { payload: payloadById(scatterDatasets, "scatter-multi-series") } };
 export const Reference: Story = { args: { payload: payloadById(scatterDatasets, "scatter-reference") } };
+export const MarkerShapes: Story = { args: { payload: payloadById(scatterDatasets, "scatter-shapes") } };

@@ -193,4 +193,19 @@ export const statPanelDatasets: Dataset<StatPanelPayload>[] = [
       ],
     },
   },
+  {
+    id: "stat-shared-trends",
+    label: "Multi-series — one measure per region, shared trend scale",
+    category: "multiSeries",
+    payload: {
+      title: "Revenue by region, last 12 weeks",
+      trendScale: "shared",
+      items: [
+        { label: "North America", value: 482, unit: "$K", delta: 6.1, trend: [400, 410, 415, 430, 428, 440, 452, 460, 455, 470, 476, 482] },
+        { label: "Europe", value: 311, unit: "$K", delta: 3.4, trend: [280, 284, 290, 288, 295, 298, 301, 300, 305, 308, 309, 311] },
+        { label: "Asia-Pacific", value: 164, unit: "$K", delta: 12.8, trend: [110, 115, 118, 124, 130, 133, 140, 144, 150, 155, 160, 164] },
+        { label: "LatAm", value: 58, unit: "$K", delta: -2.2, trend: [62, 61, 60, 61, 59, 60, 58, 59, 57, 58, 59, 58] },
+      ],
+    },
+  },
 ];

@@ -97,7 +97,7 @@ describe("published server dependencies", () => {
     // moved into one shared module and took the count with them.
     const walked = [...visited].map((f) => relative(REPO_ROOT, f));
     const toolModules = walked.filter((f) => f.startsWith("src/tools/"));
-    expect(toolModules.length, `only walked: ${walked.join(", ")}`).toBe(14);
+    expect(toolModules.length, `only walked: ${walked.join(", ")}`).toBe(16);
   });
 
   it("declares every package the server bundle imports", () => {

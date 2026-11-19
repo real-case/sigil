@@ -78,6 +78,14 @@ const TOOL_ARGS: Record<string, Record<string, unknown>> = {
     variant: "bullet",
     items: [{ label: "Revenue", value: 8, target: 10 }],
   },
+  render_distribution: {
+    title: "E2E distribution",
+    groups: [{ name: "Latency", values: [120, 140, 180, 900] }],
+  },
+  render_timeline: {
+    title: "E2E timeline",
+    items: [{ row: "Build", start: "2026-11-01", end: "2026-11-04" }],
+  },
 };
 
 let client!: Client;

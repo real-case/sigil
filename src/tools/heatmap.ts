@@ -12,6 +12,7 @@ const description = [
   "By default a sequential single-hue scale runs light (low) to dark (high).",
   "For values with a meaningful centre (change vs target, growth, correlation), set scale 'diverging' and, if the centre is not 0, midpoint.",
   "For retention or cohort tables (signup month × months since signup), set mode 'cohort': cells are percentages, cohortSizes weights the average row, and periods a cohort has not reached are simply omitted.",
+  "For one value per day over weeks to years (daily commits, orders, incidents, sign-ins), set mode 'calendar' and pass `days` as { date: 'YYYY-MM-DD', value } instead of the matrix fields.",
 ].join(" ");
 
 export function registerHeatmapTool(server: McpServer) {
@@ -25,7 +26,8 @@ export function registerHeatmapTool(server: McpServer) {
       _meta: { ui: { resourceUri: HEATMAP_UI_URI } },
     },
     async (args) => {
-      // `.shape` cannot carry the cross-field rule (one cohort size per row),
+      // `.shape` cannot carry the cross-field rules (one cohort size per row,
+      // matrix fields versus calendar days),
       // so the handler runs the whole schema and names the rule on failure.
       const checked = heatmapSchema.safeParse(args);
       if (!checked.success) throw new Error(z.prettifyError(checked.error));
@@ -41,6 +43,9 @@ export function registerHeatmapTool(server: McpServer) {
         midpoint: args.midpoint,
         mode: args.mode,
         cohortSizes: args.cohortSizes,
+        days: args.days,
+        weekStart: args.weekStart,
+        valueLabel: args.valueLabel,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],

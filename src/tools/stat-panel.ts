@@ -10,6 +10,8 @@ const description = [
   "Each card shows a headline value with an optional unit, a trend delta vs a",
   "prior period (coloured good/bad), a short description, and a status accent.",
   "Use for dashboards-at-a-glance: KPIs, health summaries, before/after numbers.",
+  "When every card is the same measure split by a dimension (revenue per region),",
+  "set trendScale 'shared' so the sparklines compare as small multiples.",
   "For comparing many categories use render_bar_chart; for trends over time use",
   "render_line_chart.",
 ].join(" ");
@@ -29,6 +31,7 @@ export function registerStatPanelTool(server: McpServer) {
         title: args.title,
         items: args.items,
         columns: args.columns,
+        trendScale: args.trendScale,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],

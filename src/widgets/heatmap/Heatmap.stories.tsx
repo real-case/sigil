@@ -20,3 +20,5 @@ export const Large: Story = { args: { payload: payloadById(heatmapDatasets, "hea
 export const EdgeLongLabels: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-edge-labels") } };
 export const CohortRetention: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-cohort-retention") } };
 export const CohortNetRevenue: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-cohort-nrr") } };
+export const CalendarYear: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-calendar-year") } };
+export const CalendarDivergingGaps: Story = { args: { payload: payloadById(heatmapDatasets, "heatmap-calendar-gaps") } };

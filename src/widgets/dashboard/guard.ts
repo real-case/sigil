@@ -10,20 +10,15 @@
 // drifted two entries behind the registry, and rejected every dashboard holding
 // a sankey or map tile.
 //
-// Only `type` is relaxed; the rest of the tile still goes through the schema,
-// so colSpan bounds and the payload's shape are checked exactly as the tool
+// Only `type` is relaxed; the rest of the tile — and of every section — still
+// goes through the same schema builder the tool uses, so colSpan bounds,
+// provenance and the one-level section rule are checked exactly as the tool
 // checks them.
 import type { DashboardPayload } from "../../shared/payloads.js";
-import { dashboardSchema } from "../../shared/schemas.js";
+import { dashboardSchemaFor } from "../../shared/schemas.js";
 import { z } from "zod";
 
-const anyTileType = dashboardSchema.shape.tiles.element.extend({
-  type: z.string().min(1),
-});
-
-const permissiveSchema = dashboardSchema.extend({
-  tiles: z.array(anyTileType).min(1),
-});
+const permissiveSchema = dashboardSchemaFor(z.string().min(1));
 
 export function isDashboardPayload(value: unknown): value is DashboardPayload {
   return permissiveSchema.safeParse(value).success;

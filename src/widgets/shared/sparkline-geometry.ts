@@ -51,11 +51,13 @@ export interface SparkBox {
 export function sparkPoints(
   values: readonly number[],
   box: SparkBox,
+  /** A range shared with other sparklines (small multiples); defaults to the series' own. */
+  domain?: { readonly min: number; readonly max: number },
 ): readonly SparkPoint[] {
   if (values.length < 2) return [];
 
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const min = domain ? Math.min(domain.min, ...values) : Math.min(...values);
+  const max = domain ? Math.max(domain.max, ...values) : Math.max(...values);
   const range = max - min;
   const n = values.length;
 

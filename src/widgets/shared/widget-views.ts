@@ -22,6 +22,10 @@ import { MapView } from "../map/MapView.js";
 import { isMapPayload } from "../map/guard.js";
 import { FunnelView } from "../funnel/FunnelView.js";
 import { isFunnelPayload } from "../funnel/guard.js";
+import { DistributionView } from "../distribution/DistributionView.js";
+import { isDistributionPayload } from "../distribution/guard.js";
+import { TimelineView } from "../timeline/TimelineView.js";
+import { isTimelinePayload } from "../timeline/guard.js";
 import { InfoCardView } from "../info-card/InfoCardView.js";
 import { isInfoCardPayload } from "../info-card/guard.js";
 
@@ -56,6 +60,8 @@ export const WIDGET_VIEWS: Record<DashboardTileType, WidgetViewEntry> = {
   map: { View: MapView as unknown as AnyView, isPayload: isMapPayload },
   funnel: { View: FunnelView as unknown as AnyView, isPayload: isFunnelPayload },
   "info-card": { View: InfoCardView as unknown as AnyView, isPayload: isInfoCardPayload },
+  distribution: { View: DistributionView as unknown as AnyView, isPayload: isDistributionPayload },
+  timeline: { View: TimelineView as unknown as AnyView, isPayload: isTimelinePayload },
 };
 
 /**

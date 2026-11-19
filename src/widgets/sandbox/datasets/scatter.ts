@@ -125,4 +125,22 @@ export const scatterDatasets: Dataset<ScatterChartPayload>[] = [
       ],
     },
   },
+  {
+    id: "scatter-shapes",
+    label: "Multi-series — 5 series with marker shapes",
+    category: "multiSeries",
+    payload: {
+      title: "Price vs rating by category",
+      xlabel: "Price ($)",
+      ylabel: "Rating",
+      shapes: true,
+      series: ["Books", "Games", "Tools", "Music", "Toys"].map((name, s) => ({
+        name,
+        data: range(14).map((i) => ({
+          x: Math.round(20 + s * 18 + (det(110 + s, i) - 0.5) * 30),
+          y: Math.round((3.2 + (s % 3) * 0.45 + (det(111 + s, i) - 0.5) * 1.6) * 10) / 10,
+        })),
+      })),
+    },
+  },
 ];

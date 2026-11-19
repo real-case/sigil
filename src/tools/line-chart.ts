@@ -11,6 +11,7 @@ const description = [
   "Supports multiple series overlay with a shared crosshair tooltip that reveals all values at the hovered x.",
   "To compare with a previous period (last month, last year, plan), give the series a `compare` baseline instead of a second series: it draws as a faint dashed line and the tooltip shows the change.",
   "Add `reference` for targets and thresholds, `annotations` to mark events (releases, incidents), and `partialFrom` when the latest period is still incomplete.",
+  "With many series, set `patterns` to add a dash pattern per series, or `facet` to draw small multiples — one small panel per series on shared scales — instead of a tangle of crossing lines.",
   "For discrete category comparison, use render_bar_chart.",
   "For part-of-whole proportions, use render_pie_chart.",
 ].join(" ");
@@ -35,6 +36,8 @@ export function registerLineChartTool(server: McpServer) {
         reference: args.reference,
         annotations: args.annotations,
         partialFrom: args.partialFrom,
+        patterns: args.patterns,
+        facet: args.facet,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],

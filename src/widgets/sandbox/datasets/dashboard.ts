@@ -9,6 +9,11 @@ import { statPanelDatasets } from "./stat-panel.js";
 import { tableDatasets } from "./table.js";
 import { mapDatasets } from "./map.js";
 import { sankeyDatasets } from "./sankey.js";
+import { heatmapDatasets } from "./heatmap.js";
+import { funnelDatasets } from "./funnel.js";
+import { distributionDatasets } from "./distribution.js";
+import { timelineDatasets } from "./timeline.js";
+import { infoCardDatasets } from "./info-card.js";
 
 // Dashboard presets reuse other widgets' catalog payloads verbatim, so a tile
 // renders exactly like that widget's own story. The one exception is
@@ -128,6 +133,74 @@ export const dashboardDatasets: Dataset<DashboardPayload>[] = [
         { type: "line-chart", payload: payloadById(lineDatasets, "line-small-categorical") },
         // Dashboards are deliberately not tileable; distinct copy from "unknown".
         { type: "dashboard", payload: { title: "Inner", tiles: [] } },
+      ],
+    },
+  },
+  {
+    id: "dashboard-red-sections",
+    label: "Sections — service health (RED template) with provenance",
+    category: "nested",
+    payload: {
+      title: "Checkout service health",
+      columns: 3,
+      source: "Prometheus, prod-eu",
+      asOf: "Nov 18, 23:59 UTC",
+      note: "Synthetic checks excluded.",
+      tiles: [
+        {
+          section: "Overview",
+          tiles: [
+            {
+              type: "stat-panel",
+              colSpan: 3,
+              payload: {
+                title: "Rate, errors, duration",
+                items: [
+                  { label: "Request rate", value: 1_284, unit: "req/s", delta: 4.2, trend: [1100, 1150, 1210, 1190, 1240, 1284] },
+                  { label: "Error rate", value: 0.42, unit: "%", delta: 0.11, deltaUnit: "pp", higherIsBetter: false, status: "warning", trend: [0.2, 0.25, 0.3, 0.6, 0.5, 0.42] },
+                  { label: "p95 latency", value: 312, unit: "ms", delta: -3.5, higherIsBetter: false, trend: [340, 330, 335, 320, 318, 312] },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          section: "Latency",
+          description: "Where response times sit, and when the service was degraded.",
+          tiles: [
+            { type: "distribution", payload: payloadById(distributionDatasets, "distribution-latency"), colSpan: 2, note: "One request per sample." },
+            { type: "info-card", payload: payloadById(infoCardDatasets, "info-card-gauge") },
+            { type: "timeline", payload: payloadById(timelineDatasets, "timeline-state"), colSpan: 3, source: "Status page" },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "dashboard-product-template",
+    label: "Sections — product analytics template (KPI → trend → funnel → retention)",
+    category: "multiSeries",
+    payload: {
+      title: "Product analytics, October",
+      columns: 2,
+      source: "Amplitude export",
+      asOf: "2026-11-01",
+      tiles: [
+        {
+          section: "Engagement",
+          tiles: [
+            { type: "stat-panel", payload: payloadById(statPanelDatasets, "stat-small"), colSpan: 2 },
+            { type: "line-chart", payload: payloadById(lineDatasets, "line-reference-annotations"), colSpan: 2 },
+          ],
+        },
+        {
+          section: "Conversion and retention",
+          tiles: [
+            { type: "funnel", payload: payloadById(funnelDatasets, "funnel-small") },
+            { type: "heatmap", payload: payloadById(heatmapDatasets, "heatmap-cohort-retention"), note: "Paid plans only." },
+            { type: "heatmap", payload: payloadById(heatmapDatasets, "heatmap-calendar-year"), colSpan: 2 },
+          ],
+        },
       ],
     },
   },
