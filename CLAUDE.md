@@ -67,4 +67,6 @@ npm run lint         # biome lint (correctness/suspicious/performance only — s
 npm run lint:fix     # same, applying the safe fixes
 npm run build        # bundle widgets + compile server
 npm run build:storybook  # static catalog to storybook-static/ (gitignored)
+npm run dev:site     # project website (sigil.live, src/site) — live widgets on sandbox datasets
+npm run build:site   # static site to dist-site/ (gitignored); Vercel runs this via vercel.json
 ```

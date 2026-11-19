@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sigil — live chart widgets for Claude and MCP Apps hosts</title>
+    <meta
+      name="description"
+      content="Sigil is an MCP Apps server that renders live, interactive charts inline in Claude, VS Code Copilot and other MCP hosts — hover, click, copy as CSV or PNG, light and dark themes."
+    />
+    <meta property="og:title" content="Sigil — live chart widgets for MCP Apps hosts" />
+    <meta
+      property="og:description"
+      content="Charts you can hover, click and copy, rendered right inside the conversation instead of a flat PNG."
+    />
+    <meta property="og:url" content="https://sigil.live" />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#FAFAFB" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#131418" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // Apply the saved theme before first paint so a dark-mode visitor never
+      // sees a white flash. Mirrors THEME_KEY in Site.tsx.
+      try {
+        const t = localStorage.getItem("sigil-site-theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.sigilTheme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

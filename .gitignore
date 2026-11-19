@@ -26,3 +26,6 @@ ds-bundle/
 .design-sync/learnings/
 .design-sync/.cache/
 .design-sync/node_modules
+
+# Project website build (npm run build:site)
+dist-site/
