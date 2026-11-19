@@ -12,13 +12,13 @@ Every widget renders entirely from a single token set, `ChartDesignTokens`
 (`src/widgets/shared/theme.ts`). Two instances exist — `light` and `dark` — and
 they are emitted to the document as CSS custom properties (`--sigil-*`). Widgets
 never hard-code colors; they read these variables, which is what lets a single
-View adapt to both themes and to the host's `prefers-color-scheme`.
+View adapt to both themes — chosen by the host's theme, else the OS `prefers-color-scheme`.
 
 This page is the live reference for the palette. It draws directly from the same
 `light` / `dark` token objects the widgets use, so it can never drift from
 production.
 
-export const Swatches = ({ colors }) => (
+export const Swatches = ({ colors, prefix = "series" }) => (
   <div style={{ display: "flex", flexWrap: "wrap", gap: 12, margin: "12px 0" }}>
     {colors.map((c, i) => (
       <div key={i} style={{ width: 132 }}>
@@ -30,7 +30,7 @@ export const Swatches = ({ colors }) => (
             border: "1px solid rgba(128,128,128,0.25)",
           }}
         />
-        <div style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>series-{i}</div>
+        <div style={{ fontSize: 11, marginTop: 4, opacity: 0.7 }}>{prefix}-{i}</div>
         <code style={{ fontSize: 10, wordBreak: "break-all" }}>{c}</code>
       </div>
     ))}
@@ -61,6 +61,12 @@ export const Tokens = ({ rows }) => (
 The categorical series colors, in order. They are authored in OKLCH so lightness
 stays perceptually even across hues, and each theme has its own tuned set.
 
+The order is load-bearing: neighbouring slots stay at least 15 ΔE (OKLab ×100)
+apart under protanopia and deuteranopia in both themes, and
+`src/__tests__/palette.test.ts` fails if an edit breaks that. Only `series-0`
+to `series-7` are handed out; a ninth bar, line or scatter series takes the
+neutral `text-muted`, while pie, treemap and sankey repeat the eight.
+
 **Light**
 
 <Swatches colors={light.series} />
@@ -68,6 +74,23 @@ stays perceptually even across hues, and each theme has its own tuned set.
 **Dark**
 
 <Swatches colors={dark.series} />
+
+## Sequential and diverging scales
+
+Heatmap cells and choropleth regions take their colour from explicit steps,
+not from an alpha over a series hue. The dark theme inverts the anchor: small
+values sink into the background, large ones come forward. The diverging scale
+(`scale: "diverging"`) puts its neutral step at `midpoint` (default 0).
+
+**Sequential — light / dark**
+
+<Swatches colors={light.sequential} prefix="seq" />
+<Swatches colors={dark.sequential} prefix="seq" />
+
+**Diverging — light / dark**
+
+<Swatches colors={light.diverging} prefix="div" />
+<Swatches colors={dark.diverging} prefix="div" />
 
 ## Surfaces & text (light)
 

@@ -8,7 +8,7 @@ import type {
 import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { EmptyState } from "../shared/EmptyState.js";
-import { ColorScaleLegend, intensityAlpha } from "../shared/color-scale.js";
+import { ColorScaleLegend, colorScale } from "../shared/color-scale.js";
 import { useRovingFocus } from "../shared/roving-focus.js";
 import { chartLabel, countOf } from "../shared/chart-label.js";
 import { toCsv, copyText, copySvgAsPng, type CsvCell } from "../shared/export-utils.js";
@@ -232,16 +232,20 @@ export function MapView({ payload }: { payload: MapPayload }) {
   }
 
   const seriesHue = tokens.series[0]!;
-  // No-data land: a neutral tint that reads as land over the widget background,
-  // and the base that choropleth fills composite the series hue over.
+  // No-data land: a neutral tint that reads as land over the widget background.
   const land = `color-mix(in oklab, ${tokens.texts.muted} 16%, ${tokens.surfaces.bg})`;
   const ocean = tokens.surfaces.bg;
 
+  const colorAt = colorScale(tokens, {
+    kind: payload.scale,
+    min: resolved.min,
+    max: resolved.max,
+    midpoint: payload.midpoint,
+  });
+
   const fillFor = (f: RegionFeature): string => {
     const value = resolved.byFeature.get(f);
-    if (value === undefined) return land;
-    const alpha = intensityAlpha(value, resolved.min, resolved.max);
-    return `color-mix(in oklab, ${seriesHue} ${(alpha * 100).toFixed(1)}%, ${land})`;
+    return value === undefined ? land : colorAt(value);
   };
 
   const radiusFor = (v: number): number => {
@@ -443,9 +447,9 @@ export function MapView({ payload }: { payload: MapPayload }) {
                 <ColorScaleLegend
                   min={resolved.min}
                   max={resolved.max}
-                  hue={seriesHue}
+                  colorAt={colorAt}
+                  midpoint={payload.scale === "diverging" ? (payload.midpoint ?? 0) : undefined}
                   tokens={tokens}
-                  baseColor={land}
                 />
               ))}
 

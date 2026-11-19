@@ -7,7 +7,7 @@ import {
   type SankeyLinkProps,
 } from "recharts";
 import type { SankeyPayload } from "../../shared/payloads.js";
-import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { useTheme, type ChartDesignTokens, seriesColor } from "../shared/theme.js";
 import { ChartHeader } from "../shared/ChartHeader.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip, type TooltipRow } from "../shared/SigilTooltip.js";
@@ -124,7 +124,7 @@ function buildGraph(payload: SankeyPayload, tokens: ChartDesignTokens): GraphRes
   }
 
   const colors = names.map(
-    (name, i) => colorByName.get(name) ?? tokens.series[i % tokens.series.length]!,
+    (name, i) => colorByName.get(name) ?? seriesColor(tokens, i, "cycle"),
   );
 
   const hasIncoming = new Set(links.map((l) => l.target));

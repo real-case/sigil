@@ -189,7 +189,7 @@ Render an interactive treemap for hierarchical part-of-whole data with many leav
 
 ### `render_heatmap`
 
-Render an interactive heatmap matrix: a 2D grid where each cell's color encodes a numeric intensity. The cell color scales linearly from the surface background (low) to the primary palette accent (high), so the same gradient adapts cleanly to dark and light themes.
+Render an interactive heatmap matrix: a 2D grid where each cell's color encodes a numeric intensity. By default the color follows a sequential single-hue ramp (light → dark for low → high; the dark theme inverts it so large values come forward). For values with a meaningful centre — change vs plan, growth rates, correlations — `scale: "diverging"` colours below `midpoint` blue and above it orange, with a neutral grey at the midpoint itself.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -199,6 +199,8 @@ Render an interactive heatmap matrix: a 2D grid where each cell's color encodes 
 | `cells` | `Array<{ x, y, value }>` | yes | `x` indexes `xLabels`, `y` indexes `yLabels`, `value` is the cell intensity. Missing combinations render as empty cells. |
 | `xlabel` | `string` | no | X-axis title |
 | `ylabel` | `string` | no | Y-axis title |
+| `scale` | `"sequential" \| "diverging"` | no | Colour scale. Defaults to `"sequential"` |
+| `midpoint` | `number` | no | Diverging only: the value shown as neutral (default `0`). The farther side sets the extremes; the nearer side is not stretched |
 
 ### `render_stat_panel`
 
@@ -271,6 +273,8 @@ Render an interactive map with two encodings: a **choropleth** (regions shaded b
 | `points[].value` | `number` | yes | Non-negative magnitude; marker **area** scales with it |
 | `points[].label` | `string` | no | Label shown in the tooltip |
 | `valueLabel` | `string` | no | Label for the value in the tooltip and legend, e.g. `"GDP per capita"` |
+| `scale` | `"sequential" \| "diverging"` | no | Choropleth colour scale, as for `render_heatmap`. Defaults to `"sequential"` |
+| `midpoint` | `number` | no | Diverging only: the neutral value (default `0`) |
 
 Geometry is the bundled [world-atlas](https://github.com/topojson/world-atlas) / [us-atlas](https://github.com/topojson/us-atlas) TopoJSON, projected with `d3-geo` (Natural Earth for the world, Albers USA for states). Choropleth uses the heatmap colour scale; bubbles are area-proportional with a size legend. Both adapt to dark/light themes. Regions with no matching datum stay a neutral land colour; unmatched ids (or points that fall off the map) are reported below it.
 

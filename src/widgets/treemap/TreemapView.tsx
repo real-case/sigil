@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
 import type { TreemapPayload, TreemapNode } from "../../shared/payloads.js";
-import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { useTheme, type ChartDesignTokens, seriesColor } from "../shared/theme.js";
 import { useRovingFocus, type RovingFocus } from "../shared/roving-focus.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
@@ -32,7 +32,7 @@ function toRechartsTree(
   return nodes.map((node, i) => {
     const paletteIndex = inheritedIndex ?? i;
     const baseHue =
-      node.color ?? tokens.series[paletteIndex % tokens.series.length]!;
+      node.color ?? seriesColor(tokens, paletteIndex, "cycle");
     // Nested leaves share their group's hue; shade siblings along a tonal
     // family so adjacent tiles of the same group stay distinguishable.
     const isNestedLeaf =

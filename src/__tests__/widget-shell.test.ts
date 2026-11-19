@@ -13,7 +13,7 @@
 // so containment is not provable by server rendering.
 
 import { describe, it, expect } from "vitest";
-import { extractPayload } from "../widgets/shared/widget-shell.js";
+import { extractPayload, hostThemeFrom } from "../widgets/shared/widget-shell.js";
 import { isTreemapPayload } from "../widgets/treemap/guard.js";
 import type { TreemapPayload } from "../shared/payloads.js";
 
@@ -67,5 +67,23 @@ describe("extractPayload", () => {
         isTreemapPayload,
       ),
     ).toEqual(valid);
+  });
+});
+
+describe("hostThemeFrom", () => {
+  it("takes the host's light or dark theme", () => {
+    expect(hostThemeFrom({ theme: "dark" })).toBe("dark");
+    expect(hostThemeFrom({ theme: "light" })).toBe("light");
+  });
+
+  it("reads a context without a theme as 'unchanged', not as light", () => {
+    // hostcontextchanged carries only the fields that changed.
+    expect(hostThemeFrom({})).toBeNull();
+    expect(hostThemeFrom(undefined)).toBeNull();
+    expect(hostThemeFrom(null)).toBeNull();
+  });
+
+  it("ignores values outside the spec", () => {
+    expect(hostThemeFrom({ theme: "sepia" as never })).toBeNull();
   });
 });

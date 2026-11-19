@@ -8,8 +8,8 @@ export const HEATMAP_UI_URI = "ui://sigil/heatmap";
 const description = [
   "Render an interactive heatmap matrix: a 2D grid where each cell's color encodes a numeric intensity.",
   "Use for two categorical axes plus one metric — correlation matrices, day-of-week × hour-of-day activity, confusion matrices, A/B test results across segments.",
-  "Cells in the lower range stay near the surface color; cells near the maximum saturate toward the primary palette color.",
-  "Negative and positive values are supported — any range works.",
+  "By default a sequential single-hue scale runs light (low) to dark (high).",
+  "For values with a meaningful centre (change vs target, growth, correlation), set scale 'diverging' and, if the centre is not 0, midpoint.",
 ].join(" ");
 
 export function registerHeatmapTool(server: McpServer) {
@@ -30,6 +30,8 @@ export function registerHeatmapTool(server: McpServer) {
         cells: args.cells,
         xlabel: args.xlabel,
         ylabel: args.ylabel,
+        scale: args.scale,
+        midpoint: args.midpoint,
       };
       return {
         content: [{ type: "text", text: JSON.stringify(payload) }],

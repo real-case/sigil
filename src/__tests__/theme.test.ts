@@ -1,9 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { renderThemeCss, light, dark } from "../widgets/shared/theme.js";
+import {
+  renderThemeCss,
+  renderForcedThemeCss,
+  light,
+  dark,
+} from "../widgets/shared/theme.js";
 
 const EXPECTED_VARS = [
   // Series palette
   ...Array.from({ length: 10 }, (_, i) => `--sigil-series-${i}`),
+
+  // Sequential (7) + diverging (9) scales
+  ...Array.from({ length: 7 }, (_, i) => `--sigil-seq-${i}`),
+  ...Array.from({ length: 9 }, (_, i) => `--sigil-div-${i}`),
 
   // Surfaces
   "--sigil-bg",
@@ -117,6 +126,26 @@ describe("theme token surface", () => {
   it("emits :root and @media prefers-color-scheme blocks", () => {
     expect(css).toContain(":root {");
     expect(css).toContain("@media (prefers-color-scheme: dark)");
+  });
+
+  it("lets the host theme (data-theme) override the OS preference", () => {
+    const media = css.indexOf("@media (prefers-color-scheme: dark)");
+    const hostLight = css.indexOf(':root[data-theme="light"] {');
+    const hostDark = css.indexOf(':root[data-theme="dark"] {');
+    expect(hostLight).toBeGreaterThan(media);
+    expect(hostDark).toBeGreaterThan(media);
+    const darkBlock = css.slice(hostDark);
+    expect(darkBlock).toContain(`--sigil-bg: ${dark.surfaces.bg};`);
+    const lightBlock = css.slice(hostLight, hostDark);
+    expect(lightBlock).toContain(`--sigil-bg: ${light.surfaces.bg};`);
+  });
+
+  it("keeps the dev override (data-sigil-theme) above the host theme", () => {
+    // html:root[…] is (0,2,1); :root[data-theme] is (0,2,0). The override must
+    // win whichever stylesheet the document happens to load last.
+    const forced = renderForcedThemeCss();
+    expect(forced).toContain('html:root[data-sigil-theme="light"] {');
+    expect(forced).toContain('html:root[data-sigil-theme="dark"] {');
   });
 
   for (const name of EXPECTED_VARS) {

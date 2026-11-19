@@ -95,13 +95,14 @@ export const mapDatasets: Dataset<MapPayload>[] = [
   },
   {
     id: "map-negatives",
-    label: "Negatives — temperature anomaly",
+    label: "Negatives — temperature anomaly (diverging)",
     category: "negatives",
     payload: {
       title: "Avg. temperature anomaly vs 1990",
       scope: "world",
       variant: "choropleth",
       valueLabel: "°C",
+      scale: "diverging",
       data: [
         { id: "RUS", value: 2.4 }, { id: "CAN", value: 1.9 }, { id: "USA", value: 1.4 },
         { id: "BRA", value: 0.8 }, { id: "AUS", value: 1.1 }, { id: "IND", value: 0.9 },

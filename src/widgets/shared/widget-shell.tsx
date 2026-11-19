@@ -1,7 +1,11 @@
-import { useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
-import { useApp } from "@modelcontextprotocol/ext-apps/react";
-import { installThemeStyles } from "./theme.js";
+import {
+  applyDocumentTheme,
+  useApp,
+  type McpUiHostContext,
+} from "@modelcontextprotocol/ext-apps/react";
+import { installThemeStyles, type ThemeName } from "./theme.js";
 import { LoadingSkeleton, type LoadingVariant } from "./LoadingSkeleton.js";
 import { EmptyState } from "./EmptyState.js";
 import "./styles.css";
@@ -66,6 +70,32 @@ export function extractPayload<P>(
   return null;
 }
 
+/**
+ * The theme a host context asks for, or null when it does not say. Hosts send
+ * the full context on connect and a partial one on every change, so a context
+ * without `theme` means "unchanged", not "light".
+ */
+export function hostThemeFrom(
+  ctx: Pick<McpUiHostContext, "theme"> | undefined | null,
+): ThemeName | null {
+  const theme = ctx?.theme;
+  return theme === "dark" || theme === "light" ? theme : null;
+}
+
+/**
+ * Follow the host's theme rather than only the OS one: a user can run Claude
+ * dark on a light OS. applyDocumentTheme sets `data-theme` on `<html>`, which
+ * the `:root[data-theme=…]` blocks from renderThemeCss() and the observer in
+ * useTheme() both answer to. Colours and surfaces are deliberately *not* taken
+ * from the host's style variables: the palette is validated against Sigil's own
+ * backgrounds (src/__tests__/palette.test.ts), and a foreign background would
+ * void those contrast guarantees.
+ */
+function syncHostTheme(ctx: Pick<McpUiHostContext, "theme"> | undefined | null): void {
+  const theme = hostThemeFrom(ctx);
+  if (theme) applyDocumentTheme(theme);
+}
+
 function ShellFrame({ children }: { children: React.ReactNode }) {
   return <div className="sigil-root">{children}</div>;
 }
@@ -80,10 +110,11 @@ export function mountWidget<P>(opts: MountWidgetOptions<P>): void {
     const [payload, setPayload] = useState<P | null>(null);
     const [parseError, setParseError] = useState<string | null>(null);
 
-    const { isConnected, error } = useApp({
+    const { app, isConnected, error } = useApp({
       appInfo: { name, version: WIDGET_VERSION },
       capabilities: {},
       onAppCreated: (app) => {
+        app.addEventListener("hostcontextchanged", syncHostTheme);
         app.ontoolresult = (params) => {
           if (params.isError) {
             setParseError("Server reported an error while preparing data.");
@@ -99,6 +130,12 @@ export function mountWidget<P>(opts: MountWidgetOptions<P>): void {
         };
       },
     });
+
+    // The initial context arrives with the connect handshake, not as a
+    // hostcontextchanged notification.
+    useEffect(() => {
+      if (isConnected && app) syncHostTheme(app.getHostContext());
+    }, [app, isConnected]);
 
     if (error) {
       return (

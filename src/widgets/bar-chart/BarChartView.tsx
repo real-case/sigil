@@ -13,7 +13,7 @@ import {
   useActiveTooltipDataPoints,
 } from "recharts";
 import type { BarChartPayload, BarDatum } from "../../shared/payloads.js";
-import { useTheme, type ChartDesignTokens } from "../shared/theme.js";
+import { useTheme, type ChartDesignTokens, seriesColor } from "../shared/theme.js";
 import { ChartHeader } from "../shared/ChartHeader.js";
 import { Toolbar, ToolbarButton, CsvIcon, PngIcon } from "../shared/Toolbar.js";
 import { SigilTooltip } from "../shared/SigilTooltip.js";
@@ -62,7 +62,7 @@ function colorFor(
   index: number,
   tokens: ChartDesignTokens,
 ): string {
-  return datum.color ?? tokens.series[index % tokens.series.length]!;
+  return datum.color ?? seriesColor(tokens, index);
 }
 
 /**

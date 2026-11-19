@@ -11,23 +11,37 @@ values those properties hold.
 
 ## How a theme is selected
 
-There are two selection paths, both emitted as CSS by `theme.ts`:
+There are three selection paths, in priority order, all emitted as CSS by
+`theme.ts` and mirrored by `useTheme()` for the tokens charts read in JS:
 
-1. **Production — follow the host.** `installThemeStyles()` injects
-   `renderThemeCss()`, which sets the light tokens under `:root` and overrides
-   them under `@media (prefers-color-scheme: dark)`. Production widgets therefore
-   match the host's appearance automatically; they never force a theme.
-
-2. **Dev / catalog — force a theme.** `renderForcedThemeCss()` emits the same
-   tokens keyed off an attribute instead:
+1. **Dev / catalog — force a theme.** `renderForcedThemeCss()` emits the
+   tokens keyed off an attribute:
 
    ```css
-   :root[data-sigil-theme="light"] { /* light tokens */ }
-   :root[data-sigil-theme="dark"]  { /* dark tokens  */ }
+   html:root[data-sigil-theme="light"] { /* light tokens */ }
+   html:root[data-sigil-theme="dark"]  { /* dark tokens  */ }
    ```
 
-   Setting `data-sigil-theme="dark"` on the document overrides
-   `prefers-color-scheme`. This is exactly what the toolbar toggle drives.
+   Setting `data-sigil-theme="dark"` on the document overrides everything
+   below. This is exactly what the toolbar toggle drives. The `html:root`
+   selector keeps it above path 2 regardless of stylesheet order.
+
+2. **Production — follow the host.** An MCP Apps host reports its theme in the
+   host context. `widget-shell` reads it on connect and on every
+   `hostcontextchanged` notification and calls `applyDocumentTheme`, which sets
+   `data-theme` on `<html>`. `renderThemeCss()` answers with
+   `:root[data-theme="light"]` / `:root[data-theme="dark"]` blocks, and
+   `useTheme()` watches the attribute. So Claude in dark mode on a light OS
+   renders dark widgets.
+
+3. **Fallback — follow the OS.** With no host theme, `renderThemeCss()` sets
+   the light tokens under `:root` and overrides them under
+   `@media (prefers-color-scheme: dark)`.
+
+Only the theme *name* is taken from the host. Its colour and surface variables
+are not: Sigil's palette is validated against Sigil's own backgrounds
+(`src/__tests__/palette.test.ts`), and a foreign background would void those
+contrast guarantees.
 
 ## How the toolbar toggle works
 

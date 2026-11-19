@@ -99,4 +99,21 @@ export const heatmapDatasets: Dataset<HeatmapPayload>[] = [
       cells: denseGrid(84, 5, 6),
     },
   },
+  {
+    id: "heatmap-diverging",
+    label: "Negatives — diverging, % vs plan",
+    category: "negatives",
+    payload: {
+      title: "Revenue vs plan by region and month (%)",
+      xlabel: "Month",
+      ylabel: "Region",
+      xLabels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+      yLabels: ["North", "South", "East", "West", "Central"],
+      // Asymmetric on purpose (−12 … +28): the short negative arm must stay
+      // short instead of stretching to the darkest blue.
+      cells: denseGrid(31, 6, 5).map((c) => ({ ...c, value: Math.round(c.value * 0.4 - 12) })),
+      scale: "diverging",
+      midpoint: 0,
+    },
+  },
 ];

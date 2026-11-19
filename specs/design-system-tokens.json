@@ -26,7 +26,7 @@
     "text": {
       "text":           { "light": "#1A1B1F", "dark": "#F2F3F5", "description": "Primary body / value text." },
       "text-secondary": { "light": "#4D4E55", "dark": "#AEB0B8", "description": "Labels, captions, legend text." },
-      "text-muted":     { "light": "#888A92", "dark": "#7B7D86", "description": "Tick marks, axis labels, helper copy." }
+      "text-muted":     { "light": "#6E7079", "dark": "#8A8C95", "description": "Tick marks, axis labels, helper copy. ≥ 4.5:1 on bg, surface and tooltip in both themes (pinned by palette.test.ts)." }
     },
 
     "chart": {
@@ -64,17 +64,29 @@
     },
 
     "series": {
-      "description": "Categorical palette for chart series. Independently tuned per theme — light around L≈58%, dark around L≈72%. Chromas clamped under 0.20.",
+      "description": "Categorical palette for chart series. Independently tuned per theme — light around L≈58%, dark around L≈72%. Chromas clamped under 0.20. Order is load-bearing: neighbouring slots stay ≥ 15 ΔE (OKLab ×100) apart under protanopia and deuteranopia in both themes. Only series-0…7 are cycled; slot 9+ of a bar/line/scatter chart takes text-muted, pie/treemap/sankey repeat 0…7. series-8/9 remain as CSS variables only.",
       "series-0": { "light": "oklch(58% 0.16 250)", "dark": "oklch(72% 0.14 250)", "hint": "blue" },
       "series-1": { "light": "oklch(60% 0.14 150)", "dark": "oklch(74% 0.13 150)", "hint": "green" },
-      "series-2": { "light": "oklch(68% 0.16 65)",  "dark": "oklch(80% 0.15 70)",  "hint": "amber" },
-      "series-3": { "light": "oklch(58% 0.20 25)",  "dark": "oklch(70% 0.17 25)",  "hint": "red" },
-      "series-4": { "light": "oklch(54% 0.19 295)", "dark": "oklch(68% 0.18 295)", "hint": "violet" },
-      "series-5": { "light": "oklch(62% 0.12 200)", "dark": "oklch(74% 0.11 200)", "hint": "teal" },
-      "series-6": { "light": "oklch(64% 0.18 40)",  "dark": "oklch(74% 0.16 40)",  "hint": "orange" },
-      "series-7": { "light": "oklch(58% 0.18 325)", "dark": "oklch(70% 0.16 325)", "hint": "magenta" },
-      "series-8": { "light": "oklch(48% 0.13 240)", "dark": "oklch(62% 0.12 240)", "hint": "indigo" },
-      "series-9": { "light": "oklch(56% 0.10 110)", "dark": "oklch(70% 0.10 110)", "hint": "lime" }
+      "series-2": { "light": "oklch(54% 0.19 295)", "dark": "oklch(68% 0.18 295)", "hint": "violet" },
+      "series-3": { "light": "oklch(64% 0.16 65)",  "dark": "oklch(80% 0.15 70)",  "hint": "amber" },
+      "series-4": { "light": "oklch(62% 0.12 200)", "dark": "oklch(74% 0.11 200)", "hint": "teal" },
+      "series-5": { "light": "oklch(64% 0.18 40)",  "dark": "oklch(74% 0.16 40)",  "hint": "orange" },
+      "series-6": { "light": "oklch(58% 0.18 325)", "dark": "oklch(70% 0.16 325)", "hint": "magenta" },
+      "series-7": { "light": "oklch(58% 0.20 25)",  "dark": "oklch(70% 0.17 25)",  "hint": "red" },
+      "series-8": { "light": "oklch(48% 0.13 240)", "dark": "oklch(62% 0.12 240)", "hint": "indigo (not cycled)" },
+      "series-9": { "light": "oklch(56% 0.10 110)", "dark": "oklch(70% 0.10 110)", "hint": "lime (not cycled)" }
+    },
+
+    "sequential": {
+      "description": "Single-hue (blue) ramp, low → high, used by heatmap and map choropleth. Lightness is monotonic; the dark theme inverts the anchor so small values sink into the background. CSS: --sigil-seq-0…6.",
+      "light": ["#E3F4FF", "#BDDFFF", "#8CC3FC", "#5AA3EC", "#2784D5", "#0065B4", "#00488A"],
+      "dark":  ["#142A41", "#173F65", "#1A588F", "#2A75BA", "#4393E1", "#70B3F7", "#A6D2FF"]
+    },
+
+    "diverging": {
+      "description": "Blue ↔ orange ramp, −4 … +4 with a neutral midpoint, for values with a meaningful centre (heatmap/map `scale: \"diverging\"`, `midpoint` default 0). Arms are symmetric in lightness; the short arm of an asymmetric range is truncated, not stretched. CSS: --sigil-div-0…8, --sigil-div-4 is the midpoint.",
+      "light": ["#004E95", "#0F74C5", "#67A3E0", "#B1D2F4", "#EEEEEE", "#EFC3AB", "#D5895E", "#B45000", "#852C00"],
+      "dark":  ["#86C3FF", "#499AE7", "#286CAB", "#1D456B", "#2E2E2E", "#633416", "#9E511E", "#D8783D", "#F7A97C"]
     },
 
     "focus": {

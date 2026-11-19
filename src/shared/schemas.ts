@@ -202,6 +202,23 @@ export const treemapSchema = z.object({
 export type TreemapPayload = z.infer<typeof treemapSchema>;
 export type TreemapNode = z.infer<typeof treemapNodeSchema>;
 
+// ----- colour scale (heatmap, map) -------------------------------------------
+
+const colorScaleFields = {
+  scale: z
+    .enum(["sequential", "diverging"])
+    .optional()
+    .describe(
+      "Colour scale. 'sequential' (default): one hue, light → dark for low → high; use for magnitudes that only grow (counts, revenue, activity). 'diverging': blue below `midpoint`, orange above, neutral at it; use when values have a meaningful centre — change vs plan, growth rates, correlations, profit and loss.",
+    ),
+  midpoint: z
+    .number()
+    .optional()
+    .describe(
+      "Diverging scale only: the value shown as neutral — usually 0, a target, or an average. Defaults to 0. The further side sets the extremes; the nearer side is not stretched.",
+    ),
+};
+
 // ----- heatmap ---------------------------------------------------------------
 
 export const heatmapSchema = z.object({
@@ -228,6 +245,7 @@ export const heatmapSchema = z.object({
     ),
   xlabel: z.string().optional().describe("Axis label for the x-axis."),
   ylabel: z.string().optional().describe("Axis label for the y-axis."),
+  ...colorScaleFields,
 });
 
 export type HeatmapPayload = z.infer<typeof heatmapSchema>;
@@ -280,6 +298,7 @@ export const mapSchema = z.object({
     .string()
     .optional()
     .describe("Optional label for the value in the tooltip and legend, e.g. 'GDP per capita'."),
+  ...colorScaleFields,
 });
 
 export type MapPayload = z.infer<typeof mapSchema>;

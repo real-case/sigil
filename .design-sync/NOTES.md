@@ -55,8 +55,13 @@ Sigil themes at runtime: `.storybook/preview.tsx` calls `installThemeStyles()`
   Regenerate `styles-bundle.css` whenever `theme.ts` tokens or
   `shared/styles.css` change:
   ```sh
-  npx tsx -e 'import {renderThemeCss} from "./src/widgets/shared/theme.ts";import {readFileSync,writeFileSync} from "node:fs";writeFileSync(".design-sync/styles-bundle.css","/* tokens */\n"+renderThemeCss()+"\n\n/* component styles */\n"+readFileSync("./src/widgets/shared/styles.css","utf8"))'
+  npx tsx -e 'import {renderThemeCss} from "./src/widgets/shared/theme.ts";import {readFileSync,writeFileSync} from "node:fs";const head=readFileSync(".design-sync/styles-bundle.css","utf8").split("/* ===== design tokens ===== */")[0];const css=readFileSync("./src/widgets/shared/styles.css","utf8").split("\n").filter((l)=>!l.startsWith("@import ")).join("\n");writeFileSync(".design-sync/styles-bundle.css",head+"/* ===== design tokens ===== */\n"+renderThemeCss()+"\n\n/* ===== component styles (src/widgets/shared/styles.css) ===== */\n"+css)'
   ```
+
+  It keeps the file's explanatory header and drops `styles.css`'s `@import`
+  lines: an `@import` is only legal at the top of a stylesheet, and the
+  `@fontsource` packages it names do not resolve outside the Vite build anyway
+  (see Fonts below).
 
 ## Fonts
 
@@ -82,8 +87,17 @@ npx storybook build -c .storybook -o "$(git rev-parse --show-toplevel)/.design-s
   keeps previews correct via runtime injection, so a stale styles-bundle.css
   would silently desync only the *static* design closure — check a token value.)
 - **Dark theme** ships via the `@media (prefers-color-scheme: dark)` block in the
-  tokens; previews/designs follow OS preference. The Storybook `data-sigil-theme`
-  forced-theme override is dev-only and intentionally NOT shipped.
+  tokens, plus `:root[data-theme="light|dark"]` blocks that let an MCP Apps host's
+  theme override the OS (0.3.0). Previews/designs carry no `data-theme`, so they
+  follow OS preference. The Storybook `data-sigil-theme` forced-theme override is
+  dev-only and intentionally NOT shipped.
+- **Pending token drift (0.3.0).** The repo changed colour tokens that the design
+  project's `tokens.json` still holds at their 0.2.0 values: the `series` slots
+  were reordered (same hues; light amber moved to `oklch(64% 0.16 65)`),
+  `text-muted` became light `#6E7079` / dark `#8A8C95`, and new `sequential` /
+  `diverging` ramps were added. [`specs/design-system-tokens.json`](../specs/design-system-tokens.json)
+  and `styles-bundle.css` are current; push them to the design project on the
+  next DesignSync run.
 - **Story cap**: charts have up to 7 stories; captured with `--max-stories 7`.
   Tail stories beyond a future default cap are verified-by-upload, not
   individually graded.
